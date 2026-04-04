@@ -4,6 +4,7 @@ coverage/
 .turbo/
 .cache/
 .vite/
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
 .env
