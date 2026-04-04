@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #2d2117;
+  background:
+    radial-gradient(circle at top left, rgba(212, 162, 77, 0.22), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(140, 92, 64, 0.16), transparent 22%),
+    linear-gradient(180deg, #fffaf2 0%, #f4ebdd 100%);
+  font-family: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.touch-card {
+  @apply rounded-[28px] border border-white/60 bg-white/85 shadow-panel backdrop-blur-sm;
+}
+
+.touch-button {
+  @apply rounded-[24px] px-5 py-4 text-left text-lg font-semibold transition duration-150 active:scale-[0.99];
+}
+
+.status-pill {
+  @apply rounded-full px-3 py-1 text-sm font-semibold;
+}

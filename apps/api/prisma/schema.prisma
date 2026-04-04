@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  draft
+  awaiting_payment
+  paid
+  canceled
+}
+
+enum PaymentStatus {
+  idle
+  pending
+  requires_action
+  succeeded
+  failed
+  canceled
+}
+
+enum TenderType {
+  cash
+  card
+}
+
+model Location {
+  id                 String      @id
+  name               String
+  taxRateBasisPoints Int         @default(0)
+  registers          Register[]
+  categories         Category[]
+  modifiers          Modifier[]
+  products           Product[]
+  orders             Order[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+}
+
+model Register {
+  id               String            @id
+  name             String
+  locationId       String
+  location         Location          @relation(fields: [locationId], references: [id])
+  readerAssignment ReaderAssignment?
+  orders           Order[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model ReaderAssignment {
+  id         String   @id @default(uuid())
+  registerId String   @unique
+  register   Register @relation(fields: [registerId], references: [id])
+  readerId   String   @unique
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model StaffProfile {
+  id        String   @id
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id         String    @id
+  locationId String
+  location   Location  @relation(fields: [locationId], references: [id])
+  name       String
+  sortOrder  Int       @default(0)
+  products   Product[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Modifier {
+  id         String            @id
+  locationId String
+  location   Location          @relation(fields: [locationId], references: [id])
+  name       String
+  priceCents Int
+  enabled    Boolean           @default(true)
+  sortOrder  Int               @default(0)
+  products   ProductModifier[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+model Product {
+  id         String            @id
+  locationId String
+  location   Location          @relation(fields: [locationId], references: [id])
+  categoryId String
+  category   Category          @relation(fields: [categoryId], references: [id])
+  name       String
+  priceCents Int
+  enabled    Boolean           @default(true)
+  sortOrder  Int               @default(0)
+  modifiers  ProductModifier[]
+  orderItems OrderItem[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+model ProductModifier {
+  productId  String
+  modifierId String
+  product    Product  @relation(fields: [productId], references: [id])
+  modifier   Modifier @relation(fields: [modifierId], references: [id])
+
+  @@id([productId, modifierId])
+}
+
+model Order {
+  id                 String      @id @default(uuid())
+  orderNumber        String      @unique
+  status             OrderStatus
+  locationId         String
+  location           Location    @relation(fields: [locationId], references: [id])
+  registerId         String
+  register           Register    @relation(fields: [registerId], references: [id])
+  cashierId          String
+  cashierName        String
+  subtotalCents      Int
+  taxCents           Int
+  totalCents         Int
+  stripeMetadataJson Json?
+  items              OrderItem[]
+  payment            Payment?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  paidAt             DateTime?
+}
+
+model OrderItem {
+  id              String   @id @default(uuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id])
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+  productName     String
+  quantity        Int
+  unitPriceCents  Int
+  modifierIdsJson Json
+  modifierSummary Json
+  lineTotalCents  Int
+  createdAt       DateTime @default(now())
+}
+
+model Payment {
+  id                    String        @id @default(uuid())
+  orderId               String        @unique
+  order                 Order         @relation(fields: [orderId], references: [id])
+  tenderType            TenderType?
+  status                PaymentStatus @default(idle)
+  stripePaymentIntentId String?       @unique
+  stripeReaderActionId  String?
+  stripeReaderId        String?
+  failureMessage        String?
+  tenderedCents         Int?
+  changeDueCents        Int?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+model AdminAuditEvent {
+  id         String   @id @default(uuid())
+  action     String
+  entityType String
+  entityId   String
+  actorLabel String
+  payload    Json
+  createdAt  DateTime @default(now())
+}
+
+model StripeWebhookEvent {
+  id            String   @id @default(uuid())
+  stripeEventId String   @unique
+  eventType     String
+  payload       Json
+  processedAt   DateTime @default(now())
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

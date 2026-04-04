@@ -1,0 +1,22 @@
+{
+  "name": "rhc-pos",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "npm run build --workspace @rhc-pos/shared && npm run build --workspace @rhc-pos/api && npm run build --workspace @rhc-pos/kiosk",
+    "test": "npm run test --workspace @rhc-pos/shared && npm run test --workspace @rhc-pos/api && npm run test --workspace @rhc-pos/kiosk",
+    "dev:kiosk": "npm run dev --workspace @rhc-pos/kiosk",
+    "dev:api": "npm run dev --workspace @rhc-pos/api",
+    "dev:docker": "docker compose up --build",
+    "prisma:generate": "npm run prisma:generate --workspace @rhc-pos/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace @rhc-pos/api",
+    "prisma:seed": "npm run prisma:seed --workspace @rhc-pos/api"
+  }
+}

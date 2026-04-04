@@ -1,0 +1,15 @@
+FROM node:24-alpine
+WORKDIR /app
+
+COPY package.json ./
+COPY apps/kiosk/package.json apps/kiosk/package.json
+COPY packages/shared/package.json packages/shared/package.json
+
+RUN npm install
+
+COPY . .
+
+RUN npm run build --workspace @rhc-pos/shared
+
+WORKDIR /app/apps/kiosk
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

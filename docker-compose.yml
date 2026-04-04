@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: rhc_pos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rhc_pos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: ./infra/docker/api.Dockerfile
+    command: >
+      sh -lc "npm run prisma:generate &&
+      npx prisma db push &&
+      npm run prisma:seed &&
+      npm run start"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/rhc_pos?schema=public
+      PORT: 4000
+      HOST: 0.0.0.0
+      CORS_ORIGIN: http://localhost:5173
+      ADMIN_PIN: 2468
+      APP_BASE_URL: http://localhost:4000
+      STRIPE_WEBHOOK_SECRET: whsec_dev_placeholder
+      STRIPE_SECRET_KEY: ""
+      STRIPE_LOCATION_ID: ""
+      STRIPE_READER_ID: ""
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  kiosk:
+    build:
+      context: .
+      dockerfile: ./infra/docker/kiosk.Dockerfile
+    environment:
+      VITE_API_BASE_URL: http://localhost:4000/v1
+      VITE_REGISTER_ID: kiosk-register-1
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    profiles: ["stripe"]
+    command: >
+      listen --api-key ${STRIPE_SECRET_KEY} --forward-to http://api:4000/v1/stripe/webhooks
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
