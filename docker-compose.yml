@@ -21,7 +21,7 @@ services:
       dockerfile: ./infra/docker/api.Dockerfile
     command: >
       sh -lc "npm run prisma:generate &&
-      npx prisma db push &&
+      npx prisma db push --force-reset &&
       npm run prisma:seed &&
       npm run start"
     environment:

@@ -1,22 +1,37 @@
 import {
+  calculateLinePrice,
   calculateTax,
   type BootstrapResponse,
   type CartInput,
+  type Category,
   type DraftOrder,
+  type Modifier,
   type PatchSettingsInput,
   type Product,
+  type SizeOption,
   type SummaryResponse,
+  type UpsertCategoryInput,
+  type UpsertModifierInput,
   type UpsertProductInput,
+  type UpsertSizeOptionInput,
 } from "@rhc-pos/shared";
 
 import { HttpError } from "../lib/http-error.js";
 import { createOrderNumber } from "../lib/order-number.js";
 import type { AuditEventInput, CardPaymentUpdateInput, PosRepository } from "./types.js";
 
-type ModifierSummary = DraftOrder["lines"][number]["modifierSummary"];
+type LineSummary = DraftOrder["lines"][number]["modifierSummary"];
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function slugify(value: string): string {
+  return value.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replaceAll(/^-+|-+$/g, "");
+}
+
+function toMap<T extends { id: string }>(items: T[]) {
+  return new Map(items.map((item) => [item.id, item] as const));
 }
 
 export class MemoryPosRepository implements PosRepository {
@@ -31,22 +46,199 @@ export class MemoryPosRepository implements PosRepository {
       adminPinConfigured: true,
     },
     categories: [
-      { id: "drinks", name: "Drinks", sortOrder: 1 },
-      { id: "food", name: "Food", sortOrder: 2 },
-      { id: "specials", name: "Specials", sortOrder: 3 },
+      { id: "drink", name: "Drink", sortOrder: 1, enabled: true },
+      { id: "food", name: "Food", sortOrder: 2, enabled: true },
+      { id: "discount", name: "Discount", sortOrder: 3, enabled: true },
+      { id: "kids", name: "Kids", sortOrder: 4, enabled: true },
+    ],
+    sizes: [
+      { id: "regular", name: "Regular", priceDeltaCents: 0, enabled: true, sortOrder: 1 },
+      { id: "kids", name: "Kids", priceDeltaCents: -100, enabled: true, sortOrder: 2 },
     ],
     modifiers: [
-      { id: "extra-shot", name: "Extra Shot", priceCents: 100, enabled: true, sortOrder: 1 },
-      { id: "oat-milk", name: "Oat Milk", priceCents: 75, enabled: true, sortOrder: 2 },
-      { id: "syrup", name: "Syrup", priceCents: 50, enabled: true, sortOrder: 3 },
+      { id: "vanilla", name: "Vanilla", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 1 },
+      { id: "caramel", name: "Caramel", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 2 },
+      { id: "hazelnut", name: "Hazelnut", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 3 },
+      { id: "raspberry", name: "Raspberry", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 4 },
+      { id: "extra-shot", name: "Extra Shot", priceCents: 100, discountFlavor: false, enabled: true, sortOrder: 5 },
+      { id: "sugar-free-vanilla", name: "Sugar Free Vanilla", priceCents: -100, discountFlavor: true, enabled: true, sortOrder: 6 },
+      { id: "sugar-free-caramel", name: "Sugar Free Caramel", priceCents: -100, discountFlavor: true, enabled: true, sortOrder: 7 },
     ],
     products: [
-      { id: "drip-coffee", name: "Drip Coffee", categoryId: "drinks", priceCents: 250, enabled: true, sortOrder: 1, modifierIds: ["extra-shot", "syrup"] },
-      { id: "latte", name: "Latte", categoryId: "drinks", priceCents: 450, enabled: true, sortOrder: 2, modifierIds: ["extra-shot", "oat-milk", "syrup"] },
-      { id: "tea", name: "Tea", categoryId: "drinks", priceCents: 300, enabled: true, sortOrder: 3, modifierIds: ["syrup"] },
-      { id: "pastry", name: "Pastry", categoryId: "food", priceCents: 350, enabled: true, sortOrder: 1, modifierIds: [] },
-      { id: "muffin", name: "Muffin", categoryId: "food", priceCents: 300, enabled: true, sortOrder: 2, modifierIds: [] },
-      { id: "bagel", name: "Bagel", categoryId: "food", priceCents: 325, enabled: true, sortOrder: 3, modifierIds: [] },
+      {
+        id: "mocha",
+        name: "Mocha",
+        categoryId: "drink",
+        priceCents: 450,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 1,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "hazelnut", "sugar-free-vanilla", "sugar-free-caramel", "extra-shot"],
+        sizeOptionIds: ["regular"],
+        sizeOptionPrices: [{ sizeOptionId: "regular", priceDeltaCents: 0 }],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "latte",
+        name: "Latte",
+        categoryId: "drink",
+        priceCents: 400,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 2,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "hazelnut", "sugar-free-vanilla", "sugar-free-caramel", "extra-shot"],
+        sizeOptionIds: ["regular"],
+        sizeOptionPrices: [{ sizeOptionId: "regular", priceDeltaCents: 0 }],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "iced-latte",
+        name: "Iced Latte",
+        categoryId: "drink",
+        priceCents: 450,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 3,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "hazelnut", "sugar-free-vanilla", "sugar-free-caramel", "extra-shot"],
+        sizeOptionIds: ["regular"],
+        sizeOptionPrices: [{ sizeOptionId: "regular", priceDeltaCents: 0 }],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "frappuccino",
+        name: "Frappuccino",
+        categoryId: "drink",
+        priceCents: 450,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 4,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "hazelnut", "sugar-free-vanilla", "sugar-free-caramel"],
+        sizeOptionIds: ["regular"],
+        sizeOptionPrices: [{ sizeOptionId: "regular", priceDeltaCents: 0 }],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "dirty-chai",
+        name: "Dirty Chai",
+        categoryId: "drink",
+        priceCents: 450,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 5,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "hazelnut", "extra-shot", "sugar-free-vanilla", "sugar-free-caramel"],
+        sizeOptionIds: ["regular"],
+        sizeOptionPrices: [{ sizeOptionId: "regular", priceDeltaCents: 0 }],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "red-bull",
+        name: "Red Bull",
+        categoryId: "drink",
+        priceCents: 450,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 6,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "raspberry", "sugar-free-vanilla", "sugar-free-caramel"],
+        sizeOptionIds: ["regular"],
+        sizeOptionPrices: [{ sizeOptionId: "regular", priceDeltaCents: 0 }],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "americano",
+        name: "Americano",
+        categoryId: "drink",
+        priceCents: 350,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 7,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "hazelnut", "sugar-free-vanilla", "sugar-free-caramel", "extra-shot"],
+        sizeOptionIds: ["regular"],
+        sizeOptionPrices: [{ sizeOptionId: "regular", priceDeltaCents: 0 }],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "hot-chocolate",
+        name: "Hot Chocolate",
+        categoryId: "drink",
+        priceCents: 350,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 8,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "hazelnut", "raspberry", "sugar-free-vanilla", "sugar-free-caramel"],
+        sizeOptionIds: ["regular", "kids"],
+        sizeOptionPrices: [
+          { sizeOptionId: "regular", priceDeltaCents: 0 },
+          { sizeOptionId: "kids", priceDeltaCents: -100 },
+        ],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "chai",
+        name: "Chai",
+        categoryId: "drink",
+        priceCents: 300,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 9,
+        productType: "drink",
+        modifierIds: ["vanilla", "caramel", "hazelnut", "sugar-free-vanilla", "sugar-free-caramel"],
+        sizeOptionIds: ["regular", "kids"],
+        sizeOptionPrices: [
+          { sizeOptionId: "regular", priceDeltaCents: 0 },
+          { sizeOptionId: "kids", priceDeltaCents: -50 },
+        ],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "italian-soda",
+        name: "Italian Soda",
+        categoryId: "drink",
+        priceCents: 300,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 10,
+        productType: "drink",
+        modifierIds: ["raspberry", "vanilla", "caramel", "sugar-free-vanilla", "sugar-free-caramel"],
+        sizeOptionIds: ["regular"],
+        sizeOptionPrices: [{ sizeOptionId: "regular", priceDeltaCents: 0 }],
+        defaultSizeOptionId: "regular",
+      },
+      {
+        id: "muffin",
+        name: "Muffin",
+        categoryId: "food",
+        priceCents: 300,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 1,
+        productType: "food",
+        modifierIds: [],
+        sizeOptionIds: [],
+        sizeOptionPrices: [],
+        defaultSizeOptionId: null,
+      },
+      {
+        id: "bagel",
+        name: "Bagel",
+        categoryId: "food",
+        priceCents: 325,
+        discountCents: 0,
+        enabled: true,
+        sortOrder: 2,
+        productType: "food",
+        modifierIds: [],
+        sizeOptionIds: [],
+        sizeOptionPrices: [],
+        defaultSizeOptionId: null,
+      },
     ],
     cashiers: [
       { id: "sarah", name: "Sarah", active: true },
@@ -70,31 +262,51 @@ export class MemoryPosRepository implements PosRepository {
       throw new HttpError(400, "Cashier is not available.");
     }
 
+    const products = toMap(this.bootstrap.products);
+    const sizes = toMap(this.bootstrap.sizes);
+    const modifiers = toMap(this.bootstrap.modifiers);
+
     const lines = input.items.map((item, index) => {
-      const product = this.bootstrap.products.find((entry) => entry.id === item.productId && entry.enabled);
-      if (!product) {
+      const product = products.get(item.productId);
+      if (!product || !product.enabled) {
         throw new HttpError(400, `Product ${item.productId} is not available.`);
       }
 
-      const modifierSummary: ModifierSummary = item.modifierIds.map((modifierId) => {
+      const selectedSizeId = item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
+      const size = selectedSizeId ? sizes.get(selectedSizeId) ?? null : null;
+      if (selectedSizeId && (!size || !size.enabled || (product.sizeOptionIds.length > 0 && !product.sizeOptionIds.includes(selectedSizeId)))) {
+        throw new HttpError(400, `Size ${selectedSizeId} is not allowed for ${product.name}.`);
+      }
+
+      const modifierSummary: LineSummary = item.modifierIds.map((modifierId) => {
         if (!product.modifierIds.includes(modifierId)) {
-          throw new HttpError(400, `Modifier ${modifierId} is not allowed for ${product.name}.`);
+          throw new HttpError(400, `Flavor ${modifierId} is not allowed for ${product.name}.`);
         }
 
-        const modifier = this.bootstrap.modifiers.find((entry) => entry.id === modifierId && entry.enabled);
-        if (!modifier) {
-          throw new HttpError(400, `Modifier ${modifierId} is not available.`);
+        const modifier = modifiers.get(modifierId);
+        if (!modifier || !modifier.enabled) {
+          throw new HttpError(400, `Flavor ${modifierId} is not available.`);
         }
 
         return {
           id: modifier.id,
           name: modifier.name,
           priceCents: modifier.priceCents,
+          discountFlavor: modifier.discountFlavor,
         };
       });
 
-      const unitPriceCents =
-        product.priceCents + modifierSummary.reduce((sum, modifier) => sum + modifier.priceCents, 0);
+      const flavorAdjustmentCents = modifierSummary.reduce((sum, modifier) => sum + modifier.priceCents, 0);
+      const sizeAdjustmentCents =
+        product.sizeOptionPrices.find((entry) => entry.sizeOptionId === selectedSizeId)?.priceDeltaCents ??
+        size?.priceDeltaCents ??
+        0;
+      const unitPriceCents = calculateLinePrice({
+        basePriceCents: product.priceCents,
+        sizeAdjustmentCents,
+        flavorAdjustmentCents,
+        discountCents: product.discountCents,
+      });
       const lineTotalCents = unitPriceCents * item.quantity;
 
       return {
@@ -103,8 +315,13 @@ export class MemoryPosRepository implements PosRepository {
         productName: product.name,
         quantity: item.quantity,
         unitPriceCents,
+        sizeOptionId: size?.id ?? null,
+        sizeOptionName: size?.name ?? null,
+        sizeAdjustmentCents,
         modifierIds: item.modifierIds,
         modifierSummary,
+        flavorAdjustmentCents,
+        discountCents: product.discountCents,
         lineTotalCents,
       };
     });
@@ -189,16 +406,85 @@ export class MemoryPosRepository implements PosRepository {
     const paidOrders = [...this.orders.values()].filter(
       (order) => order.status === "paid" && order.createdAt.startsWith(salesDate),
     );
+
     const itemCounts = new Map<string, { productId: string; productName: string; quantity: number }>();
+    const categoryTotals = new Map<string, { id: string; name: string; quantity: number; totalCents: number }>();
+    const sizeTotals = new Map<string, { id: string; name: string; quantity: number; totalCents: number }>();
+    const flavorTotals = new Map<string, { id: string; name: string; quantity: number; totalCents: number; adjustmentCents: number; discountFlavor: boolean }>();
+    const topItemTotals = new Map<string, { productId: string; productName: string; quantity: number; totalCents: number }>();
+    const products = toMap(this.bootstrap.products);
+    const categories = toMap(this.bootstrap.categories);
+    const sizes = toMap(this.bootstrap.sizes);
+    const flavors = toMap(this.bootstrap.modifiers);
 
     for (const order of paidOrders) {
       for (const line of order.lines) {
+        const product = products.get(line.productId);
+        if (!product) {
+          continue;
+        }
+        const category = categories.get(product.categoryId);
+        const size = line.sizeOptionId ? sizes.get(line.sizeOptionId) : null;
+
         const existing = itemCounts.get(line.productId);
         itemCounts.set(line.productId, {
           productId: line.productId,
           productName: line.productName,
           quantity: (existing?.quantity ?? 0) + line.quantity,
         });
+
+        if (category) {
+          const currentCategory = categoryTotals.get(category.id) ?? {
+            id: category.id,
+            name: category.name,
+            quantity: 0,
+            totalCents: 0,
+          };
+          currentCategory.quantity += line.quantity;
+          currentCategory.totalCents += line.lineTotalCents;
+          categoryTotals.set(category.id, currentCategory);
+        }
+
+        if (size) {
+          const currentSize = sizeTotals.get(size.id) ?? {
+            id: size.id,
+            name: size.name,
+            quantity: 0,
+            totalCents: 0,
+          };
+          currentSize.quantity += line.quantity;
+          currentSize.totalCents += line.lineTotalCents;
+          sizeTotals.set(size.id, currentSize);
+        }
+
+        const currentTopItem = topItemTotals.get(line.productId) ?? {
+          productId: line.productId,
+          productName: line.productName,
+          quantity: 0,
+          totalCents: 0,
+        };
+        currentTopItem.quantity += line.quantity;
+        currentTopItem.totalCents += line.lineTotalCents;
+        topItemTotals.set(line.productId, currentTopItem);
+
+        for (const flavorId of line.modifierIds) {
+          const flavor = flavors.get(flavorId);
+          if (!flavor) {
+            continue;
+          }
+          const currentFlavor = flavorTotals.get(flavor.id) ?? {
+            id: flavor.id,
+            name: flavor.name,
+            quantity: 0,
+            totalCents: 0,
+            adjustmentCents: 0,
+            discountFlavor: flavor.discountFlavor,
+          };
+          currentFlavor.quantity += line.quantity;
+          currentFlavor.totalCents += line.lineTotalCents;
+          currentFlavor.adjustmentCents += flavor.priceCents * line.quantity;
+          flavorTotals.set(flavor.id, currentFlavor);
+        }
       }
     }
 
@@ -213,7 +499,104 @@ export class MemoryPosRepository implements PosRepository {
         .reduce((sum, order) => sum + order.totalCents, 0),
       orderCount: paidOrders.length,
       itemCounts: [...itemCounts.values()],
+      salesByCategory: [...categoryTotals.values()],
+      sizeBreakdown: [...sizeTotals.values()],
+      flavorBreakdown: [...flavorTotals.values()],
+      topItems: [...topItemTotals.values()].sort((a, b) => b.totalCents - a.totalCents).slice(0, 5),
     };
+  }
+
+  async listCategories(): Promise<Category[]> {
+    return structuredClone(this.bootstrap.categories);
+  }
+
+  async upsertCategory(input: UpsertCategoryInput, actorLabel: string): Promise<Category> {
+    const category: Category = {
+      id: input.id ?? slugify(input.name),
+      name: input.name,
+      sortOrder: input.sortOrder,
+      enabled: input.enabled,
+    };
+
+    const index = this.bootstrap.categories.findIndex((entry) => entry.id === category.id);
+    if (index >= 0) {
+      this.bootstrap.categories[index] = category;
+    } else {
+      this.bootstrap.categories.push(category);
+    }
+
+    await this.appendAuditEvent({
+      action: index >= 0 ? "category.updated" : "category.created",
+      entityType: "category",
+      entityId: category.id,
+      actorLabel,
+      payload: category as unknown as Record<string, unknown>,
+    });
+
+    return structuredClone(category);
+  }
+
+  async listModifiers(): Promise<Modifier[]> {
+    return structuredClone(this.bootstrap.modifiers);
+  }
+
+  async upsertModifier(input: UpsertModifierInput, actorLabel: string): Promise<Modifier> {
+    const modifier: Modifier = {
+      id: input.id ?? slugify(input.name),
+      name: input.name,
+      priceCents: input.priceCents,
+      discountFlavor: input.discountFlavor,
+      enabled: input.enabled,
+      sortOrder: input.sortOrder,
+    };
+
+    const index = this.bootstrap.modifiers.findIndex((entry) => entry.id === modifier.id);
+    if (index >= 0) {
+      this.bootstrap.modifiers[index] = modifier;
+    } else {
+      this.bootstrap.modifiers.push(modifier);
+    }
+
+    await this.appendAuditEvent({
+      action: index >= 0 ? "modifier.updated" : "modifier.created",
+      entityType: "modifier",
+      entityId: modifier.id,
+      actorLabel,
+      payload: modifier as unknown as Record<string, unknown>,
+    });
+
+    return structuredClone(modifier);
+  }
+
+  async listSizes(): Promise<SizeOption[]> {
+    return structuredClone(this.bootstrap.sizes);
+  }
+
+  async upsertSize(input: UpsertSizeOptionInput, actorLabel: string): Promise<SizeOption> {
+    const size: SizeOption = {
+      id: input.id ?? slugify(input.name),
+      name: input.name,
+      priceDeltaCents: input.priceDeltaCents,
+      enabled: input.enabled,
+      sortOrder: input.sortOrder,
+    };
+
+    const index = this.bootstrap.sizes.findIndex((entry) => entry.id === size.id);
+    if (index >= 0) {
+      this.bootstrap.sizes[index] = size;
+    } else {
+      this.bootstrap.sizes.push(size);
+    }
+
+    await this.appendAuditEvent({
+      action: index >= 0 ? "size.updated" : "size.created",
+      entityType: "size",
+      entityId: size.id,
+      actorLabel,
+      payload: size as unknown as Record<string, unknown>,
+    });
+
+    return structuredClone(size);
   }
 
   async listProducts(): Promise<Product[]> {
@@ -222,20 +605,27 @@ export class MemoryPosRepository implements PosRepository {
 
   async upsertProduct(input: UpsertProductInput, actorLabel: string): Promise<Product> {
     const product: Product = {
-      id: input.id ?? input.name.toLowerCase().replaceAll(/\s+/g, "-"),
+      id: input.id ?? slugify(input.name),
       name: input.name,
       categoryId: input.categoryId,
       priceCents: input.priceCents,
+      discountCents: input.discountCents,
       enabled: input.enabled,
       sortOrder: input.sortOrder,
+      productType: input.productType,
       modifierIds: input.modifierIds,
+      sizeOptionIds: input.sizeOptionIds,
+      sizeOptionPrices: input.sizeOptionPrices,
+      defaultSizeOptionId: input.defaultSizeOptionId,
     };
+
     const index = this.bootstrap.products.findIndex((entry) => entry.id === product.id);
     if (index >= 0) {
       this.bootstrap.products[index] = product;
     } else {
       this.bootstrap.products.push(product);
     }
+
     await this.appendAuditEvent({
       action: index >= 0 ? "product.updated" : "product.created",
       entityType: "product",
@@ -243,6 +633,7 @@ export class MemoryPosRepository implements PosRepository {
       actorLabel,
       payload: product as unknown as Record<string, unknown>,
     });
+
     return structuredClone(product);
   }
 
@@ -256,6 +647,7 @@ export class MemoryPosRepository implements PosRepository {
       locationName: input.locationName ?? this.bootstrap.settings.locationName,
       registerName: input.registerName ?? this.bootstrap.settings.registerName,
     };
+
     await this.appendAuditEvent({
       action: "settings.updated",
       entityType: "settings",
@@ -263,6 +655,7 @@ export class MemoryPosRepository implements PosRepository {
       actorLabel,
       payload: input as Record<string, unknown>,
     });
+
     return structuredClone(this.bootstrap.settings);
   }
 
@@ -284,10 +677,8 @@ export class MemoryPosRepository implements PosRepository {
   }
 
   async getOrderByStripePaymentIntentId(paymentIntentId: string): Promise<DraftOrder | null> {
-    return (
-      structuredClone(
-        [...this.orders.values()].find((order) => order.payment.stripePaymentIntentId === paymentIntentId) ?? null,
-      )
+    return structuredClone(
+      [...this.orders.values()].find((order) => order.payment.stripePaymentIntentId === paymentIntentId) ?? null,
     );
   }
 

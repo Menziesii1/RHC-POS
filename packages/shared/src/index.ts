@@ -2,28 +2,50 @@ import { z } from "zod";
 
 export const idSchema = z.string().min(1);
 
-export const modifierSchema = z.object({
-  id: idSchema,
-  name: z.string().min(1),
-  priceCents: z.number().int().nonnegative(),
-  enabled: z.boolean(),
-  sortOrder: z.number().int().default(0),
-});
-
 export const categorySchema = z.object({
   id: idSchema,
   name: z.string().min(1),
   sortOrder: z.number().int().default(0),
+  enabled: z.boolean().default(true),
 });
+
+export const sizeOptionSchema = z.object({
+  id: idSchema,
+  name: z.string().min(1),
+  priceDeltaCents: z.number().int().default(0),
+  enabled: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+});
+
+export const productSizePriceSchema = z.object({
+  sizeOptionId: idSchema,
+  priceDeltaCents: z.number().int().default(0),
+});
+
+export const modifierSchema = z.object({
+  id: idSchema,
+  name: z.string().min(1),
+  priceCents: z.number().int().default(0),
+  discountFlavor: z.boolean().default(false),
+  enabled: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+});
+
+export const productTypeSchema = z.enum(["drink", "food", "discount", "kids"]);
 
 export const productSchema = z.object({
   id: idSchema,
   name: z.string().min(1),
   categoryId: idSchema,
   priceCents: z.number().int().nonnegative(),
-  enabled: z.boolean(),
+  discountCents: z.number().int().nonnegative().default(0),
+  enabled: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
+  productType: productTypeSchema.default("drink"),
   modifierIds: z.array(idSchema).default([]),
+  sizeOptionIds: z.array(idSchema).default([]),
+  sizeOptionPrices: z.array(productSizePriceSchema).default([]),
+  defaultSizeOptionId: idSchema.nullable().default(null),
 });
 
 export const staffProfileSchema = z.object({
@@ -35,6 +57,7 @@ export const staffProfileSchema = z.object({
 export const cartItemInputSchema = z.object({
   productId: idSchema,
   quantity: z.number().int().positive(),
+  sizeOptionId: idSchema.nullable().optional(),
   modifierIds: z.array(idSchema).default([]),
 });
 
@@ -55,14 +78,20 @@ export const orderLineSchema = z.object({
   productName: z.string().min(1),
   quantity: z.number().int().positive(),
   unitPriceCents: z.number().int().nonnegative(),
+  sizeOptionId: idSchema.nullable().optional(),
+  sizeOptionName: z.string().min(1).nullable().optional(),
+  sizeAdjustmentCents: z.number().int().default(0),
   modifierIds: z.array(idSchema),
   modifierSummary: z.array(
     z.object({
       id: idSchema,
       name: z.string().min(1),
-      priceCents: z.number().int().nonnegative(),
+      priceCents: z.number().int(),
+      discountFlavor: z.boolean().default(false),
     }),
   ),
+  flavorAdjustmentCents: z.number().int().default(0),
+  discountCents: z.number().int().default(0),
   lineTotalCents: z.number().int().nonnegative(),
 });
 
@@ -128,13 +157,11 @@ export const appSettingsSchema = z.object({
   adminPinConfigured: z.boolean(),
 });
 
-export const bootstrapResponseSchema = z.object({
-  settings: appSettingsSchema,
-  status: registerStatusSchema,
-  categories: z.array(categorySchema),
-  products: z.array(productSchema),
-  modifiers: z.array(modifierSchema),
-  cashiers: z.array(staffProfileSchema),
+export const salesBreakdownItemSchema = z.object({
+  id: idSchema,
+  name: z.string().min(1),
+  quantity: z.number().int().nonnegative(),
+  totalCents: z.number().int().nonnegative(),
 });
 
 export const summaryResponseSchema = z.object({
@@ -150,10 +177,60 @@ export const summaryResponseSchema = z.object({
       quantity: z.number().int().nonnegative(),
     }),
   ),
+  salesByCategory: z.array(salesBreakdownItemSchema).default([]),
+  sizeBreakdown: z.array(salesBreakdownItemSchema).default([]),
+  flavorBreakdown: z.array(
+    salesBreakdownItemSchema.extend({
+      adjustmentCents: z.number().int(),
+      discountFlavor: z.boolean().default(false),
+    }),
+  ).default([]),
+  topItems: z.array(
+    z.object({
+      productId: idSchema,
+      productName: z.string().min(1),
+      quantity: z.number().int().nonnegative(),
+      totalCents: z.number().int().nonnegative(),
+    }),
+  ).default([]),
+});
+
+export const bootstrapResponseSchema = z.object({
+  settings: appSettingsSchema,
+  status: registerStatusSchema,
+  categories: z.array(categorySchema),
+  products: z.array(productSchema),
+  modifiers: z.array(modifierSchema),
+  sizes: z.array(sizeOptionSchema),
+  cashiers: z.array(staffProfileSchema),
 });
 
 export const adminPinSchema = z.object({
   pin: z.string().min(4).max(12),
+});
+
+export const upsertCategorySchema = z.object({
+  id: idSchema.optional(),
+  name: z.string().min(1),
+  sortOrder: z.number().int().default(0),
+  enabled: z.boolean().default(true),
+});
+
+export const upsertSizeOptionSchema = z.object({
+  id: idSchema.optional(),
+  name: z.string().min(1),
+  priceDeltaCents: z.number().int().default(0),
+  enabled: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+});
+
+export const upsertModifierSchema = z.object({
+  id: idSchema.optional(),
+  name: z.string().min(1),
+  priceCents: z.number().int().default(0),
+  discountFlavor: z.boolean().default(false),
+  enabled: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
 });
 
 export const upsertProductSchema = z.object({
@@ -161,9 +238,14 @@ export const upsertProductSchema = z.object({
   name: z.string().min(1),
   categoryId: idSchema,
   priceCents: z.number().int().nonnegative(),
-  enabled: z.boolean(),
+  discountCents: z.number().int().nonnegative().default(0),
+  enabled: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
+  productType: productTypeSchema.default("drink"),
   modifierIds: z.array(idSchema).default([]),
+  sizeOptionIds: z.array(idSchema).default([]),
+  sizeOptionPrices: z.array(productSizePriceSchema).default([]),
+  defaultSizeOptionId: idSchema.nullable().default(null),
 });
 
 export const patchSettingsSchema = z.object({
@@ -172,8 +254,10 @@ export const patchSettingsSchema = z.object({
   registerName: z.string().min(1).optional(),
 });
 
-export type Modifier = z.infer<typeof modifierSchema>;
 export type Category = z.infer<typeof categorySchema>;
+export type SizeOption = z.infer<typeof sizeOptionSchema>;
+export type ProductSizePrice = z.infer<typeof productSizePriceSchema>;
+export type Modifier = z.infer<typeof modifierSchema>;
 export type Product = z.infer<typeof productSchema>;
 export type StaffProfile = z.infer<typeof staffProfileSchema>;
 export type CartInput = z.infer<typeof cartInputSchema>;
@@ -181,11 +265,31 @@ export type DraftOrder = z.infer<typeof draftOrderSchema>;
 export type RegisterStatus = z.infer<typeof registerStatusSchema>;
 export type BootstrapResponse = z.infer<typeof bootstrapResponseSchema>;
 export type SummaryResponse = z.infer<typeof summaryResponseSchema>;
+export type UpsertCategoryInput = z.infer<typeof upsertCategorySchema>;
+export type UpsertSizeOptionInput = z.infer<typeof upsertSizeOptionSchema>;
+export type UpsertModifierInput = z.infer<typeof upsertModifierSchema>;
 export type UpsertProductInput = z.infer<typeof upsertProductSchema>;
 export type PatchSettingsInput = z.infer<typeof patchSettingsSchema>;
 
+export interface LinePricingInput {
+  basePriceCents: number;
+  sizeAdjustmentCents?: number;
+  flavorAdjustmentCents?: number;
+  discountCents?: number;
+}
+
 export function calculateTax(subtotalCents: number, taxRateBasisPoints: number): number {
   return Math.round((subtotalCents * taxRateBasisPoints) / 10000);
+}
+
+export function calculateLinePrice(input: LinePricingInput): number {
+  return Math.max(
+    0,
+    input.basePriceCents +
+      (input.sizeAdjustmentCents ?? 0) +
+      (input.flavorAdjustmentCents ?? 0) -
+      (input.discountCents ?? 0),
+  );
 }
 
 export function formatCurrency(cents: number): string {

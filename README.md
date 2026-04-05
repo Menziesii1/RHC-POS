@@ -30,7 +30,7 @@ RHC POS is a kiosk-first, in-store point of sale system for a church coffee shop
 ## Local Development Notes
 
 - The API defaults to mock Stripe mode until `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_READER_ID` are configured.
-- Docker Compose bootstraps Postgres with `prisma db push` plus the seed script.
+- Docker Compose bootstraps Postgres with `prisma db push --force-reset` plus the seed script, so local container restarts can reset dev data when the schema changes.
 - The default sample catalog and cashier list come from `apps/api/prisma/seed.ts`.
 
 ## Production Notes

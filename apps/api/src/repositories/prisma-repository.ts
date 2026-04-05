@@ -1,13 +1,20 @@
 import { PrismaClient } from "@prisma/client";
 import {
+  calculateLinePrice,
   calculateTax,
   type BootstrapResponse,
   type CartInput,
+  type Category,
   type DraftOrder,
+  type Modifier,
   type PatchSettingsInput,
   type Product,
+  type SizeOption,
   type SummaryResponse,
+  type UpsertCategoryInput,
+  type UpsertModifierInput,
   type UpsertProductInput,
+  type UpsertSizeOptionInput,
 } from "@rhc-pos/shared";
 
 import type { AppConfig } from "../config.js";
@@ -18,8 +25,15 @@ import type { AuditEventInput, CardPaymentUpdateInput, PosRepository } from "./t
 type ProductRecord = Awaited<ReturnType<PrismaPosRepository["getProductRecords"]>>[number];
 type OrderRecord = Awaited<ReturnType<PrismaPosRepository["getOrderRecord"]>>;
 
-function serializeModifierSummary(value: DraftOrder["lines"][number]["modifierSummary"]) {
-  return value as unknown as object;
+function serializeJson(value: unknown) {
+  return value as object;
+}
+
+function normalizeCategory(category: Category): Category {
+  return {
+    ...category,
+    enabled: category.enabled ?? true,
+  };
 }
 
 export class PrismaPosRepository implements PosRepository {
@@ -29,13 +43,26 @@ export class PrismaPosRepository implements PosRepository {
   ) {}
 
   async getBootstrapBase(): Promise<Omit<BootstrapResponse, "status">> {
-    const [location, register, categories, modifiers, products, cashiers, recoverySetting] = await Promise.all([
+    const [location, register, categories, sizes, modifiers, products, cashiers, recoverySetting] = await Promise.all([
       this.prisma.location.findUnique({ where: { id: this.config.LOCATION_ID } }),
       this.prisma.register.findUnique({ where: { id: this.config.REGISTER_ID } }),
-      this.prisma.category.findMany({ where: { locationId: this.config.LOCATION_ID }, orderBy: { sortOrder: "asc" } }),
-      this.prisma.modifier.findMany({ where: { locationId: this.config.LOCATION_ID }, orderBy: { sortOrder: "asc" } }),
+      this.prisma.category.findMany({
+        where: { locationId: this.config.LOCATION_ID },
+        orderBy: { sortOrder: "asc" },
+      }),
+      this.prisma.sizeOption.findMany({
+        where: { locationId: this.config.LOCATION_ID },
+        orderBy: { sortOrder: "asc" },
+      }),
+      this.prisma.modifier.findMany({
+        where: { locationId: this.config.LOCATION_ID },
+        orderBy: { sortOrder: "asc" },
+      }),
       this.getProductRecords(),
-      this.prisma.staffProfile.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+      this.prisma.staffProfile.findMany({
+        where: { active: true },
+        orderBy: { name: "asc" },
+      }),
       this.prisma.appSetting.findUnique({ where: { key: "recovery_ttl_seconds" } }),
     ]);
 
@@ -53,15 +80,24 @@ export class PrismaPosRepository implements PosRepository {
         recoveryTtlSeconds: Number(recoverySetting?.value ?? this.config.RECOVERY_TTL_SECONDS),
         adminPinConfigured: Boolean(this.config.ADMIN_PIN_HASH || this.config.ADMIN_PIN),
       },
-      categories: categories.map((category) => ({
+      categories: categories.map((category) => normalizeCategory({
         id: category.id,
         name: category.name,
         sortOrder: category.sortOrder,
+        enabled: category.enabled,
+      })),
+      sizes: sizes.map((size) => ({
+        id: size.id,
+        name: size.name,
+        priceDeltaCents: size.priceDeltaCents,
+        enabled: size.enabled,
+        sortOrder: size.sortOrder,
       })),
       modifiers: modifiers.map((modifier) => ({
         id: modifier.id,
         name: modifier.name,
         priceCents: modifier.priceCents,
+        discountFlavor: modifier.discountFlavor,
         enabled: modifier.enabled,
         sortOrder: modifier.sortOrder,
       })),
@@ -81,32 +117,51 @@ export class PrismaPosRepository implements PosRepository {
       throw new HttpError(400, "Cashier is not available.");
     }
 
+    const products = new Map(bootstrap.products.map((entry) => [entry.id, entry] as const));
+    const sizes = new Map(bootstrap.sizes.map((entry) => [entry.id, entry] as const));
+    const modifiers = new Map(bootstrap.modifiers.map((entry) => [entry.id, entry] as const));
+
     const lines = input.items.map((item, index) => {
-      const product = bootstrap.products.find((entry) => entry.id === item.productId && entry.enabled);
-      if (!product) {
+      const product = products.get(item.productId);
+      if (!product || !product.enabled) {
         throw new HttpError(400, `Product ${item.productId} is not available.`);
+      }
+
+      const selectedSizeId = item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
+      const size = selectedSizeId ? sizes.get(selectedSizeId) ?? null : null;
+      if (selectedSizeId && (!size || !size.enabled || (product.sizeOptionIds.length > 0 && !product.sizeOptionIds.includes(selectedSizeId)))) {
+        throw new HttpError(400, `Size ${selectedSizeId} is not allowed for ${product.name}.`);
       }
 
       const modifierSummary = item.modifierIds.map((modifierId) => {
         if (!product.modifierIds.includes(modifierId)) {
-          throw new HttpError(400, `Modifier ${modifierId} is not allowed for ${product.name}.`);
+          throw new HttpError(400, `Flavor ${modifierId} is not allowed for ${product.name}.`);
         }
 
-        const modifier = bootstrap.modifiers.find((entry) => entry.id === modifierId && entry.enabled);
-        if (!modifier) {
-          throw new HttpError(400, `Modifier ${modifierId} is not available.`);
+        const modifier = modifiers.get(modifierId);
+        if (!modifier || !modifier.enabled) {
+          throw new HttpError(400, `Flavor ${modifierId} is not available.`);
         }
 
         return {
           id: modifier.id,
           name: modifier.name,
           priceCents: modifier.priceCents,
+          discountFlavor: modifier.discountFlavor,
         };
       });
 
-      const unitPriceCents =
-        product.priceCents + modifierSummary.reduce((sum, modifier) => sum + modifier.priceCents, 0);
-      const lineTotalCents = unitPriceCents * item.quantity;
+      const flavorAdjustmentCents = modifierSummary.reduce((sum, modifier) => sum + modifier.priceCents, 0);
+      const sizeAdjustmentCents =
+        product.sizeOptionPrices.find((entry) => entry.sizeOptionId === selectedSizeId)?.priceDeltaCents ??
+        size?.priceDeltaCents ??
+        0;
+      const unitPriceCents = calculateLinePrice({
+        basePriceCents: product.priceCents,
+        sizeAdjustmentCents,
+        flavorAdjustmentCents,
+        discountCents: product.discountCents,
+      });
 
       return {
         id: `line-${index + 1}`,
@@ -114,26 +169,23 @@ export class PrismaPosRepository implements PosRepository {
         productName: product.name,
         quantity: item.quantity,
         unitPriceCents,
+        sizeOptionId: size?.id ?? null,
+        sizeOptionName: size?.name ?? null,
+        sizeAdjustmentCents,
         modifierIds: item.modifierIds,
         modifierSummary,
-        lineTotalCents,
+        flavorAdjustmentCents,
+        discountCents: product.discountCents,
+        lineTotalCents: unitPriceCents * item.quantity,
       };
     });
 
     const subtotalCents = lines.reduce((sum, line) => sum + line.lineTotalCents, 0);
     const taxCents = calculateTax(subtotalCents, bootstrap.settings.taxRateBasisPoints);
-    const today = new Date(new Date().toISOString().slice(0, 10));
-    const orderCountToday = await this.prisma.order.count({
-      where: {
-        createdAt: {
-          gte: today,
-        },
-      },
-    });
 
     const order = await this.prisma.order.create({
       data: {
-        orderNumber: createOrderNumber(new Date(), orderCountToday + 1),
+        orderNumber: createOrderNumber(new Date(), (await this.prisma.order.count()) + 1),
         status: "draft",
         locationId: bootstrap.settings.locationId,
         registerId: bootstrap.settings.registerId,
@@ -148,8 +200,13 @@ export class PrismaPosRepository implements PosRepository {
             productName: line.productName,
             quantity: line.quantity,
             unitPriceCents: line.unitPriceCents,
+            sizeOptionId: line.sizeOptionId,
+            sizeOptionName: line.sizeOptionName,
+            sizeAdjustmentCents: line.sizeAdjustmentCents,
             modifierIdsJson: line.modifierIds as unknown as object,
-            modifierSummary: serializeModifierSummary(line.modifierSummary),
+            modifierSummaryJson: serializeJson(line.modifierSummary),
+            flavorAdjustmentCents: line.flavorAdjustmentCents,
+            discountCents: line.discountCents,
             lineTotalCents: line.lineTotalCents,
           })),
         },
@@ -269,14 +326,102 @@ export class PrismaPosRepository implements PosRepository {
     });
 
     const itemMap = new Map<string, { productId: string; productName: string; quantity: number }>();
+    const categoryMap = new Map<string, { id: string; name: string; quantity: number; totalCents: number }>();
+    const sizeMap = new Map<string, { id: string; name: string; quantity: number; totalCents: number }>();
+    const flavorMap = new Map<string, { id: string; name: string; quantity: number; totalCents: number; adjustmentCents: number; discountFlavor: boolean }>();
+    const topItemMap = new Map<string, { productId: string; productName: string; quantity: number; totalCents: number }>();
+
+    const products = new Map((await this.getProductRecords()).map((product) => [product.id, product] as const));
+    const categories = new Map(
+      (await this.prisma.category.findMany({ where: { locationId: this.config.LOCATION_ID } })).map((category) => [
+        category.id,
+        category,
+      ] as const),
+    );
+    const sizes = new Map(
+      (await this.prisma.sizeOption.findMany({ where: { locationId: this.config.LOCATION_ID } })).map((size) => [
+        size.id,
+        size,
+      ] as const),
+    );
+    const flavors = new Map(
+      (await this.prisma.modifier.findMany({ where: { locationId: this.config.LOCATION_ID } })).map((modifier) => [
+        modifier.id,
+        modifier,
+      ] as const),
+    );
+
     for (const order of orders) {
       for (const item of order.items) {
-        const existing = itemMap.get(item.productId);
-        itemMap.set(item.productId, {
+        const product = products.get(item.productId);
+        if (!product) {
+          continue;
+        }
+
+        const category = categories.get(product.categoryId);
+        const size = item.sizeOptionId ? sizes.get(item.sizeOptionId) : null;
+        const flavorIds = item.modifierIdsJson as string[];
+
+        const itemCount = itemMap.get(item.productId) ?? {
           productId: item.productId,
           productName: item.productName,
-          quantity: (existing?.quantity ?? 0) + item.quantity,
-        });
+          quantity: 0,
+        };
+        itemCount.quantity += item.quantity;
+        itemMap.set(item.productId, itemCount);
+
+        if (category) {
+          const categoryCount = categoryMap.get(category.id) ?? {
+            id: category.id,
+            name: category.name,
+            quantity: 0,
+            totalCents: 0,
+          };
+          categoryCount.quantity += item.quantity;
+          categoryCount.totalCents += item.lineTotalCents;
+          categoryMap.set(category.id, categoryCount);
+        }
+
+        if (size) {
+          const sizeCount = sizeMap.get(size.id) ?? {
+            id: size.id,
+            name: size.name,
+            quantity: 0,
+            totalCents: 0,
+          };
+          sizeCount.quantity += item.quantity;
+          sizeCount.totalCents += item.lineTotalCents;
+          sizeMap.set(size.id, sizeCount);
+        }
+
+        const topItem = topItemMap.get(item.productId) ?? {
+          productId: item.productId,
+          productName: item.productName,
+          quantity: 0,
+          totalCents: 0,
+        };
+        topItem.quantity += item.quantity;
+        topItem.totalCents += item.lineTotalCents;
+        topItemMap.set(item.productId, topItem);
+
+        for (const flavorId of flavorIds) {
+          const flavor = flavors.get(flavorId);
+          if (!flavor) {
+            continue;
+          }
+          const flavorCount = flavorMap.get(flavor.id) ?? {
+            id: flavor.id,
+            name: flavor.name,
+            quantity: 0,
+            totalCents: 0,
+            adjustmentCents: 0,
+            discountFlavor: flavor.discountFlavor,
+          };
+          flavorCount.quantity += item.quantity;
+          flavorCount.totalCents += item.lineTotalCents;
+          flavorCount.adjustmentCents += flavor.priceCents * item.quantity;
+          flavorMap.set(flavor.id, flavorCount);
+        }
       }
     }
 
@@ -291,6 +436,166 @@ export class PrismaPosRepository implements PosRepository {
         .reduce((sum, order) => sum + order.totalCents, 0),
       orderCount: orders.length,
       itemCounts: [...itemMap.values()],
+      salesByCategory: [...categoryMap.values()],
+      sizeBreakdown: [...sizeMap.values()],
+      flavorBreakdown: [...flavorMap.values()],
+      topItems: [...topItemMap.values()].sort((a, b) => b.totalCents - a.totalCents).slice(0, 5),
+    };
+  }
+
+  async listCategories(): Promise<Category[]> {
+    const categories = await this.prisma.category.findMany({
+      where: { locationId: this.config.LOCATION_ID },
+      orderBy: { sortOrder: "asc" },
+    });
+    return categories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      sortOrder: category.sortOrder,
+      enabled: category.enabled,
+    }));
+  }
+
+  async upsertCategory(input: UpsertCategoryInput, actorLabel: string): Promise<Category> {
+    const category = await this.prisma.category.upsert({
+      where: {
+        id: input.id ?? input.name.toLowerCase().replaceAll(/\s+/g, "-"),
+      },
+      update: {
+        name: input.name,
+        sortOrder: input.sortOrder,
+        enabled: input.enabled,
+      },
+      create: {
+        id: input.id ?? input.name.toLowerCase().replaceAll(/\s+/g, "-"),
+        locationId: this.config.LOCATION_ID,
+        name: input.name,
+        sortOrder: input.sortOrder,
+        enabled: input.enabled,
+      },
+    });
+
+    await this.appendAuditEvent({
+      action: "category.updated",
+      entityType: "category",
+      entityId: category.id,
+      actorLabel,
+      payload: input as Record<string, unknown>,
+    });
+
+    return {
+      id: category.id,
+      name: category.name,
+      sortOrder: category.sortOrder,
+      enabled: category.enabled,
+    };
+  }
+
+  async listModifiers(): Promise<Modifier[]> {
+    const modifiers = await this.prisma.modifier.findMany({
+      where: { locationId: this.config.LOCATION_ID },
+      orderBy: { sortOrder: "asc" },
+    });
+
+    return modifiers.map((modifier) => ({
+      id: modifier.id,
+      name: modifier.name,
+      priceCents: modifier.priceCents,
+      discountFlavor: modifier.discountFlavor,
+      enabled: modifier.enabled,
+      sortOrder: modifier.sortOrder,
+    }));
+  }
+
+  async upsertModifier(input: UpsertModifierInput, actorLabel: string): Promise<Modifier> {
+    const modifierId = input.id ?? input.name.toLowerCase().replaceAll(/\s+/g, "-");
+    const modifier = await this.prisma.modifier.upsert({
+      where: { id: modifierId },
+      update: {
+        name: input.name,
+        priceCents: input.priceCents,
+        discountFlavor: input.discountFlavor,
+        enabled: input.enabled,
+        sortOrder: input.sortOrder,
+      },
+      create: {
+        id: modifierId,
+        locationId: this.config.LOCATION_ID,
+        name: input.name,
+        priceCents: input.priceCents,
+        discountFlavor: input.discountFlavor,
+        enabled: input.enabled,
+        sortOrder: input.sortOrder,
+      },
+    });
+
+    await this.appendAuditEvent({
+      action: "modifier.updated",
+      entityType: "modifier",
+      entityId: modifier.id,
+      actorLabel,
+      payload: input as Record<string, unknown>,
+    });
+
+    return {
+      id: modifier.id,
+      name: modifier.name,
+      priceCents: modifier.priceCents,
+      discountFlavor: modifier.discountFlavor,
+      enabled: modifier.enabled,
+      sortOrder: modifier.sortOrder,
+    };
+  }
+
+  async listSizes(): Promise<SizeOption[]> {
+    const sizes = await this.prisma.sizeOption.findMany({
+      where: { locationId: this.config.LOCATION_ID },
+      orderBy: { sortOrder: "asc" },
+    });
+
+    return sizes.map((size) => ({
+      id: size.id,
+      name: size.name,
+      priceDeltaCents: size.priceDeltaCents,
+      enabled: size.enabled,
+      sortOrder: size.sortOrder,
+    }));
+  }
+
+  async upsertSize(input: UpsertSizeOptionInput, actorLabel: string): Promise<SizeOption> {
+    const sizeId = input.id ?? input.name.toLowerCase().replaceAll(/\s+/g, "-");
+    const size = await this.prisma.sizeOption.upsert({
+      where: { id: sizeId },
+      update: {
+        name: input.name,
+        priceDeltaCents: input.priceDeltaCents,
+        enabled: input.enabled,
+        sortOrder: input.sortOrder,
+      },
+      create: {
+        id: sizeId,
+        locationId: this.config.LOCATION_ID,
+        name: input.name,
+        priceDeltaCents: input.priceDeltaCents,
+        enabled: input.enabled,
+        sortOrder: input.sortOrder,
+      },
+    });
+
+    await this.appendAuditEvent({
+      action: "size.updated",
+      entityType: "size",
+      entityId: size.id,
+      actorLabel,
+      payload: input as Record<string, unknown>,
+    });
+
+    return {
+      id: size.id,
+      name: size.name,
+      priceDeltaCents: size.priceDeltaCents,
+      enabled: size.enabled,
+      sortOrder: size.sortOrder,
     };
   }
 
@@ -301,17 +606,30 @@ export class PrismaPosRepository implements PosRepository {
 
   async upsertProduct(input: UpsertProductInput, actorLabel: string): Promise<Product> {
     const productId = input.id ?? input.name.toLowerCase().replaceAll(/\s+/g, "-");
+    const sizePriceMap = new Map(input.sizeOptionPrices.map((entry) => [entry.sizeOptionId, entry.priceDeltaCents] as const));
     const product = await this.prisma.product.upsert({
       where: { id: productId },
       update: {
         name: input.name,
         categoryId: input.categoryId,
         priceCents: input.priceCents,
+        discountCents: input.discountCents,
         enabled: input.enabled,
         sortOrder: input.sortOrder,
+        productType: input.productType,
+        defaultSizeOptionId: input.defaultSizeOptionId,
+        sizeOptions: {
+          deleteMany: {},
+          create: input.sizeOptionIds.map((sizeOptionId) => ({
+            sizeOptionId,
+            priceDeltaCents: sizePriceMap.get(sizeOptionId) ?? 0,
+          })),
+        },
         modifiers: {
           deleteMany: {},
-          create: input.modifierIds.map((modifierId) => ({ modifierId })),
+          create: input.modifierIds.map((modifierId) => ({
+            modifierId,
+          })),
         },
       },
       create: {
@@ -320,14 +638,30 @@ export class PrismaPosRepository implements PosRepository {
         name: input.name,
         categoryId: input.categoryId,
         priceCents: input.priceCents,
+        discountCents: input.discountCents,
         enabled: input.enabled,
         sortOrder: input.sortOrder,
+        productType: input.productType,
+        defaultSizeOptionId: input.defaultSizeOptionId,
+        sizeOptions: {
+          create: input.sizeOptionIds.map((sizeOptionId) => ({
+            sizeOptionId,
+            priceDeltaCents: sizePriceMap.get(sizeOptionId) ?? 0,
+          })),
+        },
         modifiers: {
-          create: input.modifierIds.map((modifierId) => ({ modifierId })),
+          create: input.modifierIds.map((modifierId) => ({
+            modifierId,
+          })),
         },
       },
       include: {
-        modifiers: true,
+        sizeOptions: {
+          include: { sizeOption: true },
+        },
+        modifiers: {
+          include: { modifier: true },
+        },
       },
     });
 
@@ -339,15 +673,7 @@ export class PrismaPosRepository implements PosRepository {
       payload: input as Record<string, unknown>,
     });
 
-    return {
-      id: product.id,
-      name: product.name,
-      categoryId: product.categoryId,
-      priceCents: product.priceCents,
-      enabled: product.enabled,
-      sortOrder: product.sortOrder,
-      modifierIds: product.modifiers.map((modifier) => modifier.modifierId),
-    };
+    return this.mapProduct(product);
   }
 
   async patchSettings(
@@ -448,7 +774,14 @@ export class PrismaPosRepository implements PosRepository {
   private async getProductRecords() {
     return this.prisma.product.findMany({
       where: { locationId: this.config.LOCATION_ID },
-      include: { modifiers: true },
+      include: {
+        sizeOptions: {
+          include: { sizeOption: true },
+        },
+        modifiers: {
+          include: { modifier: true },
+        },
+      },
       orderBy: [{ categoryId: "asc" }, { sortOrder: "asc" }],
     });
   }
@@ -459,9 +792,17 @@ export class PrismaPosRepository implements PosRepository {
       name: product.name,
       categoryId: product.categoryId,
       priceCents: product.priceCents,
+      discountCents: product.discountCents,
       enabled: product.enabled,
       sortOrder: product.sortOrder,
-      modifierIds: product.modifiers.map((modifier) => modifier.modifierId),
+      productType: product.productType as Product["productType"],
+      modifierIds: product.modifiers.map((entry) => entry.modifierId),
+      sizeOptionIds: product.sizeOptions.map((entry) => entry.sizeOptionId),
+      sizeOptionPrices: product.sizeOptions.map((entry) => ({
+        sizeOptionId: entry.sizeOptionId,
+        priceDeltaCents: entry.priceDeltaCents,
+      })),
+      defaultSizeOptionId: product.defaultSizeOptionId,
     };
   }
 
@@ -496,8 +837,13 @@ export class PrismaPosRepository implements PosRepository {
         productName: item.productName,
         quantity: item.quantity,
         unitPriceCents: item.unitPriceCents,
+        sizeOptionId: item.sizeOptionId ?? null,
+        sizeOptionName: item.sizeOptionName ?? null,
+        sizeAdjustmentCents: item.sizeAdjustmentCents,
         modifierIds: item.modifierIdsJson as string[],
-        modifierSummary: item.modifierSummary as DraftOrder["lines"][number]["modifierSummary"],
+        modifierSummary: item.modifierSummaryJson as DraftOrder["lines"][number]["modifierSummary"],
+        flavorAdjustmentCents: item.flavorAdjustmentCents,
+        discountCents: item.discountCents,
         lineTotalCents: item.lineTotalCents,
       })),
       subtotalCents: order.subtotalCents,

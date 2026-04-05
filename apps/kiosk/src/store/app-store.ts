@@ -1,7 +1,7 @@
 import type { BootstrapResponse, DraftOrder } from "@rhc-pos/shared";
 import { create } from "zustand";
 
-import type { AppView, CartLineState, OverlayState, PendingTransactionSnapshot } from "../types/ui";
+import type { AppView, CartLineState, DrinkLineDraft, OverlayState, PendingTransactionSnapshot } from "../types/ui";
 
 interface AppState {
   bootstrap: BootstrapResponse | null;
@@ -19,10 +19,16 @@ interface AppState {
   successOrder: DraftOrder | null;
   adminUnlocked: boolean;
   adminPin: string;
+  draftLine: DrinkLineDraft | null;
   setBootstrap: (bootstrap: BootstrapResponse) => void;
   setCashierId: (cashierId: string) => void;
   setSelectedCategoryId: (selectedCategoryId: string) => void;
   addProduct: (productId: string) => void;
+  beginDraftLine: (productId: string, sizeOptionId?: string | null) => void;
+  setDraftLineSize: (sizeOptionId: string | null) => void;
+  toggleDraftLineFlavor: (modifierId: string) => void;
+  commitDraftLine: () => void;
+  clearDraftLine: () => void;
   selectLine: (lineId: string | null) => void;
   adjustLineQuantity: (lineId: string, delta: number) => void;
   removeLine: (lineId: string) => void;
@@ -72,6 +78,7 @@ export const useAppStore = create<AppState>((set) => ({
   successOrder: null,
   adminUnlocked: false,
   adminPin: "",
+  draftLine: null,
   setBootstrap: (bootstrap) =>
     set((state) => ({
       bootstrap,
@@ -83,6 +90,51 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       cartLines: [...state.cartLines, createLine(productId)],
     })),
+  beginDraftLine: (productId, sizeOptionId = null) =>
+    set({
+      draftLine: {
+        productId,
+        sizeOptionId,
+        modifierIds: [],
+        quantity: 1,
+      },
+    }),
+  setDraftLineSize: (sizeOptionId) =>
+    set((state) => ({
+      draftLine: state.draftLine ? { ...state.draftLine, sizeOptionId } : state.draftLine,
+    })),
+  toggleDraftLineFlavor: (modifierId) =>
+    set((state) => ({
+      draftLine: state.draftLine
+        ? {
+            ...state.draftLine,
+            modifierIds: state.draftLine.modifierIds.includes(modifierId)
+              ? state.draftLine.modifierIds.filter((id) => id !== modifierId)
+              : [...state.draftLine.modifierIds, modifierId],
+          }
+        : state.draftLine,
+    })),
+  commitDraftLine: () =>
+    set((state) => {
+      if (!state.draftLine?.productId) {
+        return {};
+      }
+      return {
+        cartLines: [
+          ...state.cartLines,
+          {
+            id: crypto.randomUUID(),
+            productId: state.draftLine.productId,
+            quantity: state.draftLine.quantity,
+            sizeOptionId: state.draftLine.sizeOptionId,
+            modifierIds: state.draftLine.modifierIds,
+          },
+        ],
+        draftLine: null,
+        selectedLineId: null,
+      };
+    }),
+  clearDraftLine: () => set({ draftLine: null }),
   selectLine: (selectedLineId) => set({ selectedLineId }),
   adjustLineQuantity: (lineId, delta) =>
     set((state) => ({
@@ -104,6 +156,7 @@ export const useAppStore = create<AppState>((set) => ({
       pendingOrder: null,
       pendingTransaction: null,
       paymentError: null,
+      draftLine: null,
     }),
   toggleModifier: (lineId, modifierId) =>
     set((state) => ({
@@ -133,6 +186,7 @@ export const useAppStore = create<AppState>((set) => ({
       pendingOrder: null,
       pendingTransaction: null,
       paymentError: null,
+      draftLine: null,
     }),
   restorePersisted: ({ cartLines, cashierId, selectedCategoryId, pendingTransaction, pendingOrder }) =>
     set({

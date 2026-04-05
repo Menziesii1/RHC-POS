@@ -1,9 +1,14 @@
 import type {
   BootstrapResponse,
+  CartInput,
   DraftOrder,
+  UpsertCategoryInput,
+  UpsertModifierInput,
   PatchSettingsInput,
   Product,
+  SizeOption,
   SummaryResponse,
+  UpsertSizeOptionInput,
   UpsertProductInput,
 } from "@rhc-pos/shared";
 
@@ -28,7 +33,47 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   getBootstrap: () => request<BootstrapResponse>("/bootstrap"),
-  createOrder: (payload: { cashierId: string; items: Array<{ productId: string; quantity: number; modifierIds: string[] }> }) =>
+  getDashboard: () => request<SummaryResponse>("/dashboard/today"),
+  listCategories: () => request<BootstrapResponse["categories"]>("/admin/categories"),
+  createCategory: (pin: string, payload: UpsertCategoryInput) =>
+    request<BootstrapResponse["categories"][number]>("/admin/categories", {
+      method: "POST",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify(payload),
+    }),
+  updateCategory: (pin: string, categoryId: string, payload: Partial<UpsertCategoryInput>) =>
+    request<BootstrapResponse["categories"][number]>(`/admin/categories/${categoryId}`, {
+      method: "PATCH",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify(payload),
+    }),
+  listFlavors: () => request<BootstrapResponse["modifiers"]>("/admin/flavors"),
+  createFlavor: (pin: string, payload: UpsertModifierInput) =>
+    request<BootstrapResponse["modifiers"][number]>("/admin/flavors", {
+      method: "POST",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify(payload),
+    }),
+  updateFlavor: (pin: string, modifierId: string, payload: Partial<UpsertModifierInput>) =>
+    request<BootstrapResponse["modifiers"][number]>(`/admin/flavors/${modifierId}`, {
+      method: "PATCH",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify(payload),
+    }),
+  listSizes: () => request<SizeOption[]>("/admin/sizes"),
+  createSize: (pin: string, payload: UpsertSizeOptionInput) =>
+    request<SizeOption>("/admin/sizes", {
+      method: "POST",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify(payload),
+    }),
+  updateSize: (pin: string, sizeId: string, payload: Partial<UpsertSizeOptionInput>) =>
+    request<SizeOption>(`/admin/sizes/${sizeId}`, {
+      method: "PATCH",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify(payload),
+    }),
+  createOrder: (payload: CartInput) =>
     request<DraftOrder>("/orders", {
       method: "POST",
       body: JSON.stringify(payload),

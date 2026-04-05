@@ -29,7 +29,44 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
     posService.cancelCardPayment((request.params as { id: string }).id),
   );
   app.get("/v1/summary/today", async () => posService.getSummary(new Date()));
+  app.get("/v1/dashboard/today", async () => posService.getSummary(new Date()));
   app.post("/v1/admin/verify-pin", async (request) => posService.verifyAdminPin(request.body));
+  app.get("/v1/admin/categories", async () => posService.listCategories());
+  app.post("/v1/admin/categories", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.upsertCategory(request.body, "admin-pin");
+  });
+  app.patch("/v1/admin/categories/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.upsertCategory(
+      { ...(request.body as Record<string, unknown>), id: (request.params as { id: string }).id },
+      "admin-pin",
+    );
+  });
+  app.get("/v1/admin/flavors", async () => posService.listModifiers());
+  app.post("/v1/admin/flavors", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.upsertModifier(request.body, "admin-pin");
+  });
+  app.patch("/v1/admin/flavors/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.upsertModifier(
+      { ...(request.body as Record<string, unknown>), id: (request.params as { id: string }).id },
+      "admin-pin",
+    );
+  });
+  app.get("/v1/admin/sizes", async () => posService.listSizes());
+  app.post("/v1/admin/sizes", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.upsertSize(request.body, "admin-pin");
+  });
+  app.patch("/v1/admin/sizes/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.upsertSize(
+      { ...(request.body as Record<string, unknown>), id: (request.params as { id: string }).id },
+      "admin-pin",
+    );
+  });
   app.get("/v1/admin/products", async () => posService.listProducts());
   app.post("/v1/admin/products", async (request) => {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });

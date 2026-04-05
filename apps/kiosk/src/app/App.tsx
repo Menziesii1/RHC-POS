@@ -7,6 +7,7 @@ import { AdminPinDialog } from "../components/AdminPinDialog";
 import { CardPaymentOverlay } from "../components/CardPaymentOverlay";
 import { CartPanel } from "../components/CartPanel";
 import { CashPaymentOverlay } from "../components/CashPaymentOverlay";
+import { DrinkBuilderOverlay } from "../components/DrinkBuilderOverlay";
 import { ProductGrid } from "../components/ProductGrid";
 import { SuccessScreen } from "../components/SuccessScreen";
 import { SummaryPanel } from "../components/SummaryPanel";
@@ -202,6 +203,36 @@ export function App() {
     callback();
   };
 
+  const refreshBootstrap = async () => {
+    const bootstrap = await api.getBootstrap();
+    store.setBootstrap(bootstrap);
+    return bootstrap;
+  };
+
+  const handleSelectProduct = (productId: string) => {
+    if (!store.bootstrap) {
+      return;
+    }
+    const product = store.bootstrap.products.find((entry) => entry.id === productId);
+    if (!product) {
+      return;
+    }
+
+    mutateCart(() => {
+      const defaultSize = product.defaultSizeOptionId ?? product.sizeOptionIds[0] ?? null;
+      const needsConfigurator =
+        product.productType === "drink" || product.sizeOptionIds.length > 0 || product.modifierIds.length > 0;
+
+      if (needsConfigurator) {
+        store.beginDraftLine(productId, defaultSize);
+        store.setOverlay("drink-builder");
+        return;
+      }
+
+      store.addProduct(productId);
+    });
+  };
+
   const handleStartCash = async () => {
     if (cartView.lines.length === 0) {
       return;
@@ -296,7 +327,7 @@ export function App() {
 
   const handleSummaryOpen = async () => {
     store.setView("summary");
-    setSummary(await api.getSummary().catch(() => null));
+    setSummary(await api.getDashboard().catch(() => null));
   };
 
   const handleProductSave = async (productId: string, patch: Partial<{ priceCents: number; enabled: boolean }>) => {
@@ -311,14 +342,32 @@ export function App() {
       ...product,
       ...patch,
     });
-    const bootstrap = await api.getBootstrap();
-    store.setBootstrap(bootstrap);
+    await refreshBootstrap();
   };
 
   const handleTaxSave = async (taxRateBasisPoints: number) => {
     await api.patchSettings(store.adminPin, { taxRateBasisPoints });
-    const bootstrap = await api.getBootstrap();
-    store.setBootstrap(bootstrap);
+    await refreshBootstrap();
+  };
+
+  const handleCreateCategory = async (input: Parameters<typeof api.createCategory>[1]) => {
+    await api.createCategory(store.adminPin, input);
+    await refreshBootstrap();
+  };
+
+  const handleCreateFlavor = async (input: Parameters<typeof api.createFlavor>[1]) => {
+    await api.createFlavor(store.adminPin, input);
+    await refreshBootstrap();
+  };
+
+  const handleCreateSize = async (input: Parameters<typeof api.createSize>[1]) => {
+    await api.createSize(store.adminPin, input);
+    await refreshBootstrap();
+  };
+
+  const handleCreateProduct = async (input: Parameters<typeof api.createProduct>[1]) => {
+    await api.createProduct(store.adminPin, input);
+    await refreshBootstrap();
   };
 
   if (loading || !store.bootstrap) {
@@ -350,7 +399,7 @@ export function App() {
                 bootstrap={store.bootstrap}
                 selectedCategoryId={store.selectedCategoryId}
                 onSelectCategory={store.setSelectedCategoryId}
-                onSelectProduct={(productId) => mutateCart(() => store.addProduct(productId))}
+                onSelectProduct={handleSelectProduct}
               />
               <CartPanel
                 bootstrap={store.bootstrap}
@@ -363,22 +412,23 @@ export function App() {
                 onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
                 onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
                 onToggleModifier={(lineId, modifierId) => mutateCart(() => store.toggleModifier(lineId, modifierId))}
+                footer={
+                  <ActionBar
+                    disabled={cartView.lines.length === 0}
+                    onCash={() => void handleStartCash()}
+                    onCard={() => void handleStartCard()}
+                    onClear={() => {
+                      if (cartView.lines.length > 0 && window.confirm("Clear the cart?")) {
+                        store.clearCart();
+                        clearPersistedState();
+                      }
+                    }}
+                    onSummary={() => void handleSummaryOpen()}
+                    onAdmin={handleAdminOpen}
+                  />
+                }
               />
             </div>
-
-            <ActionBar
-              disabled={cartView.lines.length === 0}
-              onCash={() => void handleStartCash()}
-              onCard={() => void handleStartCard()}
-              onClear={() => {
-                if (cartView.lines.length > 0 && window.confirm("Clear the cart?")) {
-                  store.clearCart();
-                  clearPersistedState();
-                }
-              }}
-              onSummary={() => void handleSummaryOpen()}
-              onAdmin={handleAdminOpen}
-            />
 
             {store.paymentError ? (
               <div className="rounded-[22px] bg-ember/12 px-5 py-4 text-lg font-semibold text-ember">
@@ -394,6 +444,10 @@ export function App() {
             adminPin={store.adminPin}
             onClose={() => store.setView("register")}
             onProductSave={handleProductSave}
+            onCreateCategory={handleCreateCategory}
+            onCreateFlavor={handleCreateFlavor}
+            onCreateSize={handleCreateSize}
+            onCreateProduct={handleCreateProduct}
             onTaxSave={handleTaxSave}
           />
         ) : null}
@@ -408,6 +462,23 @@ export function App() {
           totalCents={cartView.totalCents}
           onClose={() => store.setOverlay("none")}
           onConfirm={(tenderedCents) => void handleConfirmCash(tenderedCents)}
+        />
+      ) : null}
+
+      {store.overlay === "drink-builder" && store.draftLine ? (
+        <DrinkBuilderOverlay
+          bootstrap={store.bootstrap}
+          draftLine={store.draftLine}
+          onClose={() => {
+            store.clearDraftLine();
+            store.setOverlay("none");
+          }}
+          onSelectSize={store.setDraftLineSize}
+          onToggleFlavor={store.toggleDraftLineFlavor}
+          onConfirm={() => {
+            store.commitDraftLine();
+            store.setOverlay("none");
+          }}
         />
       ) : null}
 

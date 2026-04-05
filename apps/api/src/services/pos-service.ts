@@ -2,11 +2,17 @@ import {
   adminPinSchema,
   bootstrapResponseSchema,
   cartInputSchema,
+  upsertCategorySchema,
+  upsertModifierSchema,
   summaryResponseSchema,
   upsertProductSchema,
+  upsertSizeOptionSchema,
   patchSettingsSchema,
   type BootstrapResponse,
   type DraftOrder,
+  type Category,
+  type Modifier,
+  type SizeOption,
   type SummaryResponse,
 } from "@rhc-pos/shared";
 
@@ -76,6 +82,30 @@ export class PosService {
 
   async getSummary(date = new Date()): Promise<SummaryResponse> {
     return summaryResponseSchema.parse(await this.repository.getSummary(date));
+  }
+
+  async listCategories(): Promise<Category[]> {
+    return this.repository.listCategories();
+  }
+
+  async upsertCategory(input: unknown, actorLabel: string) {
+    return this.repository.upsertCategory(upsertCategorySchema.parse(input), actorLabel);
+  }
+
+  async listModifiers(): Promise<Modifier[]> {
+    return this.repository.listModifiers();
+  }
+
+  async upsertModifier(input: unknown, actorLabel: string) {
+    return this.repository.upsertModifier(upsertModifierSchema.parse(input), actorLabel);
+  }
+
+  async listSizes(): Promise<SizeOption[]> {
+    return this.repository.listSizes();
+  }
+
+  async upsertSize(input: unknown, actorLabel: string) {
+    return this.repository.upsertSize(upsertSizeOptionSchema.parse(input), actorLabel);
   }
 
   async listProducts() {

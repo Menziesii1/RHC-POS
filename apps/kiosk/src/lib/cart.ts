@@ -1,4 +1,4 @@
-import { calculateTax, formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
+import { calculateLinePrice, calculateTax, formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
 
 import type { CartLineState } from "../types/ui";
 
@@ -10,6 +10,13 @@ export function getModifier(bootstrap: BootstrapResponse | null, modifierId: str
   return bootstrap?.modifiers.find((modifier) => modifier.id === modifierId);
 }
 
+export function getSizeOption(bootstrap: BootstrapResponse | null, sizeOptionId: string | null | undefined) {
+  if (!sizeOptionId) {
+    return null;
+  }
+  return bootstrap?.sizes.find((size) => size.id === sizeOptionId) ?? null;
+}
+
 export function buildCartView(bootstrap: BootstrapResponse | null, lines: CartLineState[]) {
   const enriched = lines
     .map((line) => {
@@ -18,18 +25,32 @@ export function buildCartView(bootstrap: BootstrapResponse | null, lines: CartLi
         return null;
       }
 
+      const sizeOption = getSizeOption(bootstrap, line.sizeOptionId ?? product.defaultSizeOptionId);
+      const sizeAdjustmentOverride = product.sizeOptionPrices?.find(
+        (entry) => entry.sizeOptionId === sizeOption?.id,
+      );
       const modifiers = line.modifierIds
         .map((modifierId) => getModifier(bootstrap, modifierId))
         .filter((modifier): modifier is NonNullable<typeof modifier> => Boolean(modifier));
 
-      const unitPriceCents =
-        product.priceCents + modifiers.reduce((sum, modifier) => sum + modifier.priceCents, 0);
+      const sizeAdjustmentCents = sizeAdjustmentOverride?.priceDeltaCents ?? sizeOption?.priceDeltaCents ?? 0;
+      const flavorAdjustmentCents = modifiers.reduce((sum, modifier) => sum + modifier.priceCents, 0);
+      const unitPriceCents = calculateLinePrice({
+        basePriceCents: product.priceCents,
+        sizeAdjustmentCents,
+        flavorAdjustmentCents,
+        discountCents: product.discountCents,
+      });
 
       return {
         ...line,
         product,
+        sizeOption,
         modifiers,
         unitPriceCents,
+        sizeAdjustmentCents,
+        flavorAdjustmentCents,
+        discountCents: product.discountCents,
         lineTotalCents: unitPriceCents * line.quantity,
       };
     })

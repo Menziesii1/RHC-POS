@@ -1,11 +1,16 @@
 import { formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
+import type { ReactNode } from "react";
 
 import type { CartLineState } from "../types/ui";
 
 interface EnrichedLine extends CartLineState {
   product: BootstrapResponse["products"][number];
+  sizeOption?: BootstrapResponse["sizes"][number] | null;
   modifiers: BootstrapResponse["modifiers"];
   unitPriceCents: number;
+  sizeAdjustmentCents?: number;
+  flavorAdjustmentCents?: number;
+  discountCents?: number;
   lineTotalCents: number;
 }
 
@@ -20,6 +25,7 @@ interface CartPanelProps {
   onAdjustLineQuantity: (lineId: string, delta: number) => void;
   onRemoveLine: (lineId: string) => void;
   onToggleModifier: (lineId: string, modifierId: string) => void;
+  footer?: ReactNode;
 }
 
 export function CartPanel({
@@ -33,6 +39,7 @@ export function CartPanel({
   onAdjustLineQuantity,
   onRemoveLine,
   onToggleModifier,
+  footer,
 }: CartPanelProps) {
   const selectedLine = lines.find((line) => line.id === selectedLineId) ?? null;
   const allowedModifiers = selectedLine
@@ -40,15 +47,15 @@ export function CartPanel({
     : [];
 
   return (
-    <section className="touch-card flex min-h-[560px] flex-col gap-4 p-6">
+    <section className="touch-card flex min-h-[560px] flex-col gap-4 p-5">
       <div>
-        <h2 className="font-display text-3xl font-bold text-bark">Cart</h2>
-        <p className="text-sm text-bark/70">Cart stays intact unless payment succeeds.</p>
+        <h2 className="font-display text-3xl font-extrabold text-[#263362]">Cart</h2>
+        <p className="brand-kicker mt-1">Cart stays intact unless payment succeeds.</p>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-auto">
+      <div className="flex-1 space-y-3 overflow-auto pr-1">
         {lines.length === 0 ? (
-          <div className="rounded-[22px] border border-dashed border-bark/20 bg-oat/80 p-8 text-center text-bark/60">
+          <div className="brand-section border-dashed p-8 text-center text-[#263362]/60">
             Tap items on the left to build the order.
           </div>
         ) : null}
@@ -57,28 +64,35 @@ export function CartPanel({
           <button
             key={line.id}
             type="button"
-            className={`w-full rounded-[22px] border p-4 text-left ${
-              selectedLineId === line.id ? "border-bark bg-oat" : "border-transparent bg-cream"
+            className={`w-full border p-4 text-left transition ${
+              selectedLineId === line.id ? "brand-rail-active" : "brand-rail"
             }`}
             onClick={() => onSelectLine(line.id)}
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-xl font-bold text-bark">
+                <div className="text-xl font-extrabold text-[#263362]">
                   {line.quantity}x {line.product.name}
                 </div>
-                {line.modifiers.length > 0 ? (
-                  <div className="text-sm text-bark/70">
-                    {line.modifiers.map((modifier) => modifier.name).join(", ")}
+                {line.sizeOption || line.modifiers.length > 0 ? (
+                  <div className="mt-1 text-sm text-[#263362]/70">
+                    {[
+                      line.sizeOption?.name,
+                      ...line.modifiers.map((modifier) => modifier.name),
+                    ]
+                      .filter(Boolean)
+                      .join(" • ")}
                   </div>
                 ) : null}
               </div>
-              <div className="text-xl font-bold text-bark">{formatCurrency(line.lineTotalCents)}</div>
+              <div className="border border-[#d7e2f1] bg-white px-3 py-2 text-xl font-extrabold text-[#263362]">
+                {formatCurrency(line.lineTotalCents)}
+              </div>
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
-                className="rounded-full bg-white px-4 py-2 font-bold text-bark"
+                className="touch-button px-4 py-2 text-base"
                 onClick={(event) => {
                   event.stopPropagation();
                   onAdjustLineQuantity(line.id, -1);
@@ -88,7 +102,7 @@ export function CartPanel({
               </button>
               <button
                 type="button"
-                className="rounded-full bg-white px-4 py-2 font-bold text-bark"
+                className="touch-button px-4 py-2 text-base"
                 onClick={(event) => {
                   event.stopPropagation();
                   onAdjustLineQuantity(line.id, 1);
@@ -98,7 +112,7 @@ export function CartPanel({
               </button>
               <button
                 type="button"
-                className="rounded-full bg-ember px-4 py-2 font-bold text-white"
+                className="touch-button border-[#e6b6ae] bg-[#fdf6f4] px-4 py-2 text-base text-[#ba4a2f]"
                 onClick={(event) => {
                   event.stopPropagation();
                   onRemoveLine(line.id);
@@ -134,7 +148,7 @@ export function CartPanel({
         </div>
       ) : null}
 
-      <div className="space-y-2 rounded-[22px] bg-bark p-5 text-cream">
+      <div className="brand-section space-y-3 p-5 text-[#263362]">
         <div className="flex justify-between text-lg">
           <span>Subtotal</span>
           <span>{formatCurrency(subtotalCents)}</span>
@@ -143,11 +157,14 @@ export function CartPanel({
           <span>Tax</span>
           <span>{formatCurrency(taxCents)}</span>
         </div>
-        <div className="flex justify-between text-3xl font-bold">
+        <div className="brand-divider" />
+        <div className="flex justify-between text-3xl font-extrabold">
           <span>Total</span>
           <span>{formatCurrency(totalCents)}</span>
         </div>
       </div>
+
+      {footer ? <div className="space-y-3">{footer}</div> : null}
     </section>
   );
 }

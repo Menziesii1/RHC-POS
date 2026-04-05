@@ -22,7 +22,7 @@ describe("RHC POS API", () => {
       url: "/v1/orders",
       payload: {
         cashierId: "sarah",
-        items: [{ productId: "latte", quantity: 1, modifierIds: ["extra-shot"] }],
+        items: [{ productId: "mocha", quantity: 1, modifierIds: ["extra-shot"] }],
       },
     });
 
@@ -40,6 +40,14 @@ describe("RHC POS API", () => {
 
     expect(paymentResponse.statusCode).toBe(200);
     expect(paymentResponse.json().payment.changeDueCents).toBe(50);
+
+    const dashboardResponse = await app.inject({
+      method: "GET",
+      url: "/v1/dashboard/today",
+    });
+
+    expect(dashboardResponse.statusCode).toBe(200);
+    expect(dashboardResponse.json().topItems[0].productId).toBe("mocha");
     await app.close();
   });
 
@@ -54,10 +62,11 @@ describe("RHC POS API", () => {
       url: "/v1/orders",
       payload: {
         cashierId: "sarah",
-        items: [{ productId: "bagel", quantity: 1, modifierIds: [] }],
+        items: [{ productId: "chai", quantity: 1, sizeOptionId: "kids", modifierIds: [] }],
       },
     });
     const order = orderResponse.json();
+    expect(order.totalCents).toBe(250);
 
     const cardResponse = await app.inject({
       method: "POST",
