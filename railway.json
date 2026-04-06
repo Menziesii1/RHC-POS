@@ -14,7 +14,7 @@
     ]
   },
   "deploy": {
-    "preDeployCommand": "npm run prisma:deploy --workspace @rhc-pos/api && npm run prisma:seed --workspace @rhc-pos/api",
+    "preDeployCommand": "sh -c 'npm run prisma:deploy --workspace @rhc-pos/api && npm run prisma:seed --workspace @rhc-pos/api'",
     "startCommand": "npm run start --workspace @rhc-pos/api",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 120,
