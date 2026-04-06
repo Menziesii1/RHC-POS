@@ -20,8 +20,22 @@ export interface CreateAppOptions {
   repository?: PosRepository;
 }
 
+function parseCorsOrigins(input: string): true | string[] {
+  if (input.trim() === "*") {
+    return true;
+  }
+
+  const origins = input
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return origins.length > 0 ? origins : true;
+}
+
 export async function createApp(options: CreateAppOptions) {
   const app = Fastify({ logger: true });
+  const allowedOrigins = parseCorsOrigins(options.config.CORS_ORIGIN);
 
   const repository =
     options.repository ??
@@ -34,7 +48,14 @@ export async function createApp(options: CreateAppOptions) {
   );
 
   await app.register(cors, {
-    origin: options.config.CORS_ORIGIN,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins === true || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, false);
+    },
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   });
   await app.register(sensible);

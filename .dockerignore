@@ -2,8 +2,13 @@ node_modules
 **/node_modules
 dist
 **/dist
-coverage
-**/coverage
 .git
-.vite
-*.tsbuildinfo
+.github
+.claude
+.DS_Store
+coverage
+tmp
+*.log
+.env
+**/.env
+postgres_data

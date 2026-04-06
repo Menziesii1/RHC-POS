@@ -16,6 +16,7 @@
     "dev:api": "npm run dev --workspace @rhc-pos/api",
     "dev:docker": "docker compose up --build",
     "prisma:generate": "npm run prisma:generate --workspace @rhc-pos/api",
+    "prisma:deploy": "npm run prisma:deploy --workspace @rhc-pos/api",
     "prisma:migrate": "npm run prisma:migrate --workspace @rhc-pos/api",
     "prisma:seed": "npm run prisma:seed --workspace @rhc-pos/api"
   }

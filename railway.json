@@ -1,0 +1,24 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "infra/docker/api.railway.Dockerfile",
+    "watchPatterns": [
+      "package.json",
+      "package-lock.json",
+      ".dockerignore",
+      "railway.json",
+      "apps/api/**",
+      "packages/shared/**",
+      "infra/docker/api.railway.Dockerfile"
+    ]
+  },
+  "deploy": {
+    "preDeployCommand": "npm run prisma:deploy --workspace @rhc-pos/api && npm run prisma:seed --workspace @rhc-pos/api",
+    "startCommand": "npm run start --workspace @rhc-pos/api",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
