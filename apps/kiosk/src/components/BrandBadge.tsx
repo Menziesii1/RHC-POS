@@ -1,8 +1,8 @@
 export function BrandBadge() {
   return (
-    <div className="flex h-14 w-14 items-center justify-center border-2 border-[#5190E6] bg-white shadow-[0_10px_24px_rgba(38,51,98,0.12)]">
-      <div className="relative h-8 w-8 overflow-hidden border-[3px] border-[#1CE4DB] bg-white">
-        <div className="absolute left-1 top-1 h-5 w-5 rotate-45 border-b-[3px] border-l-[3px] border-[#5190E6]" />
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-[#5190E6]/60 bg-white/10">
+      <div className="relative h-5 w-5 overflow-hidden border-2 border-[#1CE4DB]/70">
+        <div className="absolute left-0.5 top-0.5 h-3 w-3 rotate-45 border-b-2 border-l-2 border-[#5190E6]" />
       </div>
     </div>
   );

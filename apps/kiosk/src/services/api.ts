@@ -12,13 +12,14 @@ import type {
   UpsertProductInput,
 } from "@rhc-pos/shared";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000/v1";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/v1";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const hasBody = init?.body !== undefined;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -59,6 +60,11 @@ export const api = {
       method: "PATCH",
       headers: { "x-admin-pin": pin },
       body: JSON.stringify(payload),
+    }),
+  deleteFlavor: (pin: string, modifierId: string) =>
+    request<{ ok: true }>(`/admin/flavors/${modifierId}`, {
+      method: "DELETE",
+      headers: { "x-admin-pin": pin },
     }),
   listSizes: () => request<SizeOption[]>("/admin/sizes"),
   createSize: (pin: string, payload: UpsertSizeOptionInput) =>
@@ -110,6 +116,11 @@ export const api = {
       method: "PATCH",
       headers: { "x-admin-pin": pin },
       body: JSON.stringify(payload),
+    }),
+  deleteProduct: (pin: string, productId: string) =>
+    request<{ ok: true }>(`/admin/products/${productId}`, {
+      method: "DELETE",
+      headers: { "x-admin-pin": pin },
     }),
   patchSettings: (pin: string, payload: PatchSettingsInput) =>
     request<BootstrapResponse["settings"]>("/admin/settings", {

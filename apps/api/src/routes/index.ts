@@ -55,6 +55,10 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
       "admin-pin",
     );
   });
+  app.delete("/v1/admin/flavors/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.deleteFlavor((request.params as { id: string }).id);
+  });
   app.get("/v1/admin/sizes", async () => posService.listSizes());
   app.post("/v1/admin/sizes", async (request) => {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
@@ -78,6 +82,10 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
       { ...(request.body as Record<string, unknown>), id: (request.params as { id: string }).id },
       "admin-pin",
     );
+  });
+  app.delete("/v1/admin/products/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.deleteProduct((request.params as { id: string }).id);
   });
   app.patch("/v1/admin/settings", async (request) => {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });

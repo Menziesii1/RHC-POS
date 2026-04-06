@@ -125,6 +125,16 @@ export class PosService {
     return this.repository.upsertProduct(upsertProductSchema.parse(input), actorLabel);
   }
 
+  async deleteProduct(productId: string): Promise<{ ok: true }> {
+    await this.repository.deleteProduct(productId);
+    return { ok: true };
+  }
+
+  async deleteFlavor(modifierId: string): Promise<{ ok: true }> {
+    await this.repository.deleteModifier(modifierId);
+    return { ok: true };
+  }
+
   async patchSettings(input: unknown, actorLabel: string) {
     return this.repository.patchSettings(patchSettingsSchema.parse(input), actorLabel);
   }

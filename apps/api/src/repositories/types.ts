@@ -41,10 +41,12 @@ export interface PosRepository {
   upsertCategory(input: UpsertCategoryInput, actorLabel: string): Promise<Category>;
   listModifiers(): Promise<Modifier[]>;
   upsertModifier(input: UpsertModifierInput, actorLabel: string): Promise<Modifier>;
+  deleteModifier(modifierId: string): Promise<void>;
   listSizes(): Promise<SizeOption[]>;
   upsertSize(input: UpsertSizeOptionInput, actorLabel: string): Promise<SizeOption>;
   listProducts(): Promise<Product[]>;
   upsertProduct(input: UpsertProductInput, actorLabel: string): Promise<Product>;
+  deleteProduct(productId: string): Promise<void>;
   patchSettings(input: PatchSettingsInput, actorLabel: string): Promise<Omit<BootstrapResponse, "status">["settings"]>;
   appendAuditEvent(input: AuditEventInput): Promise<void>;
   recordWebhookEvent(stripeEventId: string, eventType: string, payload: Record<string, unknown>): Promise<boolean>;

@@ -1,4 +1,4 @@
-import { formatCurrency, type DraftOrder, type RegisterStatus, type SummaryResponse } from "@rhc-pos/shared";
+import { type DraftOrder, type RegisterStatus, type SummaryResponse } from "@rhc-pos/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ActionBar } from "../components/ActionBar";
@@ -14,7 +14,7 @@ import { SummaryPanel } from "../components/SummaryPanel";
 import { TopStatusBar } from "../components/TopStatusBar";
 import { buildCartView } from "../lib/cart";
 import { clearPersistedState, loadPersistedState, savePersistedState } from "../lib/storage";
-import { api } from "../services/api";
+import { API_BASE_URL, api } from "../services/api";
 import { useAppStore } from "../store/app-store";
 
 async function ensureOrder(
@@ -32,6 +32,7 @@ export function App() {
   const store = useAppStore();
   const [now, setNow] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [adminError, setAdminError] = useState<string | null>(null);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const hydratedRef = useRef(false);
@@ -77,31 +78,39 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
+    let timeoutId: number;
 
-    const fetchBootstrap = async () => {
-      try {
-        const bootstrap = await api.getBootstrap();
-        if (cancelled) {
-          return;
-        }
-        store.setBootstrap(bootstrap);
-        store.setBackendOnline(true);
-      } catch {
-        if (!cancelled) {
+    const scheduleNext = (delayMs: number) => {
+      timeoutId = window.setTimeout(() => void fetchBootstrap(), delayMs);
+    };
+
+      const fetchBootstrap = async () => {
+        try {
+          const bootstrap = await api.getBootstrap();
+          if (cancelled) return;
+          store.setBootstrap(bootstrap);
+          store.setBackendOnline(true);
+          setBootstrapError(null);
+          scheduleNext(15000);
+        } catch (error) {
+          if (cancelled) return;
           store.setBackendOnline(false);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+          setBootstrapError(
+            error instanceof Error
+              ? error.message
+              : `Unable to reach the API at ${API_BASE_URL}.`,
+          );
+          // Back off to 5 s when the API is unreachable to avoid flooding
+          scheduleNext(5000);
+        } finally {
+        if (!cancelled) setLoading(false);
       }
     };
 
     void fetchBootstrap();
-    const interval = window.setInterval(() => void fetchBootstrap(), 15000);
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      window.clearTimeout(timeoutId);
     };
   }, [store]);
 
@@ -210,18 +219,19 @@ export function App() {
   };
 
   const handleSelectProduct = (productId: string) => {
-    if (!store.bootstrap) {
+    const bootstrap = store.bootstrap;
+    if (!bootstrap) {
       return;
     }
-    const product = store.bootstrap.products.find((entry) => entry.id === productId);
+    const product = bootstrap.products.find((entry) => entry.id === productId);
     if (!product) {
       return;
     }
 
     mutateCart(() => {
       const defaultSize = product.defaultSizeOptionId ?? product.sizeOptionIds[0] ?? null;
-      const needsConfigurator =
-        product.productType === "drink" || product.sizeOptionIds.length > 0 || product.modifierIds.length > 0;
+      const hasEnabledModifiers = bootstrap.modifiers.some((m) => m.enabled && product.modifierIds.includes(m.id));
+      const needsConfigurator = product.sizeOptionIds.length > 0 || hasEnabledModifiers;
 
       if (needsConfigurator) {
         store.beginDraftLine(productId, defaultSize);
@@ -330,18 +340,59 @@ export function App() {
     setSummary(await api.getDashboard().catch(() => null));
   };
 
-  const handleProductSave = async (productId: string, patch: Partial<{ priceCents: number; enabled: boolean }>) => {
-    if (!store.bootstrap) {
-      return;
-    }
-    const product = store.bootstrap.products.find((entry) => entry.id === productId);
-    if (!product) {
-      return;
-    }
-    await api.updateProduct(store.adminPin, productId, {
-      ...product,
-      ...patch,
-    });
+  const handleProductSave = async (productId: string, input: Parameters<typeof api.updateProduct>[2]) => {
+    await api.updateProduct(store.adminPin, productId, input);
+    await refreshBootstrap();
+  };
+
+  const handleProductsReorder = async (orderedIds: string[]) => {
+    if (!store.bootstrap) return;
+    const updates = orderedIds
+      .map((id, index) => {
+        const product = store.bootstrap!.products.find((p) => p.id === id);
+        if (!product) return null;
+        const newSortOrder = index + 1;
+        if (product.sortOrder === newSortOrder) return null;
+        return { product, newSortOrder };
+      })
+      .filter((x): x is { product: NonNullable<typeof x>["product"]; newSortOrder: number } => x !== null);
+    await Promise.all(
+      updates.map(({ product, newSortOrder }) =>
+        api.updateProduct(store.adminPin, product.id, {
+          name: product.name,
+          categoryId: product.categoryId,
+          priceCents: product.priceCents,
+          discountCents: product.discountCents,
+          enabled: product.enabled,
+          sortOrder: newSortOrder,
+          productType: product.productType,
+          modifierIds: product.modifierIds,
+          sizeOptionIds: product.sizeOptionIds,
+          sizeOptionPrices: product.sizeOptionPrices,
+          defaultSizeOptionId: product.defaultSizeOptionId,
+        }),
+      ),
+    );
+    await refreshBootstrap();
+  };
+
+  const handleSizeSave = async (sizeId: string, input: Parameters<typeof api.updateSize>[2]) => {
+    await api.updateSize(store.adminPin, sizeId, input);
+    await refreshBootstrap();
+  };
+
+  const handleFlavorSave = async (modifierId: string, input: Parameters<typeof api.updateFlavor>[2]) => {
+    await api.updateFlavor(store.adminPin, modifierId, input);
+    await refreshBootstrap();
+  };
+
+  const handleFlavorDelete = async (modifierId: string) => {
+    await api.deleteFlavor(store.adminPin, modifierId);
+    await refreshBootstrap();
+  };
+
+  const handleProductDelete = async (productId: string) => {
+    await api.deleteProduct(store.adminPin, productId);
     await refreshBootstrap();
   };
 
@@ -370,92 +421,115 @@ export function App() {
     await refreshBootstrap();
   };
 
-  if (loading || !store.bootstrap) {
+  if (loading && !store.bootstrap) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-8">
-        <div className="touch-card p-10 text-center">
-          <div className="font-display text-5xl font-bold text-bark">RHC POS</div>
-          <div className="mt-3 text-lg text-bark/70">Loading register…</div>
+      <main className="flex h-screen items-center justify-center bg-[#f3f4f8]">
+        <div className="border border-[#dde2ea] bg-white p-10 text-center" style={{ borderRadius: 4 }}>
+          <div className="font-display text-5xl font-bold text-[#263362]">RHC POS</div>
+          <div className="mt-3 text-lg text-[#263362]/60">Loading register...</div>
+          <div className="mt-6 flex justify-center">
+            <div
+              className="h-8 w-8 animate-spin border-[3px] border-[#dde2ea] border-t-[#5190E6]"
+              style={{ borderRadius: "50%" }}
+            />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!store.bootstrap) {
+    return (
+      <main className="flex h-screen items-center justify-center bg-[#f3f4f8] p-6">
+        <div className="max-w-xl border border-[#dde2ea] bg-white p-10 text-center" style={{ borderRadius: 4 }}>
+          <div className="font-display text-5xl font-bold text-[#263362]">RHC POS</div>
+          <div className="mt-3 text-2xl font-bold text-[#263362]">Register cannot reach the backend</div>
+          <div className="mt-4 text-lg text-[#263362]/75">
+            {bootstrapError ?? "The kiosk is retrying the connection every 5 seconds."}
+          </div>
+          <div className="mt-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#5190E6]">
+            API target: {API_BASE_URL}
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-5 lg:p-6">
-      <div className="mx-auto flex max-w-[1700px] flex-col gap-5">
-        <TopStatusBar
-          bootstrap={store.bootstrap}
-          status={registerStatus}
-          cashierId={store.cashierId}
-          timeLabel={now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-          onCashierChange={store.setCashierId}
-        />
+    <main className="flex h-screen flex-col overflow-hidden bg-[#f3f4f8]">
+      <TopStatusBar
+        bootstrap={store.bootstrap}
+        status={registerStatus}
+        cashierId={store.cashierId}
+        timeLabel={now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+        onCashierChange={store.setCashierId}
+      />
 
-        {store.view === "register" ? (
-          <>
-            <div className="grid gap-5 xl:grid-cols-[1.2fr_0.95fr]">
-              <ProductGrid
-                bootstrap={store.bootstrap}
-                selectedCategoryId={store.selectedCategoryId}
-                onSelectCategory={store.setSelectedCategoryId}
-                onSelectProduct={handleSelectProduct}
+      {store.view === "register" ? (
+        <div className="flex flex-1 overflow-hidden">
+          <ProductGrid
+            bootstrap={store.bootstrap}
+            selectedCategoryId={store.selectedCategoryId}
+            onSelectCategory={store.setSelectedCategoryId}
+            onSelectProduct={handleSelectProduct}
+          />
+          <CartPanel
+            bootstrap={store.bootstrap}
+            lines={cartView.lines}
+            selectedLineId={store.selectedLineId}
+            subtotalCents={cartView.subtotalCents}
+            taxCents={cartView.taxCents}
+            totalCents={cartView.totalCents}
+            paymentError={store.paymentError}
+            onSelectLine={store.selectLine}
+            onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
+            onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
+            onToggleModifier={(lineId, modifierId) => mutateCart(() => store.toggleModifier(lineId, modifierId))}
+            footer={
+              <ActionBar
+                disabled={cartView.lines.length === 0}
+                onCash={() => void handleStartCash()}
+                onCard={() => void handleStartCard()}
+                onClear={() => {
+                  if (cartView.lines.length > 0 && window.confirm("Clear the cart?")) {
+                    store.clearCart();
+                    clearPersistedState();
+                  }
+                }}
+                onSummary={() => void handleSummaryOpen()}
+                onAdmin={handleAdminOpen}
               />
-              <CartPanel
-                bootstrap={store.bootstrap}
-                lines={cartView.lines}
-                selectedLineId={store.selectedLineId}
-                subtotalCents={cartView.subtotalCents}
-                taxCents={cartView.taxCents}
-                totalCents={cartView.totalCents}
-                onSelectLine={store.selectLine}
-                onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
-                onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
-                onToggleModifier={(lineId, modifierId) => mutateCart(() => store.toggleModifier(lineId, modifierId))}
-                footer={
-                  <ActionBar
-                    disabled={cartView.lines.length === 0}
-                    onCash={() => void handleStartCash()}
-                    onCard={() => void handleStartCard()}
-                    onClear={() => {
-                      if (cartView.lines.length > 0 && window.confirm("Clear the cart?")) {
-                        store.clearCart();
-                        clearPersistedState();
-                      }
-                    }}
-                    onSummary={() => void handleSummaryOpen()}
-                    onAdmin={handleAdminOpen}
-                  />
-                }
-              />
-            </div>
+            }
+          />
+        </div>
+      ) : null}
 
-            {store.paymentError ? (
-              <div className="rounded-[22px] bg-ember/12 px-5 py-4 text-lg font-semibold text-ember">
-                {store.paymentError}
-              </div>
-            ) : null}
-          </>
-        ) : null}
-
-        {store.view === "admin" ? (
+      {store.view === "admin" ? (
+        <div className="flex-1 overflow-auto p-5">
           <AdminPanel
             bootstrap={store.bootstrap}
             adminPin={store.adminPin}
             onClose={() => store.setView("register")}
             onProductSave={handleProductSave}
+            onProductsReorder={handleProductsReorder}
+            onProductDelete={handleProductDelete}
+            onSizeSave={handleSizeSave}
+            onFlavorSave={handleFlavorSave}
+            onFlavorDelete={handleFlavorDelete}
             onCreateCategory={handleCreateCategory}
             onCreateFlavor={handleCreateFlavor}
             onCreateSize={handleCreateSize}
             onCreateProduct={handleCreateProduct}
             onTaxSave={handleTaxSave}
           />
-        ) : null}
+        </div>
+      ) : null}
 
-        {store.view === "summary" ? (
+      {store.view === "summary" ? (
+        <div className="flex-1 overflow-auto p-5">
           <SummaryPanel summary={summary} onClose={() => store.setView("register")} />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {store.overlay === "cash" ? (
         <CashPaymentOverlay
@@ -474,6 +548,7 @@ export function App() {
             store.setOverlay("none");
           }}
           onSelectSize={store.setDraftLineSize}
+          onSetIced={store.setDraftLineIced}
           onToggleFlavor={store.toggleDraftLineFlavor}
           onConfirm={() => {
             store.commitDraftLine();
@@ -488,7 +563,7 @@ export function App() {
           statusLabel={
             store.pendingOrder?.payment.status === "pending"
               ? "Customer may tap, insert, or swipe"
-              : "Waiting for reader…"
+              : "Waiting for reader..."
           }
           failureMessage={store.paymentError}
           onCancel={() => void handleCancelCard()}
@@ -503,9 +578,6 @@ export function App() {
         <SuccessScreen orderNumber={store.successOrder.orderNumber} totalCents={store.successOrder.totalCents} />
       ) : null}
 
-      <div className="pointer-events-none fixed bottom-4 right-4 rounded-full bg-bark px-4 py-2 text-sm font-bold text-cream shadow-panel">
-        {formatCurrency(cartView.totalCents)}
-      </div>
     </main>
   );
 }

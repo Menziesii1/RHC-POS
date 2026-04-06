@@ -33,7 +33,10 @@ export async function createApp(options: CreateAppOptions) {
     new AdminAuthService(options.config.ADMIN_PIN, options.config.ADMIN_PIN_HASH),
   );
 
-  await app.register(cors, { origin: options.config.CORS_ORIGIN });
+  await app.register(cors, {
+    origin: options.config.CORS_ORIGIN,
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+  });
   await app.register(sensible);
   await app.register(fastifyRawBody, {
     field: "rawBody",

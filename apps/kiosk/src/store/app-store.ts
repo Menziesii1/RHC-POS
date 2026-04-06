@@ -26,6 +26,7 @@ interface AppState {
   addProduct: (productId: string) => void;
   beginDraftLine: (productId: string, sizeOptionId?: string | null) => void;
   setDraftLineSize: (sizeOptionId: string | null) => void;
+  setDraftLineIced: (iced: boolean) => void;
   toggleDraftLineFlavor: (modifierId: string) => void;
   commitDraftLine: () => void;
   clearDraftLine: () => void;
@@ -59,6 +60,7 @@ function createLine(productId: string): CartLineState {
     productId,
     quantity: 1,
     modifierIds: [],
+    iced: false,
   };
 }
 
@@ -97,11 +99,16 @@ export const useAppStore = create<AppState>((set) => ({
         sizeOptionId,
         modifierIds: [],
         quantity: 1,
+        iced: false,
       },
     }),
   setDraftLineSize: (sizeOptionId) =>
     set((state) => ({
       draftLine: state.draftLine ? { ...state.draftLine, sizeOptionId } : state.draftLine,
+    })),
+  setDraftLineIced: (iced) =>
+    set((state) => ({
+      draftLine: state.draftLine ? { ...state.draftLine, iced } : state.draftLine,
     })),
   toggleDraftLineFlavor: (modifierId) =>
     set((state) => ({
@@ -128,6 +135,7 @@ export const useAppStore = create<AppState>((set) => ({
             quantity: state.draftLine.quantity,
             sizeOptionId: state.draftLine.sizeOptionId,
             modifierIds: state.draftLine.modifierIds,
+            iced: state.draftLine.iced,
           },
         ],
         draftLine: null,
@@ -190,7 +198,7 @@ export const useAppStore = create<AppState>((set) => ({
     }),
   restorePersisted: ({ cartLines, cashierId, selectedCategoryId, pendingTransaction, pendingOrder }) =>
     set({
-      cartLines,
+      cartLines: cartLines.map((line) => ({ ...line, iced: line.iced ?? false })),
       cashierId,
       selectedCategoryId,
       pendingTransaction,

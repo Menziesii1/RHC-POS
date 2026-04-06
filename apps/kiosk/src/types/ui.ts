@@ -6,6 +6,7 @@ export interface CartLineState {
   quantity: number;
   sizeOptionId?: string | null;
   modifierIds: string[];
+  iced: boolean;
 }
 
 export type OverlayState = "none" | "cash" | "card" | "success" | "admin-pin" | "drink-builder";
@@ -31,4 +32,5 @@ export interface DrinkLineDraft {
   sizeOptionId: string | null;
   modifierIds: string[];
   quantity: number;
+  iced: boolean;
 }

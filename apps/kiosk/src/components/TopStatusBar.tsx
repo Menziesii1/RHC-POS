@@ -3,13 +3,9 @@ import type { BootstrapResponse, RegisterStatus } from "@rhc-pos/shared";
 import { BrandBadge } from "./BrandBadge";
 
 function pillTone(value: string) {
-  if (["online", "ready", "connected"].includes(value)) {
-    return "bg-pine/15 text-pine";
-  }
-  if (["mock", "degraded", "busy"].includes(value)) {
-    return "bg-brass/20 text-bark";
-  }
-  return "bg-ember/15 text-ember";
+  if (["online", "ready", "connected"].includes(value)) return "border-green-400/40 bg-green-400/15 text-green-200";
+  if (["mock", "degraded", "busy"].includes(value)) return "border-yellow-400/40 bg-yellow-400/15 text-yellow-200";
+  return "border-red-400/40 bg-red-400/15 text-red-200";
 }
 
 interface TopStatusBarProps {
@@ -20,48 +16,56 @@ interface TopStatusBarProps {
   onCashierChange: (cashierId: string) => void;
 }
 
-export function TopStatusBar({
-  bootstrap,
-  status,
-  cashierId,
-  timeLabel,
-  onCashierChange,
-}: TopStatusBarProps) {
+export function TopStatusBar({ bootstrap, status, cashierId, timeLabel, onCashierChange }: TopStatusBarProps) {
   return (
-    <header className="touch-card grid gap-4 px-5 py-5 xl:grid-cols-[auto_1fr_auto] xl:items-center">
-      <div className="flex items-center gap-4">
-        <BrandBadge />
-        <div>
-          <div className="font-display text-3xl font-extrabold tracking-tight text-[#263362]">
-            {bootstrap.settings.locationName}
-          </div>
-          <div className="brand-kicker mt-1">Single-purpose register</div>
-        </div>
+    <header className="flex h-14 shrink-0 items-center gap-4 bg-[#263362] px-5">
+      <BrandBadge />
+
+      <div className="font-display text-base font-extrabold tracking-tight text-white">
+        {bootstrap.settings.locationName}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 xl:justify-center">
-        <label className="brand-section flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#263362]">
-          <span className="brand-section-title">Volunteer</span>
-          <select
-            className="brand-select min-w-[160px] bg-transparent text-base"
-            value={cashierId}
-            onChange={(event) => onCashierChange(event.target.value)}
+      <div className="mx-4 h-5 w-px bg-white/20" />
+
+      <label className="flex items-center gap-2 text-sm text-white/70">
+        <span className="text-xs font-bold uppercase tracking-widest text-white/50">Volunteer</span>
+        <select
+          className="border border-white/20 bg-white/10 px-3 py-1 text-sm font-semibold text-white outline-none focus:border-white/40"
+          style={{ borderRadius: 3 }}
+          value={cashierId}
+          onChange={(e) => onCashierChange(e.target.value)}
+        >
+          {bootstrap.cashiers.map((cashier) => (
+            <option key={cashier.id} value={cashier.id} className="bg-[#263362]">
+              {cashier.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="flex-1" />
+
+      <div className="text-sm font-bold text-white/80">{timeLabel}</div>
+
+      <div className="mx-3 h-5 w-px bg-white/20" />
+
+      <div className="flex items-center gap-2">
+        {(
+          [
+            ["Internet", status.internet],
+            ["Backend", status.backend],
+            ["Reader", status.reader],
+            ["Stripe", status.stripe],
+          ] as const
+        ).map(([label, value]) => (
+          <span
+            key={label}
+            className={`border px-2 py-0.5 text-xs font-semibold ${pillTone(value)}`}
+            style={{ borderRadius: 3 }}
           >
-            {bootstrap.cashiers.map((cashier) => (
-              <option key={cashier.id} value={cashier.id}>
-                {cashier.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="brand-section px-5 py-3 text-lg font-extrabold text-[#263362]">{timeLabel}</div>
-      </div>
-
-      <div className="flex flex-wrap gap-2 xl:justify-end">
-        <span className={`status-pill ${pillTone(status.internet)}`}>Internet: {status.internet}</span>
-        <span className={`status-pill ${pillTone(status.backend)}`}>Backend: {status.backend}</span>
-        <span className={`status-pill ${pillTone(status.reader)}`}>Reader: {status.reader}</span>
-        <span className={`status-pill ${pillTone(status.stripe)}`}>Stripe: {status.stripe}</span>
+            {label}: {value}
+          </span>
+        ))}
       </div>
     </header>
   );

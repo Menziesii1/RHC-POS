@@ -491,6 +491,11 @@ export class PrismaPosRepository implements PosRepository {
     };
   }
 
+  async deleteModifier(modifierId: string): Promise<void> {
+    await this.prisma.productModifier.deleteMany({ where: { modifierId } });
+    await this.prisma.modifier.delete({ where: { id: modifierId } });
+  }
+
   async listModifiers(): Promise<Modifier[]> {
     const modifiers = await this.prisma.modifier.findMany({
       where: { locationId: this.config.LOCATION_ID },
@@ -602,6 +607,12 @@ export class PrismaPosRepository implements PosRepository {
   async listProducts(): Promise<Product[]> {
     const products = await this.getProductRecords();
     return products.map((product) => this.mapProduct(product));
+  }
+
+  async deleteProduct(productId: string): Promise<void> {
+    await this.prisma.productSizeOption.deleteMany({ where: { productId } });
+    await this.prisma.productModifier.deleteMany({ where: { productId } });
+    await this.prisma.product.delete({ where: { id: productId } });
   }
 
   async upsertProduct(input: UpsertProductInput, actorLabel: string): Promise<Product> {

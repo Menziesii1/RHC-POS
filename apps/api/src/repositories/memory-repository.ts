@@ -568,6 +568,27 @@ export class MemoryPosRepository implements PosRepository {
     return structuredClone(modifier);
   }
 
+  async deleteModifier(modifierId: string): Promise<void> {
+    const modifier = this.bootstrap.modifiers.find((entry) => entry.id === modifierId);
+    if (!modifier) {
+      throw new HttpError(404, "Flavor not found.");
+    }
+
+    this.bootstrap.modifiers = this.bootstrap.modifiers.filter((entry) => entry.id !== modifierId);
+    this.bootstrap.products = this.bootstrap.products.map((product) => ({
+      ...product,
+      modifierIds: product.modifierIds.filter((id) => id !== modifierId),
+    }));
+
+    await this.appendAuditEvent({
+      action: "modifier.deleted",
+      entityType: "modifier",
+      entityId: modifierId,
+      actorLabel: "system",
+      payload: { modifierId },
+    });
+  }
+
   async listSizes(): Promise<SizeOption[]> {
     return structuredClone(this.bootstrap.sizes);
   }
@@ -635,6 +656,23 @@ export class MemoryPosRepository implements PosRepository {
     });
 
     return structuredClone(product);
+  }
+
+  async deleteProduct(productId: string): Promise<void> {
+    const product = this.bootstrap.products.find((entry) => entry.id === productId);
+    if (!product) {
+      throw new HttpError(404, "Product not found.");
+    }
+
+    this.bootstrap.products = this.bootstrap.products.filter((entry) => entry.id !== productId);
+
+    await this.appendAuditEvent({
+      action: "product.deleted",
+      entityType: "product",
+      entityId: productId,
+      actorLabel: "system",
+      payload: { productId },
+    });
   }
 
   async patchSettings(
