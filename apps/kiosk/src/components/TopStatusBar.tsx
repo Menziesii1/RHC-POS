@@ -1,12 +1,9 @@
+import { Wifi, WifiOff, Server, ServerOff, Smartphone, CreditCard, Clock } from "lucide-react";
 import type { BootstrapResponse, RegisterStatus } from "@rhc-pos/shared";
 
 import { BrandBadge } from "./BrandBadge";
 
-function pillTone(value: string) {
-  if (["online", "ready", "connected"].includes(value)) return "border-green-400/40 bg-green-400/15 text-green-200";
-  if (["mock", "degraded", "busy"].includes(value)) return "border-yellow-400/40 bg-yellow-400/15 text-yellow-200";
-  return "border-red-400/40 bg-red-400/15 text-red-200";
-}
+const POSITIVE_VALUES = ["online", "ready", "connected"];
 
 interface TopStatusBarProps {
   bootstrap: BootstrapResponse;
@@ -15,44 +12,52 @@ interface TopStatusBarProps {
 }
 
 export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps) {
+  const statusItems: Array<{
+    icon: typeof Wifi;
+    offIcon?: typeof WifiOff;
+    label: string;
+    value: string;
+  }> = [
+    { icon: Wifi, offIcon: WifiOff, label: "Net", value: status.internet },
+    { icon: Server, offIcon: ServerOff, label: "API", value: status.backend },
+    { icon: Smartphone, label: "Reader", value: status.reader },
+    { icon: CreditCard, label: "Stripe", value: status.stripe },
+  ];
+
   return (
-    <header className="flex h-20 shrink-0 items-center gap-5 bg-[#263362] px-5">
-      <div className="flex h-full shrink-0 items-center py-2">
+    <header className="relative z-20 flex h-14 shrink-0 items-center gap-3 bg-[#0c1520] px-4 text-white">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl p-1">
         <BrandBadge />
       </div>
 
       <div className="min-w-0">
-        <div className="truncate font-display text-2xl font-extrabold tracking-tight text-white">
+        <div className="truncate text-sm font-bold text-white">
           {bootstrap.settings.locationName}
         </div>
-        <div className="truncate pt-1 text-sm font-semibold uppercase tracking-[0.28em] text-white/55">
+        <div className="truncate text-[10px] font-medium uppercase tracking-wider text-white/35">
           {bootstrap.settings.registerName}
         </div>
       </div>
 
       <div className="flex-1" />
 
-      <div className="text-2xl font-bold text-white/80">{timeLabel}</div>
+      <div className="hidden items-center gap-1.5 md:flex">
+        <Clock size={13} className="text-white/30" />
+        <span className="text-sm font-medium text-white/60">{timeLabel}</span>
+      </div>
 
-      <div className="mx-1 h-8 w-px bg-white/20" />
-
+      {/* Status dots */}
       <div className="flex items-center gap-2">
-        {(
-          [
-            ["Internet", status.internet],
-            ["Backend", status.backend],
-            ["Reader", status.reader],
-            ["Stripe", status.stripe],
-          ] as const
-        ).map(([label, value]) => (
-          <span
-            key={label}
-            className={`border px-2 py-0.5 text-xs font-semibold ${pillTone(value)}`}
-            style={{ borderRadius: 3 }}
-          >
-            {label}: {value}
-          </span>
-        ))}
+        {statusItems.map(({ icon: Icon, offIcon: OffIcon, label, value }) => {
+          const ok = POSITIVE_VALUES.includes(value);
+          const DisplayIcon = !ok && OffIcon ? OffIcon : Icon;
+          return (
+            <div key={label} className="flex items-center gap-1" title={`${label}: ${value}`}>
+              <DisplayIcon size={14} className={ok ? "text-[#1be4db]" : value === "mock" || value === "degraded" ? "text-amber-400" : "text-red-400"} />
+              <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-[#1be4db]" : value === "mock" || value === "degraded" ? "bg-amber-400" : "bg-red-400"}`} />
+            </div>
+          );
+        })}
       </div>
     </header>
   );

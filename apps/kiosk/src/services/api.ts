@@ -49,6 +49,11 @@ export const api = {
       headers: { "x-admin-pin": pin },
       body: JSON.stringify(payload),
     }),
+  deleteCategory: (pin: string, categoryId: string) =>
+    request<{ ok: true }>(`/admin/categories/${categoryId}`, {
+      method: "DELETE",
+      headers: { "x-admin-pin": pin },
+    }),
   listFlavors: () => request<BootstrapResponse["modifiers"]>("/admin/flavors"),
   createFlavor: (pin: string, payload: UpsertModifierInput) =>
     request<BootstrapResponse["modifiers"][number]>("/admin/flavors", {
@@ -79,6 +84,11 @@ export const api = {
       method: "PATCH",
       headers: { "x-admin-pin": pin },
       body: JSON.stringify(payload),
+    }),
+  deleteSize: (pin: string, sizeId: string) =>
+    request<{ ok: true }>(`/admin/sizes/${sizeId}`, {
+      method: "DELETE",
+      headers: { "x-admin-pin": pin },
     }),
   createOrder: (payload: CartInput) =>
     request<DraftOrder>("/orders", {

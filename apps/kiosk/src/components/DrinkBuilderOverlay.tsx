@@ -1,5 +1,8 @@
 import { calculateLinePrice, formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
+import { Flame, Snowflake, Ruler, Droplets, Plus, X } from "lucide-react";
 
+import { getSizeAdjustmentCents } from "../lib/cart";
+import { getProductImage } from "../lib/product-images";
 import type { DrinkLineDraft } from "../types/ui";
 
 interface DrinkBuilderOverlayProps {
@@ -24,18 +27,14 @@ export function DrinkBuilderOverlay({
   const product = bootstrap.products.find((entry) => entry.id === draftLine.productId);
   if (!product) return null;
 
-  const allowedSizes = bootstrap.sizes.filter((size) => size.enabled && product.sizeOptionIds.includes(size.id));
-  const allowedFlavors = bootstrap.modifiers.filter(
-    (modifier) => modifier.enabled && product.modifierIds.includes(modifier.id),
-  );
+  const productPhoto = getProductImage(product.name);
 
-  const selectedSize =
-    allowedSizes.find((size) => size.id === (draftLine.sizeOptionId ?? product.defaultSizeOptionId ?? null)) ?? null;
+  const allowedSizes = bootstrap.sizes.filter((size) => size.enabled);
+  const allowedFlavors = bootstrap.modifiers.filter((modifier) => modifier.enabled);
+
+  const selectedSize = allowedSizes.find((size) => size.id === (draftLine.sizeOptionId ?? null)) ?? null;
   const selectedFlavors = allowedFlavors.filter((modifier) => draftLine.modifierIds.includes(modifier.id));
-  const sizeAdjustment =
-    product.sizeOptionPrices.find((entry) => entry.sizeOptionId === selectedSize?.id)?.priceDeltaCents ??
-    selectedSize?.priceDeltaCents ??
-    0;
+  const sizeAdjustment = getSizeAdjustmentCents(bootstrap, product.id, draftLine.sizeOptionId);
   const flavorAdjustment = selectedFlavors.reduce((sum, modifier) => sum + modifier.priceCents, 0);
   const previewPrice = calculateLinePrice({
     basePriceCents: product.priceCents,
@@ -43,187 +42,166 @@ export function DrinkBuilderOverlay({
     flavorAdjustmentCents: flavorAdjustment,
     discountCents: product.discountCents,
   });
-  const selectedTemperatureLabel = draftLine.iced ? "Iced" : "Hot";
-  const selectedSizeLabel = selectedSize?.name ?? "Standard";
-  const selectedFlavorLabel =
-    selectedFlavors.length > 0 ? selectedFlavors.map((modifier) => modifier.name).join(", ") : null;
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#18244b]/78 p-3 md:p-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm md:p-6">
       <div
-        className="flex w-full flex-col border border-[#c9d6e6] bg-white shadow-[0_24px_60px_rgba(24,36,75,0.24)] md:grid md:grid-cols-[0.9fr_1.3fr]"
-        style={{
-          borderRadius: 4,
-          width: "min(94vw, 1200px)",
-          height: "calc(100dvh - 1.5rem)",
-          maxHeight: "860px",
-        }}
+        className="flex w-full flex-col overflow-hidden rounded-2xl bg-[#0f1923] md:grid md:grid-cols-[0.75fr_1.25fr]"
+        style={{ width: "min(92vw, 1080px)", height: "calc(100dvh - 2.5rem)", maxHeight: "760px" }}
       >
-        <div className="hidden border-[#d9e2ee] bg-[#f3f7fc] md:block md:overflow-y-auto md:border-r md:p-8">
-          <div className="text-sm font-bold uppercase tracking-[0.24em] text-[#1d4f91]">Add item to order</div>
-          <div className="mt-3 font-display text-4xl font-extrabold leading-tight text-[#16213f]">{product.name}</div>
+        {/* Left - summary */}
+        <div className="hidden overflow-y-auto bg-[#0c1520] p-6 text-white md:block">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">Customize</div>
+          <div className="mt-3 font-display text-2xl font-extrabold text-white">{product.name}</div>
 
-          <div className="mt-8 grid gap-3">
-            <div className="brand-stat">
-              <div className="brand-stat-label">Current price</div>
-              <div className="brand-stat-value">{formatCurrency(previewPrice)}</div>
+          <div className="mt-6 rounded-xl bg-white/[0.04] p-4">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Price</div>
+            <div className="mt-1 font-display text-4xl font-extrabold text-[#1be4db]">{formatCurrency(previewPrice)}</div>
+          </div>
+
+          {productPhoto ? (
+            <div className="mt-3 flex items-center justify-center">
+              <img
+                src={productPhoto}
+                alt={product.name}
+                className="h-60 w-60 object-contain drop-shadow-2xl"
+                draggable={false}
+              />
             </div>
+          ) : null}
 
-            <div className="brand-stat">
-              <div className="brand-stat-label">Temperature</div>
-              <div className="mt-2 text-2xl font-extrabold text-[#16213f]">{selectedTemperatureLabel}</div>
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-2.5">
+              {draftLine.iced ? <Snowflake size={14} className="text-sky-400" /> : <Flame size={14} className="text-orange-400" />}
+              <span className="text-sm font-medium text-white/70">{draftLine.iced ? "Iced" : "Hot"}</span>
             </div>
-
-            <div className="brand-stat">
-              <div className="brand-stat-label">Size</div>
-              <div className="mt-2 text-2xl font-extrabold text-[#16213f]">{selectedSizeLabel}</div>
+            <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-2.5">
+              <Ruler size={14} className="text-white/35" />
+              <span className="text-sm font-medium text-white/70">{selectedSize?.name ?? "Standard"}</span>
             </div>
-
-            {selectedFlavorLabel ? (
-              <div className="brand-stat">
-                <div className="brand-stat-label">Flavor add-ons</div>
-                <div className="mt-2 text-lg font-bold leading-snug text-[#16213f]">{selectedFlavorLabel}</div>
+            {selectedFlavors.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-2.5">
+                <Droplets size={14} className="text-[#1be4db]" />
+                <span className="truncate text-sm font-medium text-white/70">{selectedFlavors.map((m) => m.name).join(", ")}</span>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
 
+        {/* Right - controls */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="shrink-0 border-b border-[#d9e2ee] bg-white px-5 py-4 md:px-8">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="shrink-0 bg-[#162231] px-5 py-4">
+            <div className="flex items-center justify-between">
               <div>
-                <div className="font-display text-4xl font-extrabold uppercase tracking-[0.08em] text-[#16213f]">Customize Drink</div>
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Build order</div>
+                <div className="mt-1 font-display text-xl font-bold text-white">{product.name}</div>
               </div>
-              <div className="rounded-[4px] bg-[#16213f] px-4 py-3 text-right text-white">
-                <div className="text-xs font-bold uppercase tracking-[0.2em] text-white/75">Price shown</div>
-                <div className="mt-1 text-2xl font-extrabold">{formatCurrency(previewPrice)}</div>
+              <div className="text-right">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[#1be4db]/60">Total</div>
+                <div className="mt-0.5 font-display text-2xl font-extrabold text-[#1be4db]">{formatCurrency(previewPrice)}</div>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 md:p-8">
-            <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 md:p-5">
+            <div className="space-y-5">
               <div>
-                <div className="mb-3 font-display text-2xl font-extrabold uppercase tracking-[0.08em] text-[#1d4f91]">Temperature</div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/35">
+                  <Flame size={13} /> Temperature
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    className={`border px-4 py-4 text-left transition ${
-                      !draftLine.iced
-                        ? "border-[#16213f] bg-[#16213f] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                        : "border-[#b9c9dd] bg-white text-[#16213f] hover:border-[#1d4f91] hover:bg-[#f5f9ff]"
+                    className={`flex items-center gap-2 rounded-xl px-4 py-3 text-left transition ${
+                      !draftLine.iced ? "bg-[#1be4db]/15 text-white" : "bg-white/[0.03] text-white/50 hover:bg-white/[0.05]"
                     }`}
-                    style={{ borderRadius: 4 }}
                     onClick={() => onSetIced(false)}
                   >
-                    <span className="block text-lg font-extrabold">Serve hot</span>
+                    <Flame size={16} className={!draftLine.iced ? "text-orange-400" : "text-white/25"} />
+                    <span className="font-semibold">Hot</span>
                   </button>
                   <button
                     type="button"
-                    className={`border px-4 py-4 text-left transition ${
-                      draftLine.iced
-                        ? "border-[#1d4f91] bg-[#1d4f91] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                        : "border-[#b9c9dd] bg-white text-[#16213f] hover:border-[#1d4f91] hover:bg-[#f5f9ff]"
+                    className={`flex items-center gap-2 rounded-xl px-4 py-3 text-left transition ${
+                      draftLine.iced ? "bg-sky-400/15 text-white" : "bg-white/[0.03] text-white/50 hover:bg-white/[0.05]"
                     }`}
-                    style={{ borderRadius: 4 }}
                     onClick={() => onSetIced(true)}
                   >
-                    <span className="block text-lg font-extrabold">Serve iced</span>
+                    <Snowflake size={16} className={draftLine.iced ? "text-sky-400" : "text-white/25"} />
+                    <span className="font-semibold">Iced</span>
                   </button>
                 </div>
               </div>
 
-              {allowedSizes.length > 0 ? (
+              {allowedSizes.length > 0 && (
                 <div>
-                  <div className="mb-3 font-display text-2xl font-extrabold uppercase tracking-[0.08em] text-[#1d4f91]">Size</div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/35">
+                    <Ruler size={13} /> Size
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     {allowedSizes.map((size) => {
-                      const active = (draftLine.sizeOptionId ?? product.defaultSizeOptionId ?? null) === size.id;
-                      const priceDelta =
-                        product.sizeOptionPrices.find((entry) => entry.sizeOptionId === size.id)?.priceDeltaCents ??
-                        size.priceDeltaCents;
-
+                      const active = (draftLine.sizeOptionId ?? null) === size.id;
+                      const priceDelta = getSizeAdjustmentCents(bootstrap, product.id, size.id);
                       return (
                         <button
                           key={size.id}
                           type="button"
-                          className={`border px-4 py-4 text-left transition ${
-                            active
-                              ? "border-[#16213f] bg-[#16213f] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                              : "border-[#b9c9dd] bg-white text-[#16213f] hover:border-[#1d4f91] hover:bg-[#f5f9ff]"
+                          className={`rounded-xl px-4 py-3 text-left transition ${
+                            active ? "bg-[#1be4db]/15 text-white" : "bg-white/[0.03] text-white/50 hover:bg-white/[0.05]"
                           }`}
-                          style={{ borderRadius: 4 }}
                           onClick={() => onSelectSize(size.id)}
                         >
-                          <span className="block text-lg font-extrabold">{size.name}</span>
-                          <span className={`mt-2 block text-base font-semibold ${active ? "text-white/80" : "text-[#4c5f84]"}`}>
-                            {priceDelta === 0
-                              ? "Included in base price"
-                              : `${priceDelta > 0 ? "+" : ""}${formatCurrency(priceDelta)}`}
+                          <span className="block text-sm font-semibold">{size.name}</span>
+                          <span className={`mt-0.5 block text-xs ${active ? "text-[#1be4db]" : "text-white/30"}`}>
+                            {priceDelta === 0 ? "Base price" : `${priceDelta > 0 ? "+" : ""}${formatCurrency(priceDelta)}`}
                           </span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
-              ) : null}
+              )}
 
-              {allowedFlavors.length > 0 ? (
+              {allowedFlavors.length > 0 && (
                 <div>
-                  <div className="mb-3 font-display text-2xl font-extrabold uppercase tracking-[0.08em] text-[#1d4f91]">Flavors</div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/35">
+                    <Droplets size={13} /> Flavors
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                     {allowedFlavors.map((modifier) => {
                       const active = draftLine.modifierIds.includes(modifier.id);
-
                       return (
                         <button
                           key={modifier.id}
                           type="button"
-                          className={`border px-4 py-4 text-left transition ${
-                            active
-                              ? "border-[#1d4f91] bg-[#1d4f91] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                              : "border-[#b9c9dd] bg-white text-[#16213f] hover:border-[#1d4f91] hover:bg-[#f5f9ff]"
+                          className={`rounded-xl px-4 py-3 text-left transition ${
+                            active ? "bg-[#1be4db]/15 text-white" : "bg-white/[0.03] text-white/50 hover:bg-white/[0.05]"
                           }`}
-                          style={{ borderRadius: 4 }}
                           onClick={() => onToggleFlavor(modifier.id)}
                         >
-                          <span className="block text-lg font-extrabold leading-snug">{modifier.name}</span>
-                          <span className={`mt-2 block text-base font-semibold ${active ? "text-white/80" : "text-[#4c5f84]"}`}>
+                          <span className="block text-sm font-semibold leading-snug">{modifier.name}</span>
+                          <span className={`mt-0.5 block text-xs ${active ? "text-[#1be4db]" : "text-white/30"}`}>
                             {modifier.discountFlavor
                               ? `${formatCurrency(modifier.priceCents)} off`
-                              : modifier.priceCents === 0
-                                ? "Included in base price"
-                                : `+${formatCurrency(modifier.priceCents)}`}
+                              : modifier.priceCents === 0 ? "Included" : `+${formatCurrency(modifier.priceCents)}`}
                           </span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-[#d9e2ee] bg-white px-5 py-4 md:px-8">
-            <div className="flex justify-end">
-              <div className="grid w-full max-w-[360px] grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  className="touch-manipulation border border-[#b9c9dd] px-6 py-4 text-base font-bold text-[#16213f] hover:border-[#1d4f91] hover:bg-[#f5f9ff]"
-                  style={{ borderRadius: 4 }}
-                  onClick={onClose}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="touch-manipulation bg-[#16213f] px-6 py-4 text-base font-bold text-white hover:bg-[#0f1730]"
-                  style={{ borderRadius: 4 }}
-                  onClick={onConfirm}
-                >
-                  Add Item
-                </button>
-              </div>
+          <div className="shrink-0 bg-[#162231] px-4 py-3 md:px-5">
+            <div className="flex justify-end gap-2">
+              <button type="button" className="flex items-center gap-1.5 rounded-xl bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white/50 hover:bg-white/[0.07]" onClick={onClose}>
+                <X size={15} /> Cancel
+              </button>
+              <button type="button" className="flex items-center gap-1.5 rounded-xl bg-[#1be4db] px-5 py-2.5 text-sm font-bold text-[#0f1923]" onClick={onConfirm}>
+                <Plus size={15} /> Add to Order
+              </button>
             </div>
           </div>
         </div>

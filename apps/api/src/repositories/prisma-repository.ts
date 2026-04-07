@@ -130,15 +130,11 @@ export class PrismaPosRepository implements PosRepository {
 
       const selectedSizeId = item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
       const size = selectedSizeId ? sizes.get(selectedSizeId) ?? null : null;
-      if (selectedSizeId && (!size || !size.enabled || (product.sizeOptionIds.length > 0 && !product.sizeOptionIds.includes(selectedSizeId)))) {
+      if (selectedSizeId && (!size || !size.enabled)) {
         throw new HttpError(400, `Size ${selectedSizeId} is not allowed for ${product.name}.`);
       }
 
       const modifierSummary = item.modifierIds.map((modifierId) => {
-        if (!product.modifierIds.includes(modifierId)) {
-          throw new HttpError(400, `Flavor ${modifierId} is not allowed for ${product.name}.`);
-        }
-
         const modifier = modifiers.get(modifierId);
         if (!modifier || !modifier.enabled) {
           throw new HttpError(400, `Flavor ${modifierId} is not available.`);
@@ -589,6 +585,21 @@ export class PrismaPosRepository implements PosRepository {
     };
   }
 
+  async deleteCategory(categoryId: string): Promise<void> {
+    const productCount = await this.prisma.product.count({
+      where: {
+        locationId: this.config.LOCATION_ID,
+        categoryId,
+      },
+    });
+
+    if (productCount > 0) {
+      throw new HttpError(400, "Move products out of this category before deleting it.");
+    }
+
+    await this.prisma.category.delete({ where: { id: categoryId } });
+  }
+
   async deleteModifier(modifierId: string): Promise<void> {
     await this.prisma.productModifier.deleteMany({ where: { modifierId } });
     await this.prisma.modifier.delete({ where: { id: modifierId } });
@@ -702,6 +713,20 @@ export class PrismaPosRepository implements PosRepository {
     };
   }
 
+  async deleteSize(sizeId: string): Promise<void> {
+    await this.prisma.product.updateMany({
+      where: {
+        locationId: this.config.LOCATION_ID,
+        defaultSizeOptionId: sizeId,
+      },
+      data: {
+        defaultSizeOptionId: null,
+      },
+    });
+    await this.prisma.productSizeOption.deleteMany({ where: { sizeOptionId: sizeId } });
+    await this.prisma.sizeOption.delete({ where: { id: sizeId } });
+  }
+
   async listProducts(): Promise<Product[]> {
     const products = await this.getProductRecords();
     return products.map((product) => this.mapProduct(product));
@@ -710,6 +735,7 @@ export class PrismaPosRepository implements PosRepository {
   async deleteProduct(productId: string): Promise<void> {
     await this.prisma.productSizeOption.deleteMany({ where: { productId } });
     await this.prisma.productModifier.deleteMany({ where: { productId } });
+    await this.prisma.orderItem.deleteMany({ where: { productId } });
     await this.prisma.product.delete({ where: { id: productId } });
   }
 

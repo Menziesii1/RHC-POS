@@ -1,3 +1,5 @@
+import { Banknote, CreditCard, Trash2, Settings } from "lucide-react";
+
 interface ActionBarProps {
   disabled: boolean;
   onCash: () => void;
@@ -18,51 +20,47 @@ export function ActionBar({
   adminEnabled = true,
 }: ActionBarProps) {
   return (
-    <div className="shrink-0 border-t border-[#dde2ea] px-4 pb-4 pt-3">
-      {/* Primary tender buttons */}
+    <div className="shrink-0 bg-[#0c1520] px-3 pb-3 pt-2">
       <div className={`grid gap-2 ${cardEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button
           type="button"
-          className="py-5 text-center font-bold text-white transition disabled:opacity-35"
-          style={{ borderRadius: 4, background: disabled ? "#5190E6" : "#5190E6" }}
+          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-5 text-sm font-bold text-white transition active:scale-[0.97] disabled:opacity-30"
           disabled={disabled}
           onClick={onCash}
         >
-          <span className="block text-[0.65rem] font-bold uppercase tracking-[0.2em] opacity-70">Tender</span>
-          <span className="block text-xl font-extrabold">Cash</span>
+          <Banknote size={18} />
+          Cash
         </button>
         {cardEnabled ? (
           <button
             type="button"
-            className="py-5 text-center font-bold text-white transition disabled:opacity-35"
-            style={{ borderRadius: 4, background: "#263362" }}
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#5191e5] py-5 text-sm font-bold text-white transition active:scale-[0.97] disabled:opacity-30"
             disabled={disabled}
             onClick={onCard}
           >
-            <span className="block text-[0.65rem] font-bold uppercase tracking-[0.2em] opacity-70">Tender</span>
-            <span className="block text-xl font-extrabold">Card</span>
+            <CreditCard size={18} />
+            Card
           </button>
         ) : null}
       </div>
 
-      {/* Utility row */}
       <div className={`mt-2 grid gap-2 ${adminEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button
           type="button"
-          className="border border-[#dde2ea] py-2.5 text-xs font-bold uppercase tracking-wide text-[#263362]/60 transition hover:border-[#5190E6] hover:text-[#263362] disabled:opacity-35"
-          style={{ borderRadius: 4 }}
+          className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 py-2.5 text-[11px] font-medium text-white/35 transition hover:text-white/50 disabled:opacity-30"
           disabled={disabled}
           onClick={onClear}
         >
+          <Trash2 size={13} />
           Clear
         </button>
         {adminEnabled ? (
           <button
             type="button"
-            className="border border-[#dde2ea] py-2.5 text-xs font-bold uppercase tracking-wide text-[#263362]/60 transition hover:border-[#5190E6] hover:text-[#263362]"
-            style={{ borderRadius: 4 }}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 py-2.5 text-[11px] font-medium text-white/35 transition hover:text-white/50"
             onClick={onAdmin}
           >
+            <Settings size={13} />
             Admin
           </button>
         ) : null}

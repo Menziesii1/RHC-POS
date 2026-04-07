@@ -1,4 +1,5 @@
 import { formatCurrency, type AnalyticsRangeResponse, type SummaryResponse } from "@rhc-pos/shared";
+import { TrendingUp, DollarSign, ShoppingCart, Calendar, BarChart3, Banknote, CreditCard, Package, ArrowDownRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { AdminWorkspaceHeader } from "./AdminWorkspaceHeader";
@@ -55,195 +56,217 @@ export function AnalyticsPage({
   );
 
   return (
-    <div className="flex min-h-[760px] flex-col">
-      <AdminWorkspaceHeader
-        eyebrow="Sales Intelligence"
-        title="Analytics"
-        description="Review financial performance and product demand over time. This page is built to answer operational questions quickly, not just decorate the data."
-        activeTab="analytics"
-        onSelectTab={(tab) => {
-          if (tab === "inventory" && canOpenInventory) {
-            onNavigateInventory();
+    <div className="min-h-[760px] p-4 md:p-5">
+      <div className="mx-auto flex min-h-[760px] max-w-[1600px] flex-col">
+        <AdminWorkspaceHeader
+          eyebrow="Sales Intelligence"
+          title="Analytics"
+          description="Review financial performance and product demand over time."
+          activeTab="analytics"
+          onSelectTab={(tab) => {
+            if (tab === "inventory" && canOpenInventory) {
+              onNavigateInventory();
+            }
+          }}
+          onClose={onClose}
+          actions={
+            <div className="inline-flex overflow-hidden rounded-xl bg-white/[0.02]">
+              <button
+                type="button"
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
+                  mode === "financial" ? "bg-[#1be4db] text-[#0f1923]" : "bg-white/[0.03] text-white/45 hover:text-white/65"
+                }`}
+                onClick={() => setMode("financial")}
+              >
+                <DollarSign size={13} />
+                Financial
+              </button>
+              <button
+                type="button"
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
+                  mode === "inventory" ? "bg-[#1be4db] text-[#0f1923]" : "bg-white/[0.03] text-white/45 hover:text-white/65"
+                }`}
+                onClick={() => setMode("inventory")}
+              >
+                <Package size={13} />
+                Demand
+              </button>
+            </div>
           }
-        }}
-        onClose={onClose}
-        actions={
-          <div className="flex border border-[#dbe6f4] bg-[#f7fbff]">
-            <button
-              type="button"
-              className={`px-5 py-4 text-sm font-bold uppercase tracking-[0.22em] ${
-                mode === "financial" ? "bg-[#263362] text-white" : "text-[#263362]/60"
-              }`}
-              onClick={() => setMode("financial")}
-            >
-              Financial
-            </button>
-            <button
-              type="button"
-              className={`border-l border-[#dbe6f4] px-5 py-4 text-sm font-bold uppercase tracking-[0.22em] ${
-                mode === "inventory" ? "bg-[#263362] text-white" : "text-[#263362]/60"
-              }`}
-              onClick={() => setMode("inventory")}
-            >
-              Inventory Demand
-            </button>
-          </div>
-        }
-      />
+        />
 
-      {mode === "financial" ? (
-        <>
-          <div className="mb-6 grid gap-4 xl:grid-cols-5">
-            <div className="brand-stat">
-              <div className="brand-stat-label">Range Sales</div>
-              <div className="brand-stat-value">{formatCurrency(totalSalesOverRange)}</div>
-            </div>
-            <div className="brand-stat">
-              <div className="brand-stat-label">Today</div>
-              <div className="brand-stat-value">{formatCurrency(summary?.totalSalesCents ?? 0)}</div>
-            </div>
-            <div className="brand-stat">
-              <div className="brand-stat-label">Average Ticket</div>
-              <div className="brand-stat-value">{formatCurrency(avgTicket)}</div>
-            </div>
-            <div className="brand-stat">
-              <div className="brand-stat-label">Orders</div>
-              <div className="brand-stat-value">{totalOrdersOverRange}</div>
-            </div>
-            <div className="brand-stat">
-              <div className="brand-stat-label">Best Day</div>
-              <div className="brand-stat-value text-2xl">{bestDay?.date ?? "N/A"}</div>
-            </div>
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-            <section className="brand-section p-5">
-              <div className="brand-section-title">Revenue Over Time</div>
-              <div className="mt-5 grid gap-3">
-                {salesSeries.map((entry) => (
-                  <div key={entry.date} className="grid grid-cols-[90px_1fr_120px] items-center gap-4">
-                    <div className="text-sm font-semibold text-[#263362]/70">{entry.date.slice(5)}</div>
-                    <div className="h-4 bg-[#e8eef7]">
-                      <div className="h-4 bg-[#263362]" style={{ width: barWidth(entry.totalSalesCents, revenueMax) }} />
-                    </div>
-                    <div className="text-right font-semibold text-[#263362]">{formatCurrency(entry.totalSalesCents)}</div>
-                  </div>
-                ))}
+        {mode === "financial" ? (
+          <div className="grid gap-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><TrendingUp size={11} /> Range Sales</div>
+                <div className="brand-stat-value">{formatCurrency(totalSalesOverRange)}</div>
               </div>
-            </section>
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><DollarSign size={11} /> Today</div>
+                <div className="brand-stat-value">{formatCurrency(summary?.totalSalesCents ?? 0)}</div>
+              </div>
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><ShoppingCart size={11} /> Avg Ticket</div>
+                <div className="brand-stat-value">{formatCurrency(avgTicket)}</div>
+              </div>
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><BarChart3 size={11} /> Orders</div>
+                <div className="brand-stat-value">{totalOrdersOverRange}</div>
+              </div>
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><Calendar size={11} /> Best Day</div>
+                <div className="brand-stat-value text-2xl">{bestDay?.date ?? "N/A"}</div>
+              </div>
+            </div>
 
-            <section className="grid gap-5">
-              <div className="brand-section p-5">
-                <div className="brand-section-title">Tender Mix</div>
-                <div className="mt-5 space-y-4">
-                  <div>
-                    <div className="mb-2 flex justify-between text-sm font-semibold text-[#263362]">
-                      <span>Cash</span>
-                      <span>{formatCurrency(summary?.cashSalesCents ?? 0)}</span>
-                    </div>
-                    <div className="h-4 bg-[#e8eef7]">
-                      <div className="h-4 bg-[#5190E6]" style={{ width: barWidth(summary?.cashSalesCents ?? 0, Math.max(summary?.totalSalesCents ?? 0, 1)) }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="mb-2 flex justify-between text-sm font-semibold text-[#263362]">
-                      <span>Card</span>
-                      <span>{formatCurrency(summary?.cardSalesCents ?? 0)}</span>
-                    </div>
-                    <div className="h-4 bg-[#e8eef7]">
-                      <div className="h-4 bg-[#1CE4DB]" style={{ width: barWidth(summary?.cardSalesCents ?? 0, Math.max(summary?.totalSalesCents ?? 0, 1)) }} />
-                    </div>
-                  </div>
+            <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+              <section className="overflow-hidden rounded-xl bg-white/[0.02]">
+                <div className="bg-white/[0.02] px-5 py-3">
+                  <div className="brand-section-title">Revenue Over Time</div>
                 </div>
-              </div>
-
-              <div className="brand-section p-5">
-                <div className="brand-section-title">Category Performance</div>
-                <div className="mt-4 space-y-3">
-                  {(summary?.salesByCategory ?? []).map((item) => (
-                    <div key={item.id} className="flex items-center justify-between text-[#263362]">
-                      <span>{item.name}</span>
-                      <span className="font-bold">{formatCurrency(item.totalCents)}</span>
+                <div className="grid gap-2.5 p-5">
+                  {salesSeries.map((entry) => (
+                    <div key={entry.date} className="grid grid-cols-[88px_1fr_110px] items-center gap-4">
+                      <div className="text-sm font-semibold text-white/50">{entry.date.slice(5)}</div>
+                      <div className="h-3.5 overflow-hidden rounded-full bg-white/[0.04]">
+                        <div className="h-3.5 rounded-full bg-[#1be4db]" style={{ width: barWidth(entry.totalSalesCents, revenueMax) }} />
+                      </div>
+                      <div className="text-right font-semibold text-white">{formatCurrency(entry.totalSalesCents)}</div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </section>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="mb-6 grid gap-4 xl:grid-cols-4">
-            <div className="brand-stat">
-              <div className="brand-stat-label">Units Sold</div>
-              <div className="brand-stat-value">{productSeries.reduce((sum, item) => sum + item.totalQuantity, 0)}</div>
-            </div>
-            <div className="brand-stat">
-              <div className="brand-stat-label">Top Mover</div>
-              <div className="brand-stat-value text-2xl">{productSeries[0]?.productName ?? "None"}</div>
-            </div>
-            <div className="brand-stat">
-              <div className="brand-stat-label">Slowest Mover</div>
-              <div className="brand-stat-value text-2xl">{slowMovers[0]?.productName ?? "None"}</div>
-            </div>
-            <div className="brand-stat">
-              <div className="brand-stat-label">Tracked Range</div>
-              <div className="brand-stat-value text-2xl">{analytics?.days ?? 0} days</div>
-            </div>
-          </div>
+              </section>
 
-          <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-            <section className="brand-section p-5">
-              <div className="brand-section-title">Top Movers</div>
-              <div className="mt-5 space-y-3">
-                {productSeries.slice(0, 8).map((entry) => (
-                  <div key={entry.productId} className="grid grid-cols-[minmax(0,1fr)_90px] items-center gap-4">
+              <section className="grid gap-4">
+                <div className="overflow-hidden rounded-xl bg-white/[0.02]">
+                  <div className="bg-white/[0.02] px-4 py-3">
+                    <div className="brand-section-title">Tender Mix</div>
+                  </div>
+                  <div className="grid gap-4 p-4">
                     <div>
-                      <div className="font-semibold text-[#263362]">{entry.productName}</div>
-                      <div className="mt-2 h-3 bg-[#e8eef7]">
-                        <div className="h-3 bg-[#263362]" style={{ width: barWidth(entry.totalQuantity, quantityMax) }} />
+                      <div className="mb-2 flex items-center justify-between text-sm font-semibold text-white/70">
+                        <span className="flex items-center gap-1.5"><Banknote size={13} /> Cash</span>
+                        <span>{formatCurrency(summary?.cashSalesCents ?? 0)}</span>
+                      </div>
+                      <div className="h-3.5 overflow-hidden rounded-full bg-white/[0.04]">
+                        <div
+                          className="h-3.5 rounded-full bg-[#1be4db]"
+                          style={{ width: barWidth(summary?.cashSalesCents ?? 0, Math.max(summary?.totalSalesCents ?? 0, 1)) }}
+                        />
                       </div>
                     </div>
-                    <div className="text-right font-bold text-[#263362]">{entry.totalQuantity}</div>
+                    <div>
+                      <div className="mb-2 flex items-center justify-between text-sm font-semibold text-white/70">
+                        <span className="flex items-center gap-1.5"><CreditCard size={13} /> Card</span>
+                        <span>{formatCurrency(summary?.cardSalesCents ?? 0)}</span>
+                      </div>
+                      <div className="h-3.5 overflow-hidden rounded-full bg-white/[0.04]">
+                        <div
+                          className="h-3.5 rounded-full bg-emerald-500"
+                          style={{ width: barWidth(summary?.cardSalesCents ?? 0, Math.max(summary?.totalSalesCents ?? 0, 1)) }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="grid gap-5">
-              <div className="brand-section p-5">
-                <div className="brand-section-title">Slow Movers</div>
-                <div className="mt-4 space-y-3">
-                  {slowMovers.map((entry) => (
-                    <div key={entry.productId} className="flex items-center justify-between text-[#263362]">
-                      <span>{entry.productName}</span>
-                      <span className="font-bold">{entry.totalQuantity}</span>
-                    </div>
-                  ))}
                 </div>
-              </div>
 
-              <div className="brand-section p-5">
-                <div className="brand-section-title">Size & Flavor Signals</div>
-                <div className="mt-4 grid gap-3">
-                  {(summary?.sizeBreakdown ?? []).slice(0, 4).map((item) => (
-                    <div key={item.id} className="flex items-center justify-between text-[#263362]">
-                      <span>Size: {item.name}</span>
-                      <span className="font-bold">{item.quantity}</span>
-                    </div>
-                  ))}
-                  {(summary?.flavorBreakdown ?? []).slice(0, 4).map((item) => (
-                    <div key={item.id} className="flex items-center justify-between text-[#263362]">
-                      <span>Flavor: {item.name}</span>
-                      <span className="font-bold">{item.quantity}</span>
-                    </div>
-                  ))}
+                <div className="overflow-hidden rounded-xl bg-white/[0.02]">
+                  <div className="bg-white/[0.02] px-4 py-3">
+                    <div className="brand-section-title">Category Performance</div>
+                  </div>
+                  <div className="grid gap-2.5 p-4">
+                    {(summary?.salesByCategory ?? []).map((item) => (
+                      <div key={item.id} className="flex items-center justify-between">
+                        <span className="text-white/60">{item.name}</span>
+                        <span className="font-bold text-white">{formatCurrency(item.totalCents)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
-        </>
-      )}
+        ) : (
+          <div className="grid gap-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><Package size={11} /> Units Sold</div>
+                <div className="brand-stat-value">{productSeries.reduce((sum, item) => sum + item.totalQuantity, 0)}</div>
+              </div>
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><TrendingUp size={11} /> Top Mover</div>
+                <div className="brand-stat-value text-2xl">{productSeries[0]?.productName ?? "None"}</div>
+              </div>
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><ArrowDownRight size={11} /> Slowest</div>
+                <div className="brand-stat-value text-2xl">{slowMovers[0]?.productName ?? "None"}</div>
+              </div>
+              <div className="brand-stat">
+                <div className="flex items-center gap-1.5 brand-stat-label"><Calendar size={11} /> Range</div>
+                <div className="brand-stat-value text-2xl">{analytics?.days ?? 0} days</div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <section className="overflow-hidden rounded-xl bg-white/[0.02]">
+                <div className="bg-white/[0.02] px-5 py-3">
+                  <div className="brand-section-title">Top Movers</div>
+                </div>
+                <div className="grid gap-3 p-5">
+                  {productSeries.slice(0, 8).map((entry) => (
+                    <div key={entry.productId} className="grid grid-cols-[minmax(0,1fr)_90px] items-center gap-4">
+                      <div>
+                        <div className="font-semibold text-white/80">{entry.productName}</div>
+                        <div className="mt-1.5 h-3 overflow-hidden rounded-full bg-white/[0.04]">
+                          <div className="h-3 rounded-full bg-[#1be4db]" style={{ width: barWidth(entry.totalQuantity, quantityMax) }} />
+                        </div>
+                      </div>
+                      <div className="text-right font-bold text-white">{entry.totalQuantity}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="grid gap-4">
+                <div className="overflow-hidden rounded-xl bg-white/[0.02]">
+                  <div className="bg-white/[0.02] px-4 py-3">
+                    <div className="brand-section-title">Slow Movers</div>
+                  </div>
+                  <div className="grid gap-2.5 p-4">
+                    {slowMovers.map((entry) => (
+                      <div key={entry.productId} className="flex items-center justify-between">
+                        <span className="text-white/60">{entry.productName}</span>
+                        <span className="font-bold text-white">{entry.totalQuantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="overflow-hidden rounded-xl bg-white/[0.02]">
+                  <div className="bg-white/[0.02] px-4 py-3">
+                    <div className="brand-section-title">Size & Flavor Signals</div>
+                  </div>
+                  <div className="grid gap-2.5 p-4">
+                    {(summary?.sizeBreakdown ?? []).slice(0, 4).map((item) => (
+                      <div key={item.id} className="flex items-center justify-between">
+                        <span className="text-white/60">Size: {item.name}</span>
+                        <span className="font-bold text-white">{item.quantity}</span>
+                      </div>
+                    ))}
+                    {(summary?.flavorBreakdown ?? []).slice(0, 4).map((item) => (
+                      <div key={item.id} className="flex items-center justify-between">
+                        <span className="text-white/60">Flavor: {item.name}</span>
+                        <span className="font-bold text-white">{item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

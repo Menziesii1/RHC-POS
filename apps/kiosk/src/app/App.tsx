@@ -13,6 +13,7 @@ import { ProductGrid } from "../components/ProductGrid";
 import { SuccessScreen } from "../components/SuccessScreen";
 import { TopStatusBar } from "../components/TopStatusBar";
 import { buildCartView } from "../lib/cart";
+import { useConfirm } from "../lib/confirm";
 import { ADMIN_ENABLED, CARD_ENABLED } from "../lib/env";
 import { clearPersistedState, loadPersistedState, savePersistedState } from "../lib/storage";
 import { API_BASE_URL, api } from "../services/api";
@@ -21,7 +22,7 @@ import { useAppStore } from "../store/app-store";
 async function ensureOrder(
   currentOrder: DraftOrder | null,
   cashierId: string,
-  cartItems: Array<{ productId: string; quantity: number; modifierIds: string[] }>,
+  cartItems: Array<{ productId: string; quantity: number; sizeOptionId?: string | null; modifierIds: string[] }>,
 ) {
   if (currentOrder && currentOrder.status !== "paid") {
     return currentOrder;
@@ -29,8 +30,46 @@ async function ensureOrder(
   return api.createOrder({ cashierId, items: cartItems });
 }
 
+function SplashCard({
+  title,
+  body,
+  detail,
+  loading = false,
+}: {
+  title: string;
+  body: string;
+  detail?: string;
+  loading?: boolean;
+}) {
+  return (
+    <main className="pos-app-shell flex items-center justify-center px-4 py-6">
+      <div className="pos-ambient pos-ambient-primary" />
+      <div className="pos-ambient pos-ambient-warm" />
+
+      <section className="pos-center-card">
+        <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">River Hills Coffee</div>
+        <div className="mt-4 font-display text-4xl font-extrabold tracking-tight text-white">RHC POS</div>
+        <div className="mt-4 text-lg font-semibold text-white/70">{title}</div>
+        <p className="mt-3 max-w-[32rem] text-sm leading-7 text-white/40">{body}</p>
+        {detail ? (
+          <div className="mt-6 rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-white/50">
+            {detail}
+          </div>
+        ) : null}
+        {loading ? (
+          <div className="mt-8 flex items-center gap-4">
+            <div className="pos-spinner h-12 w-12 animate-spin" />
+            <div className="text-sm font-medium uppercase tracking-widest text-white/35">Booting register</div>
+          </div>
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
 export function App() {
   const store = useAppStore();
+  const confirm = useConfirm();
   const [now, setNow] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
@@ -86,25 +125,25 @@ export function App() {
       timeoutId = window.setTimeout(() => void fetchBootstrap(), delayMs);
     };
 
-      const fetchBootstrap = async () => {
-        try {
-          const bootstrap = await api.getBootstrap();
-          if (cancelled) return;
-          store.setBootstrap(bootstrap);
-          store.setBackendOnline(true);
-          setBootstrapError(null);
-          scheduleNext(15000);
-        } catch (error) {
-          if (cancelled) return;
-          store.setBackendOnline(false);
-          setBootstrapError(
-            error instanceof Error
-              ? error.message
-              : `Unable to reach the API at ${API_BASE_URL}.`,
-          );
-          // Back off to 5 s when the API is unreachable to avoid flooding
-          scheduleNext(5000);
-        } finally {
+    const fetchBootstrap = async () => {
+      try {
+        const bootstrap = await api.getBootstrap();
+        if (cancelled) return;
+        store.setBootstrap(bootstrap);
+        store.setBackendOnline(true);
+        setBootstrapError(null);
+        scheduleNext(15000);
+      } catch (error) {
+        if (cancelled) return;
+        store.setBackendOnline(false);
+        setBootstrapError(
+          error instanceof Error
+            ? error.message
+            : `Unable to reach the API at ${API_BASE_URL}.`,
+        );
+        // Back off to 5 s when the API is unreachable to avoid flooding
+        scheduleNext(5000);
+      } finally {
         if (!cancelled) setLoading(false);
       }
     };
@@ -240,9 +279,14 @@ export function App() {
     }
 
     mutateCart(() => {
-      const defaultSize = product.defaultSizeOptionId ?? product.sizeOptionIds[0] ?? null;
-      const hasEnabledModifiers = bootstrap.modifiers.some((m) => m.enabled && product.modifierIds.includes(m.id));
-      const needsConfigurator = product.sizeOptionIds.length > 0 || hasEnabledModifiers;
+      const defaultSize =
+        (product.defaultSizeOptionId &&
+        bootstrap.sizes.some((size) => size.id === product.defaultSizeOptionId && size.enabled)
+          ? product.defaultSizeOptionId
+          : bootstrap.sizes.find((size) => size.enabled)?.id) ?? null;
+      const hasEnabledModifiers = bootstrap.modifiers.some((modifier) => modifier.enabled);
+      const hasEnabledSizes = bootstrap.sizes.some((size) => size.enabled);
+      const needsConfigurator = hasEnabledSizes || hasEnabledModifiers;
 
       if (needsConfigurator) {
         store.beginDraftLine(productId, defaultSize);
@@ -269,6 +313,7 @@ export function App() {
         store.cartLines.map((line) => ({
           productId: line.productId,
           quantity: line.quantity,
+          sizeOptionId: line.sizeOptionId ?? null,
           modifierIds: line.modifierIds,
         })),
       );
@@ -300,6 +345,7 @@ export function App() {
         store.cartLines.map((line) => ({
           productId: line.productId,
           quantity: line.quantity,
+          sizeOptionId: line.sizeOptionId ?? null,
           modifierIds: line.modifierIds,
         })),
       );
@@ -360,13 +406,42 @@ export function App() {
     await refreshAnalytics();
   };
 
+  const handleClearCart = async () => {
+    if (cartView.lines.length === 0) {
+      return;
+    }
+
+    const confirmed = await confirm({ message: "Clear the cart?" });
+    if (!confirmed) {
+      return;
+    }
+
+    store.clearCart();
+    clearPersistedState();
+  };
+
   const handleProductSave = async (productId: string, input: Parameters<typeof api.updateProduct>[2]) => {
     await api.updateProduct(store.adminPin, productId, input);
     await refreshBootstrap();
   };
 
+  const handleCategorySave = async (categoryId: string, input: Parameters<typeof api.updateCategory>[2]) => {
+    await api.updateCategory(store.adminPin, categoryId, input);
+    await refreshBootstrap();
+  };
+
+  const handleCategoryDelete = async (categoryId: string) => {
+    await api.deleteCategory(store.adminPin, categoryId);
+    await refreshBootstrap();
+  };
+
   const handleSizeSave = async (sizeId: string, input: Parameters<typeof api.updateSize>[2]) => {
     await api.updateSize(store.adminPin, sizeId, input);
+    await refreshBootstrap();
+  };
+
+  const handleSizeDelete = async (sizeId: string) => {
+    await api.deleteSize(store.adminPin, sizeId);
     await refreshBootstrap();
   };
 
@@ -408,123 +483,116 @@ export function App() {
 
   if (loading && !store.bootstrap) {
     return (
-      <main className="flex h-screen items-center justify-center bg-[#f3f4f8]">
-        <div className="border border-[#dde2ea] bg-white p-10 text-center" style={{ borderRadius: 4 }}>
-          <div className="font-display text-5xl font-bold text-[#263362]">RHC POS</div>
-          <div className="mt-3 text-lg text-[#263362]/60">Loading register...</div>
-          <div className="mt-6 flex justify-center">
-            <div
-              className="h-8 w-8 animate-spin border-[3px] border-[#dde2ea] border-t-[#5190E6]"
-              style={{ borderRadius: "50%" }}
-            />
-          </div>
-        </div>
-      </main>
+      <SplashCard
+        title="Loading register"
+        body="Syncing products, pricing, and register status so the kiosk starts from a clean operational state."
+        loading
+      />
     );
   }
 
   if (!store.bootstrap) {
     return (
-      <main className="flex h-screen items-center justify-center bg-[#f3f4f8] p-6">
-        <div className="max-w-xl border border-[#dde2ea] bg-white p-10 text-center" style={{ borderRadius: 4 }}>
-          <div className="font-display text-5xl font-bold text-[#263362]">RHC POS</div>
-          <div className="mt-3 text-2xl font-bold text-[#263362]">Register cannot reach the backend</div>
-          <div className="mt-4 text-lg text-[#263362]/75">
-            {bootstrapError ?? "The kiosk is retrying the connection every 5 seconds."}
-          </div>
-          <div className="mt-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#5190E6]">
-            API target: {API_BASE_URL}
-          </div>
-        </div>
-      </main>
+      <SplashCard
+        title="Register cannot reach the backend"
+        body={bootstrapError ?? "The kiosk is retrying the connection every 5 seconds while the local shell stays ready."}
+        detail={`API target: ${API_BASE_URL}`}
+      />
     );
   }
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-[#f3f4f8]">
-      <TopStatusBar
-        bootstrap={store.bootstrap}
-        status={registerStatus}
-        timeLabel={now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-      />
+    <main className="pos-app-shell p-3 lg:p-5">
+      <div className="pos-ambient pos-ambient-primary" />
+      <div className="pos-ambient pos-ambient-warm" />
 
-      {store.view === "register" ? (
-        <div className="flex flex-1 overflow-hidden">
-          <ProductGrid
-            bootstrap={store.bootstrap}
-            selectedCategoryId={store.selectedCategoryId}
-            onSelectCategory={store.setSelectedCategoryId}
-            onSelectProduct={handleSelectProduct}
-          />
-          <CartPanel
-            bootstrap={store.bootstrap}
-            lines={cartView.lines}
-            selectedLineId={store.selectedLineId}
-            subtotalCents={cartView.subtotalCents}
-            taxCents={cartView.taxCents}
-            totalCents={cartView.totalCents}
-            paymentError={store.paymentError}
-            onSelectLine={store.selectLine}
-            onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
-            onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
-            onToggleModifier={(lineId, modifierId) => mutateCart(() => store.toggleModifier(lineId, modifierId))}
-            footer={
-              <ActionBar
-                disabled={cartView.lines.length === 0}
-                onCash={() => void handleStartCash()}
-                onCard={() => void handleStartCard()}
-                onClear={() => {
-                  if (cartView.lines.length > 0 && window.confirm("Clear the cart?")) {
-                    store.clearCart();
-                    clearPersistedState();
-                  }
-                }}
-                onAdmin={handleAdminOpen}
-                cardEnabled={CARD_ENABLED}
-                adminEnabled={ADMIN_ENABLED}
+      <section className="pos-workspace">
+        <TopStatusBar
+          bootstrap={store.bootstrap}
+          status={registerStatus}
+          timeLabel={now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+        />
+
+        {store.view === "register" ? (
+          <div className="flex min-h-0 flex-1 p-3 lg:p-4">
+            <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl bg-[#0c1520]">
+              <ProductGrid
+                bootstrap={store.bootstrap}
+                selectedCategoryId={store.selectedCategoryId}
+                onSelectCategory={store.setSelectedCategoryId}
+                onSelectProduct={handleSelectProduct}
               />
-            }
-          />
-        </div>
-      ) : null}
+              <CartPanel
+                bootstrap={store.bootstrap}
+                lines={cartView.lines}
+                selectedLineId={store.selectedLineId}
+                totalCents={cartView.totalCents}
+                paymentError={store.paymentError}
+                onSelectLine={store.selectLine}
+                onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
+                onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
+                onToggleModifier={(lineId, modifierId) => mutateCart(() => store.toggleModifier(lineId, modifierId))}
+                footer={
+                  <ActionBar
+                    disabled={cartView.lines.length === 0}
+                    onCash={() => void handleStartCash()}
+                    onCard={() => void handleStartCard()}
+                    onClear={() => void handleClearCart()}
+                    onAdmin={handleAdminOpen}
+                    cardEnabled={CARD_ENABLED}
+                    adminEnabled={ADMIN_ENABLED}
+                  />
+                }
+              />
+            </div>
+          </div>
+        ) : null}
 
-      {store.view === "inventory" && ADMIN_ENABLED ? (
-        <div className="flex-1 overflow-auto p-5">
-          <InventoryControlPage
-            bootstrap={store.bootstrap}
-            analytics={analytics}
-            onClose={() => store.setView("register")}
-            onNavigateAnalytics={() => void handleSummaryOpen()}
-            onProductSave={handleProductSave}
-            onProductDelete={handleProductDelete}
-            onCreateProduct={handleCreateProduct}
-            onSizeSave={handleSizeSave}
-            onFlavorSave={handleFlavorSave}
-            onCreateCategory={handleCreateCategory}
-            onCreateFlavor={handleCreateFlavor}
-            onCreateSize={handleCreateSize}
-            onTaxSave={handleTaxSave}
-          />
-        </div>
-      ) : null}
+        {store.view === "inventory" && ADMIN_ENABLED ? (
+          <div className="flex-1 overflow-auto p-3 lg:p-4">
+            <div className="pos-view-panel p-5 lg:p-6">
+              <InventoryControlPage
+                bootstrap={store.bootstrap}
+                analytics={analytics}
+                onClose={() => store.setView("register")}
+                onNavigateAnalytics={() => void handleSummaryOpen()}
+                onCategorySave={handleCategorySave}
+                onCategoryDelete={handleCategoryDelete}
+                onProductSave={handleProductSave}
+                onProductDelete={handleProductDelete}
+                onCreateProduct={handleCreateProduct}
+                onSizeSave={handleSizeSave}
+                onSizeDelete={handleSizeDelete}
+                onFlavorSave={handleFlavorSave}
+                onCreateCategory={handleCreateCategory}
+                onCreateFlavor={handleCreateFlavor}
+                onCreateSize={handleCreateSize}
+                onTaxSave={handleTaxSave}
+              />
+            </div>
+          </div>
+        ) : null}
 
-      {store.view === "analytics" ? (
-        <div className="flex-1 overflow-auto p-5">
-          <AnalyticsPage
-            summary={summary}
-            analytics={analytics}
-            onClose={() => store.setView("register")}
-            onNavigateInventory={() => {
-              if (ADMIN_ENABLED && store.adminUnlocked) {
-                store.setView("inventory");
-                return;
-              }
-              handleAdminOpen();
-            }}
-            canOpenInventory={ADMIN_ENABLED && store.adminUnlocked}
-          />
-        </div>
-      ) : null}
+        {store.view === "analytics" ? (
+          <div className="flex-1 overflow-auto p-3 lg:p-4">
+            <div className="pos-view-panel p-5 lg:p-6">
+              <AnalyticsPage
+                summary={summary}
+                analytics={analytics}
+                onClose={() => store.setView("register")}
+                onNavigateInventory={() => {
+                  if (ADMIN_ENABLED && store.adminUnlocked) {
+                    store.setView("inventory");
+                    return;
+                  }
+                  handleAdminOpen();
+                }}
+                canOpenInventory={ADMIN_ENABLED && store.adminUnlocked}
+              />
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       {store.overlay === "cash" ? (
         <CashPaymentOverlay
@@ -572,7 +640,6 @@ export function App() {
       {store.overlay === "success" && store.successOrder ? (
         <SuccessScreen orderNumber={store.successOrder.orderNumber} totalCents={store.successOrder.totalCents} />
       ) : null}
-
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import { formatCurrency } from "@rhc-pos/shared";
+import { CreditCard, Smartphone, Loader2, X, AlertTriangle } from "lucide-react";
 
 interface CardPaymentOverlayProps {
   totalCents: number;
@@ -7,48 +8,53 @@ interface CardPaymentOverlayProps {
   onCancel: () => void;
 }
 
-export function CardPaymentOverlay({
-  totalCents,
-  statusLabel,
-  failureMessage,
-  onCancel,
-}: CardPaymentOverlayProps) {
+export function CardPaymentOverlay({ totalCents, statusLabel, failureMessage, onCancel }: CardPaymentOverlayProps) {
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#263362]/50 p-6 backdrop-blur-sm">
-      <div className="touch-card grid w-full max-w-4xl overflow-hidden md:grid-cols-[1.2fr_0.8fr]">
-        <div className="bg-white p-8 md:p-10">
-          <div className="brand-kicker">Card payment</div>
-          <div className="mt-3 font-display text-6xl font-extrabold tracking-tight text-[#263362]">
-            {formatCurrency(totalCents)}
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm md:p-6">
+      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-[#0f1923] md:grid-cols-[1.15fr_0.85fr]">
+        <div className="bg-[#0c1520] p-7 text-white md:p-10">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-[#5191e5]">
+            <CreditCard size={14} /> Card Payment
           </div>
-          <p className="mt-6 text-2xl font-semibold text-[#263362]">{statusLabel}</p>
-          <p className="mt-2 text-lg text-[#263362]/70">Customer may tap, insert, or swipe on the WisePOS E.</p>
-          {failureMessage ? (
-            <p className="mt-5 border border-[#e6b6ae] bg-[#fdf6f4] p-4 text-lg text-[#ba4a2f]">{failureMessage}</p>
-          ) : null}
+          <div className="mt-4 font-display text-5xl font-extrabold text-white md:text-6xl">{formatCurrency(totalCents)}</div>
+          <div className="mt-5 flex items-center gap-3">
+            <Loader2 size={20} className="animate-spin text-[#5191e5]" />
+            <p className="text-lg font-semibold text-white/70">{statusLabel}</p>
+          </div>
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-white/35">
+            <Smartphone size={14} /> Tap, insert, or swipe on the reader
+          </p>
+          {failureMessage && (
+            <div className="mt-5 flex items-start gap-2 rounded-xl bg-red-500/10 p-3">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-400" />
+              <span className="text-sm text-red-300">{failureMessage}</span>
+            </div>
+          )}
         </div>
-
-        <div className="border-t border-[#d7e2f1] bg-[#f7fbff] p-8 md:border-l md:border-t-0">
-          <div className="brand-section bg-white p-5">
-            <div className="brand-section-title">Status</div>
-            <div className="mt-4 space-y-3 text-[#263362]">
-              <div className="flex items-center justify-between border-b border-[#edf2f8] pb-2">
-                <span>Reader</span>
-                <span className="font-bold">Waiting</span>
+        <div className="bg-[#162231] p-7 md:p-8">
+          <div className="rounded-xl bg-white/[0.03] p-5">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#5191e5]">Status</div>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between pb-2.5">
+                <span className="flex items-center gap-1.5 text-sm text-white/40"><Smartphone size={13} /> Reader</span>
+                <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">Waiting</span>
               </div>
-              <div className="flex items-center justify-between border-b border-[#edf2f8] pb-2">
-                <span>Amount</span>
-                <span className="font-bold">{formatCurrency(totalCents)}</span>
+              <div className="flex items-center justify-between pb-2.5">
+                <span className="flex items-center gap-1.5 text-sm text-white/40"><CreditCard size={13} /> Amount</span>
+                <span className="font-display text-lg font-extrabold text-white">{formatCurrency(totalCents)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Next</span>
-                <span className="font-bold text-[#1CE4DB]">Reader interaction</span>
+                <span className="text-sm text-white/40">Next</span>
+                <span className="text-sm font-semibold text-[#5191e5]">Reader interaction</span>
               </div>
             </div>
           </div>
-
-          <button type="button" className="touch-button mt-6 w-full bg-[#ba4a2f] text-white" onClick={onCancel}>
-            Cancel
+          <button
+            type="button"
+            className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl bg-red-500/15 px-5 py-3.5 text-sm font-semibold text-red-300 hover:bg-red-500/20"
+            onClick={onCancel}
+          >
+            <X size={16} /> Cancel Payment
           </button>
         </div>
       </div>
