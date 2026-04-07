@@ -63,9 +63,10 @@ export function DrinkBuilderOverlay({
           {productPhoto ? (
             <div className="mt-3 flex items-center justify-center">
               <img
-                src={productPhoto}
+                src={productPhoto.src}
                 alt={product.name}
                 className="h-60 w-60 object-contain drop-shadow-2xl"
+                style={productPhoto.scale !== 1 ? { transform: `scale(${productPhoto.scale})` } : undefined}
                 draggable={false}
               />
             </div>

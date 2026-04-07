@@ -7,6 +7,7 @@ import {
   type UpsertProductInput,
   type UpsertSizeOptionInput,
 } from "@rhc-pos/shared";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useConfirm } from "../lib/confirm";
@@ -227,6 +228,23 @@ export function InventoryControlPage({
     }
   };
 
+  const handleReorderProduct = async (productId: string, direction: "up" | "down") => {
+    const index = visibleProducts.findIndex((p) => p.id === productId);
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (index < 0 || swapIndex < 0 || swapIndex >= visibleProducts.length) return;
+    const a = visibleProducts[index];
+    const b = visibleProducts[swapIndex];
+    try {
+      await Promise.all([
+        onProductSave(a.id, { ...toProductDraft(a), sortOrder: b.sortOrder }),
+        onProductSave(b.id, { ...toProductDraft(b), sortOrder: a.sortOrder }),
+      ]);
+      triggerSuccessFlash();
+    } catch {
+      // silent — row will stay in place
+    }
+  };
+
   return (
     <div className="min-h-[720px] p-4 md:p-5">
     <div className="mx-auto flex min-h-[720px] max-w-[1600px] flex-col">
@@ -316,6 +334,7 @@ export function InventoryControlPage({
           <table className="w-full text-[13px]">
             <thead className="sticky top-0 z-10 bg-[#383838] text-[10px] uppercase tracking-wider text-white/75">
               <tr>
+                <th className="w-12 px-2 py-3" />
                 <th className="px-5 py-3 text-left">Product</th>
                 <th className="px-5 py-3 text-left">Category</th>
                 <th className="px-5 py-3 text-right">Price</th>
@@ -325,7 +344,7 @@ export function InventoryControlPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-white/4">
-              {visibleProducts.map((product) => {
+              {visibleProducts.map((product, index) => {
                 const metric = productMetrics.get(product.id);
                 return (
                   <tr
@@ -333,6 +352,26 @@ export function InventoryControlPage({
                     className="cursor-pointer transition hover:bg-white/[0.03]"
                     onClick={() => openEditModal(product.id)}
                   >
+                    <td className="w-12 px-2 py-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex flex-col items-center gap-0.5">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          className="rounded p-1 text-white/40 transition hover:bg-white/[0.08] hover:text-white disabled:opacity-20 disabled:cursor-default"
+                          onClick={() => void handleReorderProduct(product.id, "up")}
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === visibleProducts.length - 1}
+                          className="rounded p-1 text-white/40 transition hover:bg-white/[0.08] hover:text-white disabled:opacity-20 disabled:cursor-default"
+                          onClick={() => void handleReorderProduct(product.id, "down")}
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-5 py-4">
                       <div className="font-semibold text-white">{product.name}</div>
                       <div className="mt-1 text-[10px] uppercase tracking-wider text-white/42">{product.id}</div>

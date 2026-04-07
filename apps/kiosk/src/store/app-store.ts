@@ -24,7 +24,7 @@ interface AppState {
   setCashierId: (cashierId: string) => void;
   setSelectedCategoryId: (selectedCategoryId: string) => void;
   addProduct: (productId: string) => void;
-  beginDraftLine: (productId: string, sizeOptionId?: string | null) => void;
+  beginDraftLine: (productId: string, sizeOptionId?: string | null, iced?: boolean) => void;
   setDraftLineSize: (sizeOptionId: string | null) => void;
   setDraftLineIced: (iced: boolean) => void;
   toggleDraftLineFlavor: (modifierId: string) => void;
@@ -163,14 +163,14 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       cartLines: [...state.cartLines, createLine(productId)],
     })),
-  beginDraftLine: (productId, sizeOptionId = null) =>
+  beginDraftLine: (productId, sizeOptionId = null, iced = false) =>
     set({
       draftLine: {
         productId,
         sizeOptionId,
         modifierIds: [],
         quantity: 1,
-        iced: false,
+        iced,
       },
     }),
   setDraftLineSize: (sizeOptionId) =>

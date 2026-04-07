@@ -103,9 +103,10 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
                   <div className="flex h-44 w-full items-center justify-center overflow-hidden bg-[#303030]">
                     {photo ? (
                       <img
-                        src={photo}
+                        src={photo.src}
                         alt={product.name}
                         className="h-full w-full object-contain p-4 transition group-hover:scale-105 drop-shadow-lg"
+                        style={photo.scale !== 1 ? { transform: `scale(${photo.scale})` } : undefined}
                         draggable={false}
                       />
                     ) : (

@@ -289,7 +289,10 @@ export function App() {
       const needsConfigurator = hasEnabledSizes || hasEnabledModifiers;
 
       if (needsConfigurator) {
-        store.beginDraftLine(productId, defaultSize);
+        const icedByDefault = ["frappuccino", "frap", "red bull", "italian soda"].some((kw) =>
+          product.name.toLowerCase().includes(kw),
+        );
+        store.beginDraftLine(productId, defaultSize, icedByDefault);
         store.setOverlay("drink-builder");
         return;
       }
