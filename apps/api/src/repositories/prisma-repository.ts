@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import {
   type AnalyticsRangeResponse,
+  calculateFlavorAdjustment,
   calculateLinePrice,
   calculateTax,
   type BootstrapResponse,
@@ -148,7 +149,7 @@ export class PrismaPosRepository implements PosRepository {
         };
       });
 
-      const flavorAdjustmentCents = modifierSummary.reduce((sum, modifier) => sum + modifier.priceCents, 0);
+      const flavorAdjustmentCents = calculateFlavorAdjustment(modifierSummary);
       const sizeAdjustmentCents =
         product.sizeOptionPrices.find((entry) => entry.sizeOptionId === selectedSizeId)?.priceDeltaCents ??
         size?.priceDeltaCents ??

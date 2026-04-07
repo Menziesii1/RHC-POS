@@ -50,16 +50,16 @@ function SplashCard({
         <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">River Hills Coffee</div>
         <div className="mt-4 font-display text-4xl font-extrabold tracking-tight text-white">RHC POS</div>
         <div className="mt-4 text-lg font-semibold text-white/70">{title}</div>
-        <p className="mt-3 max-w-[32rem] text-sm leading-7 text-white/40">{body}</p>
+        <p className="mt-3 max-w-[32rem] text-sm leading-7 text-white/57">{body}</p>
         {detail ? (
-          <div className="mt-6 rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-white/50">
+          <div className="mt-6 rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-white/65">
             {detail}
           </div>
         ) : null}
         {loading ? (
           <div className="mt-8 flex items-center gap-4">
             <div className="pos-spinner h-12 w-12 animate-spin" />
-            <div className="text-sm font-medium uppercase tracking-widest text-white/35">Booting register</div>
+            <div className="text-sm font-medium uppercase tracking-widest text-white/52">Booting register</div>
           </div>
         ) : null}
       </section>
@@ -515,7 +515,7 @@ export function App() {
 
         {store.view === "register" ? (
           <div className="flex min-h-0 flex-1 p-3 lg:p-4">
-            <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl bg-[#0c1520]">
+            <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl bg-[#303030]">
               <ProductGrid
                 bootstrap={store.bootstrap}
                 selectedCategoryId={store.selectedCategoryId}

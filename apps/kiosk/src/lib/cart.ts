@@ -1,4 +1,4 @@
-import { calculateLinePrice, calculateTax, formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
+import { calculateFlavorAdjustment, calculateLinePrice, calculateTax, formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
 
 import type { CartLineState } from "../types/ui";
 
@@ -52,7 +52,7 @@ export function buildCartView(bootstrap: BootstrapResponse | null, lines: CartLi
         .filter((modifier): modifier is NonNullable<typeof modifier> => Boolean(modifier));
 
       const sizeAdjustmentCents = getSizeAdjustmentCents(bootstrap, product.id, line.sizeOptionId);
-      const flavorAdjustmentCents = modifiers.reduce((sum, modifier) => sum + modifier.priceCents, 0);
+      const flavorAdjustmentCents = calculateFlavorAdjustment(modifiers);
       const unitPriceCents = calculateLinePrice({
         basePriceCents: product.priceCents,
         sizeAdjustmentCents,

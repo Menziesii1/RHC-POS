@@ -309,6 +309,25 @@ export interface LinePricingInput {
   discountCents?: number;
 }
 
+/** Max discount from discount-flagged syrups, regardless of how many are selected. */
+const MAX_DISCOUNT_SYRUP_CENTS = -100;
+
+export function calculateFlavorAdjustment(
+  modifiers: ReadonlyArray<{ priceCents: number; discountFlavor: boolean }>,
+): number {
+  const addOns = modifiers
+    .filter((m) => !m.discountFlavor)
+    .reduce((sum, m) => sum + m.priceCents, 0);
+
+  const rawDiscount = modifiers
+    .filter((m) => m.discountFlavor)
+    .reduce((sum, m) => sum + m.priceCents, 0);
+
+  const cappedDiscount = Math.max(rawDiscount, MAX_DISCOUNT_SYRUP_CENTS);
+
+  return addOns + cappedDiscount;
+}
+
 export function calculateTax(subtotalCents: number, taxRateBasisPoints: number): number {
   return Math.round((subtotalCents * taxRateBasisPoints) / 10000);
 }

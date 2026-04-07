@@ -25,7 +25,7 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
   ];
 
   return (
-    <header className="relative z-20 flex h-14 shrink-0 items-center gap-3 bg-[#0c1520] px-4 text-white">
+    <header className="relative z-20 flex h-14 shrink-0 items-center gap-3 bg-[#303030] px-4 text-white">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl p-1">
         <BrandBadge />
       </div>
@@ -34,7 +34,7 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
         <div className="truncate text-sm font-bold text-white">
           {bootstrap.settings.locationName}
         </div>
-        <div className="truncate text-[10px] font-medium uppercase tracking-wider text-white/35">
+        <div className="truncate text-[10px] font-medium uppercase tracking-wider text-white/52">
           {bootstrap.settings.registerName}
         </div>
       </div>
@@ -42,7 +42,7 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
       <div className="flex-1" />
 
       <div className="hidden items-center gap-1.5 md:flex">
-        <Clock size={13} className="text-white/30" />
+        <Clock size={13} className="text-white/47" />
         <span className="text-sm font-medium text-white/60">{timeLabel}</span>
       </div>
 
@@ -53,8 +53,8 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
           const DisplayIcon = !ok && OffIcon ? OffIcon : Icon;
           return (
             <div key={label} className="flex items-center gap-1" title={`${label}: ${value}`}>
-              <DisplayIcon size={14} className={ok ? "text-[#1be4db]" : value === "mock" || value === "degraded" ? "text-amber-400" : "text-red-400"} />
-              <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-[#1be4db]" : value === "mock" || value === "degraded" ? "bg-amber-400" : "bg-red-400"}`} />
+              <DisplayIcon size={14} className={ok ? "text-emerald-400" : value === "mock" || value === "degraded" ? "text-amber-400" : "text-red-400"} />
+              <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-400" : value === "mock" || value === "degraded" ? "bg-amber-400" : "bg-red-400"}`} />
             </div>
           );
         })}

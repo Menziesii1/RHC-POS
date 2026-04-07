@@ -20,7 +20,7 @@ export function ActionBar({
   adminEnabled = true,
 }: ActionBarProps) {
   return (
-    <div className="shrink-0 bg-[#0c1520] px-3 pb-3 pt-2">
+    <div className="shrink-0 bg-[#303030] px-3 pb-3 pt-2">
       <div className={`grid gap-2 ${cardEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button
           type="button"
@@ -47,7 +47,7 @@ export function ActionBar({
       <div className={`mt-2 grid gap-2 ${adminEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button
           type="button"
-          className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 py-2.5 text-[11px] font-medium text-white/35 transition hover:text-white/50 disabled:opacity-30"
+          className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 py-2.5 text-[11px] font-medium text-white/52 transition hover:text-white/65 disabled:opacity-30"
           disabled={disabled}
           onClick={onClear}
         >
@@ -57,7 +57,7 @@ export function ActionBar({
         {adminEnabled ? (
           <button
             type="button"
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 py-2.5 text-[11px] font-medium text-white/35 transition hover:text-white/50"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 py-2.5 text-[11px] font-medium text-white/52 transition hover:text-white/65"
             onClick={onAdmin}
           >
             <Settings size={13} />
