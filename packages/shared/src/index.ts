@@ -164,6 +164,36 @@ export const salesBreakdownItemSchema = z.object({
   totalCents: z.number().int().nonnegative(),
 });
 
+export const analyticsDailySeriesPointSchema = z.object({
+  date: z.string(),
+  totalSalesCents: z.number().int().nonnegative(),
+  cashSalesCents: z.number().int().nonnegative(),
+  cardSalesCents: z.number().int().nonnegative(),
+  orderCount: z.number().int().nonnegative(),
+});
+
+export const analyticsProductSeriesPointSchema = z.object({
+  date: z.string(),
+  quantity: z.number().int().nonnegative(),
+  totalCents: z.number().int().nonnegative(),
+});
+
+export const analyticsProductSeriesSchema = z.object({
+  productId: idSchema,
+  productName: z.string().min(1),
+  totalQuantity: z.number().int().nonnegative(),
+  totalSalesCents: z.number().int().nonnegative(),
+  daily: z.array(analyticsProductSeriesPointSchema),
+});
+
+export const analyticsRangeResponseSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  days: z.number().int().positive(),
+  salesSeries: z.array(analyticsDailySeriesPointSchema),
+  productSeries: z.array(analyticsProductSeriesSchema),
+});
+
 export const summaryResponseSchema = z.object({
   salesDate: z.string(),
   totalSalesCents: z.number().int().nonnegative(),
@@ -265,6 +295,7 @@ export type DraftOrder = z.infer<typeof draftOrderSchema>;
 export type RegisterStatus = z.infer<typeof registerStatusSchema>;
 export type BootstrapResponse = z.infer<typeof bootstrapResponseSchema>;
 export type SummaryResponse = z.infer<typeof summaryResponseSchema>;
+export type AnalyticsRangeResponse = z.infer<typeof analyticsRangeResponseSchema>;
 export type UpsertCategoryInput = z.infer<typeof upsertCategorySchema>;
 export type UpsertSizeOptionInput = z.infer<typeof upsertSizeOptionSchema>;
 export type UpsertModifierInput = z.infer<typeof upsertModifierSchema>;

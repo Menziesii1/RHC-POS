@@ -1,4 +1,5 @@
 import type {
+  AnalyticsRangeResponse,
   BootstrapResponse,
   CartInput,
   DraftOrder,
@@ -99,6 +100,7 @@ export const api = {
       method: "POST",
     }),
   getSummary: () => request<SummaryResponse>("/summary/today"),
+  getAnalyticsRange: (days = 14) => request<AnalyticsRangeResponse>(`/analytics/range?days=${days}`),
   verifyAdminPin: (pin: string) =>
     request<{ ok: true }>("/admin/verify-pin", {
       method: "POST",

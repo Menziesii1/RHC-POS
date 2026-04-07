@@ -11,43 +11,30 @@ function pillTone(value: string) {
 interface TopStatusBarProps {
   bootstrap: BootstrapResponse;
   status: RegisterStatus;
-  cashierId: string;
   timeLabel: string;
-  onCashierChange: (cashierId: string) => void;
 }
 
-export function TopStatusBar({ bootstrap, status, cashierId, timeLabel, onCashierChange }: TopStatusBarProps) {
+export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps) {
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 bg-[#263362] px-5">
-      <BrandBadge />
-
-      <div className="font-display text-base font-extrabold tracking-tight text-white">
-        {bootstrap.settings.locationName}
+    <header className="flex h-20 shrink-0 items-center gap-5 bg-[#263362] px-5">
+      <div className="flex h-full shrink-0 items-center py-2">
+        <BrandBadge />
       </div>
 
-      <div className="mx-4 h-5 w-px bg-white/20" />
-
-      <label className="flex items-center gap-2 text-sm text-white/70">
-        <span className="text-xs font-bold uppercase tracking-widest text-white/50">Volunteer</span>
-        <select
-          className="border border-white/20 bg-white/10 px-3 py-1 text-sm font-semibold text-white outline-none focus:border-white/40"
-          style={{ borderRadius: 3 }}
-          value={cashierId}
-          onChange={(e) => onCashierChange(e.target.value)}
-        >
-          {bootstrap.cashiers.map((cashier) => (
-            <option key={cashier.id} value={cashier.id} className="bg-[#263362]">
-              {cashier.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="min-w-0">
+        <div className="truncate font-display text-2xl font-extrabold tracking-tight text-white">
+          {bootstrap.settings.locationName}
+        </div>
+        <div className="truncate pt-1 text-sm font-semibold uppercase tracking-[0.28em] text-white/55">
+          {bootstrap.settings.registerName}
+        </div>
+      </div>
 
       <div className="flex-1" />
 
-      <div className="text-sm font-bold text-white/80">{timeLabel}</div>
+      <div className="text-2xl font-bold text-white/80">{timeLabel}</div>
 
-      <div className="mx-3 h-5 w-px bg-white/20" />
+      <div className="mx-1 h-8 w-px bg-white/20" />
 
       <div className="flex items-center gap-2">
         {(

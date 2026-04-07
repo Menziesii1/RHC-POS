@@ -1,5 +1,6 @@
 import {
   adminPinSchema,
+  analyticsRangeResponseSchema,
   bootstrapResponseSchema,
   cartInputSchema,
   upsertCategorySchema,
@@ -9,6 +10,7 @@ import {
   upsertSizeOptionSchema,
   patchSettingsSchema,
   type BootstrapResponse,
+  type AnalyticsRangeResponse,
   type DraftOrder,
   type Category,
   type Modifier,
@@ -82,6 +84,10 @@ export class PosService {
 
   async getSummary(date = new Date()): Promise<SummaryResponse> {
     return summaryResponseSchema.parse(await this.repository.getSummary(date));
+  }
+
+  async getAnalyticsRange(date = new Date(), days = 14): Promise<AnalyticsRangeResponse> {
+    return analyticsRangeResponseSchema.parse(await this.repository.getAnalyticsRange(date, days));
   }
 
   async listCategories(): Promise<Category[]> {

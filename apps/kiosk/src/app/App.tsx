@@ -1,18 +1,19 @@
-import { type DraftOrder, type RegisterStatus, type SummaryResponse } from "@rhc-pos/shared";
+import { type AnalyticsRangeResponse, type DraftOrder, type RegisterStatus, type SummaryResponse } from "@rhc-pos/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ActionBar } from "../components/ActionBar";
-import { AdminPanel } from "../components/AdminPanel";
 import { AdminPinDialog } from "../components/AdminPinDialog";
+import { AnalyticsPage } from "../components/AnalyticsPage";
 import { CardPaymentOverlay } from "../components/CardPaymentOverlay";
 import { CartPanel } from "../components/CartPanel";
 import { CashPaymentOverlay } from "../components/CashPaymentOverlay";
 import { DrinkBuilderOverlay } from "../components/DrinkBuilderOverlay";
+import { InventoryControlPage } from "../components/InventoryControlPage";
 import { ProductGrid } from "../components/ProductGrid";
 import { SuccessScreen } from "../components/SuccessScreen";
-import { SummaryPanel } from "../components/SummaryPanel";
 import { TopStatusBar } from "../components/TopStatusBar";
 import { buildCartView } from "../lib/cart";
+import { ADMIN_ENABLED, CARD_ENABLED } from "../lib/env";
 import { clearPersistedState, loadPersistedState, savePersistedState } from "../lib/storage";
 import { API_BASE_URL, api } from "../services/api";
 import { useAppStore } from "../store/app-store";
@@ -35,6 +36,7 @@ export function App() {
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [adminError, setAdminError] = useState<string | null>(null);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsRangeResponse | null>(null);
   const hydratedRef = useRef(false);
 
   const cartView = useMemo(
@@ -196,12 +198,12 @@ export function App() {
     }
 
     const timeout = window.setTimeout(() => {
-      store.setOverlay("none");
+      store.dismissSuccess();
       clearPersistedState();
     }, 2500);
 
     return () => window.clearTimeout(timeout);
-  }, [store, store.overlay]);
+  }, [store.overlay]);
 
   const mutateCart = (callback: () => void) => {
     if (store.pendingOrder && store.pendingOrder.status !== "paid") {
@@ -216,6 +218,15 @@ export function App() {
     const bootstrap = await api.getBootstrap();
     store.setBootstrap(bootstrap);
     return bootstrap;
+  };
+
+  const refreshAnalytics = async (days = 14) => {
+    const [dashboard, range] = await Promise.all([
+      api.getDashboard().catch(() => null),
+      api.getAnalyticsRange(days).catch(() => null),
+    ]);
+    setSummary(dashboard);
+    setAnalytics(range);
   };
 
   const handleSelectProduct = (productId: string) => {
@@ -273,6 +284,10 @@ export function App() {
   };
 
   const handleStartCard = async () => {
+    if (!CARD_ENABLED) {
+      store.setPaymentError("Card payments are unavailable in local cash-only mode.");
+      return;
+    }
     if (cartView.lines.length === 0) {
       return;
     }
@@ -317,8 +332,12 @@ export function App() {
   };
 
   const handleAdminOpen = () => {
+    if (!ADMIN_ENABLED) {
+      return;
+    }
     if (store.adminUnlocked) {
-      store.setView("admin");
+      store.setView("inventory");
+      void refreshAnalytics();
       return;
     }
     setAdminError(null);
@@ -330,49 +349,19 @@ export function App() {
       await api.verifyAdminPin(pin);
       setAdminError(null);
       store.unlockAdmin(pin);
+      await refreshAnalytics();
     } catch (error) {
       setAdminError(error instanceof Error ? error.message : "Admin PIN is invalid.");
     }
   };
 
   const handleSummaryOpen = async () => {
-    store.setView("summary");
-    setSummary(await api.getDashboard().catch(() => null));
+    store.setView("analytics");
+    await refreshAnalytics();
   };
 
   const handleProductSave = async (productId: string, input: Parameters<typeof api.updateProduct>[2]) => {
     await api.updateProduct(store.adminPin, productId, input);
-    await refreshBootstrap();
-  };
-
-  const handleProductsReorder = async (orderedIds: string[]) => {
-    if (!store.bootstrap) return;
-    const updates = orderedIds
-      .map((id, index) => {
-        const product = store.bootstrap!.products.find((p) => p.id === id);
-        if (!product) return null;
-        const newSortOrder = index + 1;
-        if (product.sortOrder === newSortOrder) return null;
-        return { product, newSortOrder };
-      })
-      .filter((x): x is { product: NonNullable<typeof x>["product"]; newSortOrder: number } => x !== null);
-    await Promise.all(
-      updates.map(({ product, newSortOrder }) =>
-        api.updateProduct(store.adminPin, product.id, {
-          name: product.name,
-          categoryId: product.categoryId,
-          priceCents: product.priceCents,
-          discountCents: product.discountCents,
-          enabled: product.enabled,
-          sortOrder: newSortOrder,
-          productType: product.productType,
-          modifierIds: product.modifierIds,
-          sizeOptionIds: product.sizeOptionIds,
-          sizeOptionPrices: product.sizeOptionPrices,
-          defaultSizeOptionId: product.defaultSizeOptionId,
-        }),
-      ),
-    );
     await refreshBootstrap();
   };
 
@@ -386,13 +375,9 @@ export function App() {
     await refreshBootstrap();
   };
 
-  const handleFlavorDelete = async (modifierId: string) => {
-    await api.deleteFlavor(store.adminPin, modifierId);
-    await refreshBootstrap();
-  };
-
   const handleProductDelete = async (productId: string) => {
     await api.deleteProduct(store.adminPin, productId);
+    mutateCart(() => store.purgeProductFromCart(productId));
     await refreshBootstrap();
   };
 
@@ -460,9 +445,7 @@ export function App() {
       <TopStatusBar
         bootstrap={store.bootstrap}
         status={registerStatus}
-        cashierId={store.cashierId}
         timeLabel={now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-        onCashierChange={store.setCashierId}
       />
 
       {store.view === "register" ? (
@@ -496,38 +479,50 @@ export function App() {
                     clearPersistedState();
                   }
                 }}
-                onSummary={() => void handleSummaryOpen()}
                 onAdmin={handleAdminOpen}
+                cardEnabled={CARD_ENABLED}
+                adminEnabled={ADMIN_ENABLED}
               />
             }
           />
         </div>
       ) : null}
 
-      {store.view === "admin" ? (
+      {store.view === "inventory" && ADMIN_ENABLED ? (
         <div className="flex-1 overflow-auto p-5">
-          <AdminPanel
+          <InventoryControlPage
             bootstrap={store.bootstrap}
-            adminPin={store.adminPin}
+            analytics={analytics}
             onClose={() => store.setView("register")}
+            onNavigateAnalytics={() => void handleSummaryOpen()}
             onProductSave={handleProductSave}
-            onProductsReorder={handleProductsReorder}
             onProductDelete={handleProductDelete}
+            onCreateProduct={handleCreateProduct}
             onSizeSave={handleSizeSave}
             onFlavorSave={handleFlavorSave}
-            onFlavorDelete={handleFlavorDelete}
             onCreateCategory={handleCreateCategory}
             onCreateFlavor={handleCreateFlavor}
             onCreateSize={handleCreateSize}
-            onCreateProduct={handleCreateProduct}
             onTaxSave={handleTaxSave}
           />
         </div>
       ) : null}
 
-      {store.view === "summary" ? (
+      {store.view === "analytics" ? (
         <div className="flex-1 overflow-auto p-5">
-          <SummaryPanel summary={summary} onClose={() => store.setView("register")} />
+          <AnalyticsPage
+            summary={summary}
+            analytics={analytics}
+            onClose={() => store.setView("register")}
+            onNavigateInventory={() => {
+              if (ADMIN_ENABLED && store.adminUnlocked) {
+                store.setView("inventory");
+                return;
+              }
+              handleAdminOpen();
+            }}
+            canOpenInventory={ADMIN_ENABLED && store.adminUnlocked}
+          />
         </div>
       ) : null}
 

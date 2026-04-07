@@ -18,6 +18,7 @@
     "prisma:generate": "npm run prisma:generate --workspace @rhc-pos/api",
     "prisma:deploy": "npm run prisma:deploy --workspace @rhc-pos/api",
     "prisma:migrate": "npm run prisma:migrate --workspace @rhc-pos/api",
-    "prisma:seed": "npm run prisma:seed --workspace @rhc-pos/api"
+    "prisma:restore": "npm run prisma:restore --workspace @rhc-pos/api",
+    "prisma:seed": "npm run prisma:restore"
   }
 }

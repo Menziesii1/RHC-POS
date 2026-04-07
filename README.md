@@ -16,7 +16,7 @@ RHC POS is a kiosk-first, in-store point of sale system for a church coffee shop
 3. Install dependencies with `npm install`.
 4. Generate the Prisma client with `npm run prisma:generate`.
 5. Initialize the schema with `npx prisma db push --schema apps/api/prisma/schema.prisma`.
-6. Seed sample data with `npm run prisma:seed`.
+6. If you need to rebuild catalog/bootstrap data after a database loss, run `npm run prisma:restore`.
 7. Run the API and kiosk locally, or start the stack with Docker Compose.
 
 ## Key Commands
@@ -30,8 +30,8 @@ RHC POS is a kiosk-first, in-store point of sale system for a church coffee shop
 ## Local Development Notes
 
 - The API defaults to mock Stripe mode until `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_READER_ID` are configured.
-- Docker Compose bootstraps Postgres with `prisma db push --force-reset` plus the seed script, so local container restarts can reset dev data when the schema changes.
-- The default sample catalog and cashier list come from `apps/api/prisma/seed.ts`.
+- Docker Compose applies the Prisma schema with `prisma db push` and does not load catalog data automatically.
+- The manual backup restore lives in [apps/api/prisma/backup-seed.ts](E:/Code/RHC POS/apps/api/prisma/backup-seed.ts) and is additive-only.
 
 ## Production Notes
 
@@ -39,4 +39,4 @@ RHC POS is a kiosk-first, in-store point of sale system for a church coffee shop
 - The kiosk frontend is intended to be deployed locally on the register machine while the API and Postgres live in Railway.
 - Stripe Terminal smart-reader support is wired around the server-driven flow. The API remains the source of truth for payment state.
 - Railway deployment for the API is checked in via [railway.json](E:/Code/RHC POS/railway.json) and [infra/docker/api.railway.Dockerfile](E:/Code/RHC POS/infra/docker/api.railway.Dockerfile).
-- Production database changes are applied with Prisma migrations from [apps/api/prisma/migrations](E:/Code/RHC POS/apps/api/prisma/migrations), then seeded with the idempotent catalog bootstrap.
+- Production database changes are applied with Prisma migrations from [apps/api/prisma/migrations](E:/Code/RHC POS/apps/api/prisma/migrations). Catalog/bootstrap restore is manual via `npm run prisma:restore`.

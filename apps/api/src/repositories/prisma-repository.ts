@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import {
+  type AnalyticsRangeResponse,
   calculateLinePrice,
   calculateTax,
   type BootstrapResponse,
@@ -67,7 +68,7 @@ export class PrismaPosRepository implements PosRepository {
     ]);
 
     if (!location || !register) {
-      throw new HttpError(500, "Store bootstrap data is missing. Run the Prisma seed first.");
+      throw new HttpError(500, "Store bootstrap data is missing. Apply the backup seed restore after the schema is created.");
     }
 
     return {
@@ -440,6 +441,103 @@ export class PrismaPosRepository implements PosRepository {
       sizeBreakdown: [...sizeMap.values()],
       flavorBreakdown: [...flavorMap.values()],
       topItems: [...topItemMap.values()].sort((a, b) => b.totalCents - a.totalCents).slice(0, 5),
+    };
+  }
+
+  async getAnalyticsRange(date: Date, days: number): Promise<AnalyticsRangeResponse> {
+    const end = new Date(date);
+    end.setUTCHours(0, 0, 0, 0);
+    const start = new Date(end);
+    start.setUTCDate(start.getUTCDate() - (days - 1));
+    const endExclusive = new Date(end);
+    endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        status: "paid",
+        locationId: this.config.LOCATION_ID,
+        createdAt: {
+          gte: start,
+          lt: endExclusive,
+        },
+      },
+      include: {
+        items: true,
+        payment: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const dateKeys = Array.from({ length: days }, (_, index) => {
+      const current = new Date(start);
+      current.setUTCDate(start.getUTCDate() + index);
+      return current.toISOString().slice(0, 10);
+    });
+
+    const salesSeries = dateKeys.map((dateKey) => {
+      const dayOrders = orders.filter((order) => order.createdAt.toISOString().slice(0, 10) === dateKey);
+      return {
+        date: dateKey,
+        totalSalesCents: dayOrders.reduce((sum, order) => sum + order.totalCents, 0),
+        cashSalesCents: dayOrders
+          .filter((order) => order.payment?.tenderType === "cash")
+          .reduce((sum, order) => sum + order.totalCents, 0),
+        cardSalesCents: dayOrders
+          .filter((order) => order.payment?.tenderType === "card")
+          .reduce((sum, order) => sum + order.totalCents, 0),
+        orderCount: dayOrders.length,
+      };
+    });
+
+    const productSeriesMap = new Map<
+      string,
+      {
+        productId: string;
+        productName: string;
+        totalQuantity: number;
+        totalSalesCents: number;
+        daily: Map<string, { date: string; quantity: number; totalCents: number }>;
+      }
+    >();
+
+    for (const order of orders) {
+      const orderDate = order.createdAt.toISOString().slice(0, 10);
+      for (const item of order.items) {
+        const current = productSeriesMap.get(item.productId) ?? {
+          productId: item.productId,
+          productName: item.productName,
+          totalQuantity: 0,
+          totalSalesCents: 0,
+          daily: new Map(),
+        };
+        current.totalQuantity += item.quantity;
+        current.totalSalesCents += item.lineTotalCents;
+        const daily = current.daily.get(orderDate) ?? {
+          date: orderDate,
+          quantity: 0,
+          totalCents: 0,
+        };
+        daily.quantity += item.quantity;
+        daily.totalCents += item.lineTotalCents;
+        current.daily.set(orderDate, daily);
+        productSeriesMap.set(item.productId, current);
+      }
+    }
+
+    return {
+      startDate: dateKeys[0],
+      endDate: dateKeys[dateKeys.length - 1],
+      days,
+      salesSeries,
+      productSeries: [...productSeriesMap.values()]
+        .map((entry) => ({
+          productId: entry.productId,
+          productName: entry.productName,
+          totalQuantity: entry.totalQuantity,
+          totalSalesCents: entry.totalSalesCents,
+          daily: dateKeys.map((dateKey) => entry.daily.get(dateKey) ?? { date: dateKey, quantity: 0, totalCents: 0 }),
+        }))
+        .sort((a, b) => b.totalSalesCents - a.totalSalesCents),
     };
   }
 

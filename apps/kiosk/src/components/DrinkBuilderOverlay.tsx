@@ -46,22 +46,22 @@ export function DrinkBuilderOverlay({
   const selectedTemperatureLabel = draftLine.iced ? "Iced" : "Hot";
   const selectedSizeLabel = selectedSize?.name ?? "Standard";
   const selectedFlavorLabel =
-    selectedFlavors.length > 0 ? selectedFlavors.map((modifier) => modifier.name).join(", ") : "No flavor add-ons";
+    selectedFlavors.length > 0 ? selectedFlavors.map((modifier) => modifier.name).join(", ") : null;
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#18244b]/78 p-4 md:p-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#18244b]/78 p-3 md:p-6 backdrop-blur-sm">
       <div
-        className="flex w-full flex-col overflow-hidden border border-[#c9d6e6] bg-white shadow-[0_24px_60px_rgba(24,36,75,0.24)] md:grid md:grid-cols-[0.9fr_1.3fr]"
+        className="flex w-full flex-col border border-[#c9d6e6] bg-white shadow-[0_24px_60px_rgba(24,36,75,0.24)] md:grid md:grid-cols-[0.9fr_1.3fr]"
         style={{
           borderRadius: 4,
           width: "min(94vw, 1200px)",
-          height: "min(78vh, calc(min(94vw, 1200px) / 1.45))",
+          height: "calc(100dvh - 1.5rem)",
+          maxHeight: "860px",
         }}
       >
-        <div className="border-b border-[#d9e2ee] bg-[#f3f7fc] p-5 md:border-b-0 md:border-r md:p-8">
-          <div className="text-sm font-bold uppercase tracking-[0.24em] text-[#1d4f91]">Add item to cart</div>
-          <div className="mt-3 font-display text-3xl font-extrabold leading-tight text-[#16213f]">{product.name}</div>
-          <div className="mt-2 text-lg font-semibold text-[#324261]">Review the selections, then confirm the item.</div>
+        <div className="hidden border-[#d9e2ee] bg-[#f3f7fc] md:block md:overflow-y-auto md:border-r md:p-8">
+          <div className="text-sm font-bold uppercase tracking-[0.24em] text-[#1d4f91]">Add item to order</div>
+          <div className="mt-3 font-display text-4xl font-extrabold leading-tight text-[#16213f]">{product.name}</div>
 
           <div className="mt-8 grid gap-3">
             <div className="brand-stat">
@@ -79,19 +79,20 @@ export function DrinkBuilderOverlay({
               <div className="mt-2 text-2xl font-extrabold text-[#16213f]">{selectedSizeLabel}</div>
             </div>
 
-            <div className="brand-stat">
-              <div className="brand-stat-label">Flavor add-ons</div>
-              <div className="mt-2 text-lg font-bold leading-snug text-[#16213f]">{selectedFlavorLabel}</div>
-            </div>
+            {selectedFlavorLabel ? (
+              <div className="brand-stat">
+                <div className="brand-stat-label">Flavor add-ons</div>
+                <div className="mt-2 text-lg font-bold leading-snug text-[#16213f]">{selectedFlavorLabel}</div>
+              </div>
+            ) : null}
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-col">
-          <div className="border-b border-[#d9e2ee] bg-white px-5 py-4 md:px-8">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="shrink-0 border-b border-[#d9e2ee] bg-white px-5 py-4 md:px-8">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <div className="text-sm font-bold uppercase tracking-[0.24em] text-[#1d4f91]">Customize item</div>
-                <div className="mt-2 text-2xl font-extrabold text-[#16213f]">Choose the options below</div>
+                <div className="font-display text-4xl font-extrabold uppercase tracking-[0.08em] text-[#16213f]">Customize Drink</div>
               </div>
               <div className="rounded-[4px] bg-[#16213f] px-4 py-3 text-right text-white">
                 <div className="text-xs font-bold uppercase tracking-[0.2em] text-white/75">Price shown</div>
@@ -103,8 +104,7 @@ export function DrinkBuilderOverlay({
           <div className="flex-1 overflow-y-auto p-5 md:p-8">
             <div className="space-y-6">
               <div>
-                <div className="brand-section-title mb-2 text-[#1d4f91]">Temperature</div>
-                <div className="mb-3 text-base font-semibold text-[#324261]">Choose how this drink should be served.</div>
+                <div className="mb-3 font-display text-2xl font-extrabold uppercase tracking-[0.08em] text-[#1d4f91]">Temperature</div>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -117,9 +117,6 @@ export function DrinkBuilderOverlay({
                     onClick={() => onSetIced(false)}
                   >
                     <span className="block text-lg font-extrabold">Serve hot</span>
-                    <span className={`mt-1 block text-sm ${!draftLine.iced ? "text-white/80" : "text-[#4c5f84]"}`}>
-                      Standard hot preparation
-                    </span>
                   </button>
                   <button
                     type="button"
@@ -132,17 +129,13 @@ export function DrinkBuilderOverlay({
                     onClick={() => onSetIced(true)}
                   >
                     <span className="block text-lg font-extrabold">Serve iced</span>
-                    <span className={`mt-1 block text-sm ${draftLine.iced ? "text-white/80" : "text-[#4c5f84]"}`}>
-                      Chilled over ice
-                    </span>
                   </button>
                 </div>
               </div>
 
               {allowedSizes.length > 0 ? (
                 <div>
-                  <div className="brand-section-title mb-2 text-[#1d4f91]">Size</div>
-                  <div className="mb-3 text-base font-semibold text-[#324261]">Choose the cup size for this item.</div>
+                  <div className="mb-3 font-display text-2xl font-extrabold uppercase tracking-[0.08em] text-[#1d4f91]">Size</div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {allowedSizes.map((size) => {
                       const active = (draftLine.sizeOptionId ?? product.defaultSizeOptionId ?? null) === size.id;
@@ -163,7 +156,7 @@ export function DrinkBuilderOverlay({
                           onClick={() => onSelectSize(size.id)}
                         >
                           <span className="block text-lg font-extrabold">{size.name}</span>
-                          <span className={`mt-1 block text-sm ${active ? "text-white/80" : "text-[#4c5f84]"}`}>
+                          <span className={`mt-2 block text-base font-semibold ${active ? "text-white/80" : "text-[#4c5f84]"}`}>
                             {priceDelta === 0
                               ? "Included in base price"
                               : `${priceDelta > 0 ? "+" : ""}${formatCurrency(priceDelta)}`}
@@ -177,10 +170,7 @@ export function DrinkBuilderOverlay({
 
               {allowedFlavors.length > 0 ? (
                 <div>
-                  <div className="brand-section-title mb-2 text-[#1d4f91]">Flavors and syrups</div>
-                  <div className="mb-3 text-base font-semibold text-[#324261]">
-                    Tap any add-ons you want to include.
-                  </div>
+                  <div className="mb-3 font-display text-2xl font-extrabold uppercase tracking-[0.08em] text-[#1d4f91]">Flavors</div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {allowedFlavors.map((modifier) => {
                       const active = draftLine.modifierIds.includes(modifier.id);
@@ -197,8 +187,8 @@ export function DrinkBuilderOverlay({
                           style={{ borderRadius: 4 }}
                           onClick={() => onToggleFlavor(modifier.id)}
                         >
-                          <span className="block text-base font-extrabold leading-snug">{modifier.name}</span>
-                          <span className={`mt-1 block text-sm ${active ? "text-white/80" : "text-[#4c5f84]"}`}>
+                          <span className="block text-lg font-extrabold leading-snug">{modifier.name}</span>
+                          <span className={`mt-2 block text-base font-semibold ${active ? "text-white/80" : "text-[#4c5f84]"}`}>
                             {modifier.discountFlavor
                               ? `${formatCurrency(modifier.priceCents)} off`
                               : modifier.priceCents === 0
@@ -214,27 +204,26 @@ export function DrinkBuilderOverlay({
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-[#d9e2ee] bg-white px-5 py-4 md:flex-row md:items-center md:justify-between md:px-8">
-            <div className="text-base font-semibold text-[#324261]">
-              {selectedFlavorLabel} | {selectedTemperatureLabel} | {selectedSizeLabel}
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                className="border border-[#b9c9dd] px-6 py-3 text-base font-bold text-[#16213f] hover:border-[#1d4f91] hover:bg-[#f5f9ff]"
-                style={{ borderRadius: 4 }}
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="bg-[#16213f] px-6 py-3 text-base font-bold text-white hover:bg-[#0f1730]"
-                style={{ borderRadius: 4 }}
-                onClick={onConfirm}
-              >
-                Add to cart
-              </button>
+          <div className="shrink-0 border-t border-[#d9e2ee] bg-white px-5 py-4 md:px-8">
+            <div className="flex justify-end">
+              <div className="grid w-full max-w-[360px] grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  className="touch-manipulation border border-[#b9c9dd] px-6 py-4 text-base font-bold text-[#16213f] hover:border-[#1d4f91] hover:bg-[#f5f9ff]"
+                  style={{ borderRadius: 4 }}
+                  onClick={onClose}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="touch-manipulation bg-[#16213f] px-6 py-4 text-base font-bold text-white hover:bg-[#0f1730]"
+                  style={{ borderRadius: 4 }}
+                  onClick={onConfirm}
+                >
+                  Add Item
+                </button>
+              </div>
             </div>
           </div>
         </div>

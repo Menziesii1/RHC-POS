@@ -7,6 +7,10 @@ const cashPaymentSchema = z.object({
   tenderedCents: z.number().int().nonnegative(),
 });
 
+const analyticsQuerySchema = z.object({
+  days: z.coerce.number().int().positive().max(90).default(14),
+});
+
 function getAdminPin(headers: Record<string, unknown>): string {
   const header = headers["x-admin-pin"];
   return typeof header === "string" ? header : "";
@@ -30,6 +34,10 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
   );
   app.get("/v1/summary/today", async () => posService.getSummary(new Date()));
   app.get("/v1/dashboard/today", async () => posService.getSummary(new Date()));
+  app.get("/v1/analytics/range", async (request) => {
+    const { days } = analyticsQuerySchema.parse(request.query ?? {});
+    return posService.getAnalyticsRange(new Date(), days);
+  });
   app.post("/v1/admin/verify-pin", async (request) => posService.verifyAdminPin(request.body));
   app.get("/v1/admin/categories", async () => posService.listCategories());
   app.post("/v1/admin/categories", async (request) => {

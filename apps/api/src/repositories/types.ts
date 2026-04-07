@@ -1,4 +1,5 @@
 import type {
+  AnalyticsRangeResponse,
   BootstrapResponse,
   CartInput,
   DraftOrder,
@@ -37,6 +38,7 @@ export interface PosRepository {
   finalizeCashPayment(orderId: string, tenderedCents: number): Promise<DraftOrder>;
   updateCardPayment(orderId: string, input: CardPaymentUpdateInput): Promise<DraftOrder>;
   getSummary(date: Date): Promise<SummaryResponse>;
+  getAnalyticsRange(date: Date, days: number): Promise<AnalyticsRangeResponse>;
   listCategories(): Promise<Category[]>;
   upsertCategory(input: UpsertCategoryInput, actorLabel: string): Promise<Category>;
   listModifiers(): Promise<Modifier[]>;

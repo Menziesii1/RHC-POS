@@ -30,6 +30,7 @@ interface AppState {
   toggleDraftLineFlavor: (modifierId: string) => void;
   commitDraftLine: () => void;
   clearDraftLine: () => void;
+  purgeProductFromCart: (productId: string) => void;
   selectLine: (lineId: string | null) => void;
   adjustLineQuantity: (lineId: string, delta: number) => void;
   removeLine: (lineId: string) => void;
@@ -43,6 +44,7 @@ interface AppState {
   setPendingOrder: (order: DraftOrder | null) => void;
   setPendingTransaction: (snapshot: PendingTransactionSnapshot | null) => void;
   markSuccess: (order: DraftOrder) => void;
+  dismissSuccess: () => void;
   restorePersisted: (state: {
     cartLines: CartLineState[];
     cashierId: string;
@@ -56,11 +58,79 @@ interface AppState {
 
 function createLine(productId: string): CartLineState {
   return {
-    id: crypto.randomUUID(),
+    id: self.crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
     productId,
     quantity: 1,
     modifierIds: [],
     iced: false,
+  };
+}
+
+function reconcileCatalogState(
+  state: Pick<
+    AppState,
+    | "cartLines"
+    | "selectedLineId"
+    | "draftLine"
+    | "overlay"
+    | "pendingOrder"
+    | "pendingTransaction"
+    | "paymentError"
+  >,
+  bootstrap: BootstrapResponse,
+) {
+  const productIds = new Set(bootstrap.products.map((product) => product.id));
+  const modifierIds = new Set(bootstrap.modifiers.map((modifier) => modifier.id));
+  const sizeOptionIds = new Set(bootstrap.sizes.map((size) => size.id));
+
+  const cartLines = state.cartLines
+    .filter((line) => productIds.has(line.productId))
+    .map((line) => ({
+      ...line,
+      modifierIds: line.modifierIds.filter((modifierId) => modifierIds.has(modifierId)),
+      sizeOptionId: line.sizeOptionId && sizeOptionIds.has(line.sizeOptionId) ? line.sizeOptionId : null,
+    }));
+
+  const draftLine =
+    state.draftLine?.productId && productIds.has(state.draftLine.productId)
+      ? {
+          ...state.draftLine,
+          modifierIds: state.draftLine.modifierIds.filter((modifierId) => modifierIds.has(modifierId)),
+          sizeOptionId:
+            state.draftLine.sizeOptionId && sizeOptionIds.has(state.draftLine.sizeOptionId)
+              ? state.draftLine.sizeOptionId
+              : null,
+        }
+      : null;
+
+  const cartChanged =
+    cartLines.length !== state.cartLines.length ||
+    cartLines.some((line, index) => {
+      const original = state.cartLines[index];
+      return (
+        !original ||
+        line.sizeOptionId !== (original.sizeOptionId ?? null) ||
+        line.modifierIds.join("|") !== original.modifierIds.join("|")
+      );
+    });
+  const draftChanged =
+    Boolean(state.draftLine) !== Boolean(draftLine) ||
+    (state.draftLine !== null &&
+      draftLine !== null &&
+      ((state.draftLine.sizeOptionId ?? null) !== draftLine.sizeOptionId ||
+        state.draftLine.modifierIds.join("|") !== draftLine.modifierIds.join("|")));
+  const shouldCloseOverlay =
+    (state.overlay === "drink-builder" && !draftLine) ||
+    ((state.overlay === "cash" || state.overlay === "card") && (cartChanged || draftChanged));
+
+  return {
+    cartLines,
+    selectedLineId: cartLines.some((line) => line.id === state.selectedLineId) ? state.selectedLineId : null,
+    draftLine,
+    overlay: shouldCloseOverlay ? "none" : state.overlay,
+    pendingOrder: cartChanged || draftChanged ? null : state.pendingOrder,
+    pendingTransaction: cartChanged || draftChanged ? null : state.pendingTransaction,
+    paymentError: cartChanged || draftChanged ? null : state.paymentError,
   };
 }
 
@@ -83,6 +153,7 @@ export const useAppStore = create<AppState>((set) => ({
   draftLine: null,
   setBootstrap: (bootstrap) =>
     set((state) => ({
+      ...reconcileCatalogState(state, bootstrap),
       bootstrap,
       cashierId: state.cashierId || bootstrap.cashiers[0]?.id || "",
     })),
@@ -130,7 +201,7 @@ export const useAppStore = create<AppState>((set) => ({
         cartLines: [
           ...state.cartLines,
           {
-            id: crypto.randomUUID(),
+            id: self.crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
             productId: state.draftLine.productId,
             quantity: state.draftLine.quantity,
             sizeOptionId: state.draftLine.sizeOptionId,
@@ -143,6 +214,26 @@ export const useAppStore = create<AppState>((set) => ({
       };
     }),
   clearDraftLine: () => set({ draftLine: null }),
+  purgeProductFromCart: (productId) =>
+    set((state) => {
+      const cartLines = state.cartLines.filter((line) => line.productId !== productId);
+      const draftCleared = state.draftLine?.productId === productId;
+      const selectedLineId = cartLines.some((line) => line.id === state.selectedLineId) ? state.selectedLineId : null;
+      const cartChanged = cartLines.length !== state.cartLines.length || draftCleared;
+      const shouldCloseOverlay =
+        (draftCleared && state.overlay === "drink-builder") ||
+        (cartChanged && (state.overlay === "cash" || state.overlay === "card"));
+
+      return {
+        cartLines,
+        selectedLineId,
+        draftLine: draftCleared ? null : state.draftLine,
+        overlay: shouldCloseOverlay ? "none" : state.overlay,
+        pendingOrder: cartChanged ? null : state.pendingOrder,
+        pendingTransaction: cartChanged ? null : state.pendingTransaction,
+        paymentError: cartChanged ? null : state.paymentError,
+      };
+    }),
   selectLine: (selectedLineId) => set({ selectedLineId }),
   adjustLineQuantity: (lineId, delta) =>
     set((state) => ({
@@ -196,14 +287,34 @@ export const useAppStore = create<AppState>((set) => ({
       paymentError: null,
       draftLine: null,
     }),
-  restorePersisted: ({ cartLines, cashierId, selectedCategoryId, pendingTransaction, pendingOrder }) =>
+  dismissSuccess: () =>
     set({
-      cartLines: cartLines.map((line) => ({ ...line, iced: line.iced ?? false })),
-      cashierId,
-      selectedCategoryId,
-      pendingTransaction,
-      pendingOrder,
+      overlay: "none",
+      successOrder: null,
     }),
-  unlockAdmin: (pin) => set({ adminUnlocked: true, adminPin: pin, overlay: "none", view: "admin" }),
+  restorePersisted: ({ cartLines, cashierId, selectedCategoryId, pendingTransaction, pendingOrder }) =>
+    set((state) => {
+      const restoredCartLines = cartLines.map((line) => ({
+        ...line,
+        iced: line.iced ?? false,
+      }));
+      const nextState = {
+        ...state,
+        cartLines: restoredCartLines,
+        cashierId,
+        selectedCategoryId,
+        pendingTransaction,
+        pendingOrder,
+      };
+
+      return state.bootstrap
+        ? {
+            ...reconcileCatalogState(nextState, state.bootstrap),
+            cashierId,
+            selectedCategoryId,
+          }
+        : nextState;
+    }),
+  unlockAdmin: (pin) => set({ adminUnlocked: true, adminPin: pin, overlay: "none", view: "inventory" }),
   lockAdmin: () => set({ adminUnlocked: false, adminPin: "", view: "register", overlay: "none" }),
 }));

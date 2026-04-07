@@ -13,7 +13,7 @@ The kiosk frontend is not deployed to Railway for production. Build it from `app
 - Railway config-as-code at [railway.json](E:/Code/RHC POS/railway.json)
 - Health checks on `/health`
 - Prisma migrations in [apps/api/prisma/migrations](E:/Code/RHC POS/apps/api/prisma/migrations)
-- Pre-deploy database migration plus idempotent seed
+- Pre-deploy additive schema migration without automatic data seeding
 
 ## Required API Environment Variables
 
@@ -46,6 +46,6 @@ The kiosk frontend is not deployed to Railway for production. Build it from `app
 
 ## Deployment Notes
 
-- The pre-deploy command runs `prisma migrate deploy` followed by the seed script, so the catalog/bootstrap data is present on first boot.
+- The pre-deploy command runs `prisma migrate deploy` only. If the database ever needs catalog/bootstrap recovery, run `npm run prisma:restore` manually.
 - Configure Stripe webhooks to point at `/v1/stripe/webhooks`.
 - The API process now connects to Postgres before listening and handles `SIGTERM`/`SIGINT` cleanly for Railway restarts.

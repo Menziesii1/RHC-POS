@@ -1,4 +1,5 @@
 import {
+  type AnalyticsRangeResponse,
   calculateLinePrice,
   calculateTax,
   type BootstrapResponse,
@@ -503,6 +504,93 @@ export class MemoryPosRepository implements PosRepository {
       sizeBreakdown: [...sizeTotals.values()],
       flavorBreakdown: [...flavorTotals.values()],
       topItems: [...topItemTotals.values()].sort((a, b) => b.totalCents - a.totalCents).slice(0, 5),
+    };
+  }
+
+  async getAnalyticsRange(date: Date, days: number): Promise<AnalyticsRangeResponse> {
+    const end = new Date(date);
+    end.setHours(0, 0, 0, 0);
+    const start = new Date(end);
+    start.setDate(start.getDate() - (days - 1));
+
+    const paidOrders = [...this.orders.values()].filter((order) => {
+      if (order.status !== "paid") {
+        return false;
+      }
+      const createdAt = new Date(order.createdAt).getTime();
+      return createdAt >= start.getTime() && createdAt < end.getTime() + 24 * 60 * 60 * 1000;
+    });
+
+    const dateKeys = Array.from({ length: days }, (_, index) => {
+      const current = new Date(start);
+      current.setDate(start.getDate() + index);
+      return current.toISOString().slice(0, 10);
+    });
+
+    const salesSeries = dateKeys.map((dateKey) => {
+      const dayOrders = paidOrders.filter((order) => order.createdAt.startsWith(dateKey));
+      return {
+        date: dateKey,
+        totalSalesCents: dayOrders.reduce((sum, order) => sum + order.totalCents, 0),
+        cashSalesCents: dayOrders
+          .filter((order) => order.payment.tenderType === "cash")
+          .reduce((sum, order) => sum + order.totalCents, 0),
+        cardSalesCents: dayOrders
+          .filter((order) => order.payment.tenderType === "card")
+          .reduce((sum, order) => sum + order.totalCents, 0),
+        orderCount: dayOrders.length,
+      };
+    });
+
+    const productSeriesMap = new Map<
+      string,
+      {
+        productId: string;
+        productName: string;
+        totalQuantity: number;
+        totalSalesCents: number;
+        daily: Map<string, { date: string; quantity: number; totalCents: number }>;
+      }
+    >();
+
+    for (const order of paidOrders) {
+      const orderDate = order.createdAt.slice(0, 10);
+      for (const line of order.lines) {
+        const current = productSeriesMap.get(line.productId) ?? {
+          productId: line.productId,
+          productName: line.productName,
+          totalQuantity: 0,
+          totalSalesCents: 0,
+          daily: new Map(),
+        };
+        current.totalQuantity += line.quantity;
+        current.totalSalesCents += line.lineTotalCents;
+        const daily = current.daily.get(orderDate) ?? {
+          date: orderDate,
+          quantity: 0,
+          totalCents: 0,
+        };
+        daily.quantity += line.quantity;
+        daily.totalCents += line.lineTotalCents;
+        current.daily.set(orderDate, daily);
+        productSeriesMap.set(line.productId, current);
+      }
+    }
+
+    return {
+      startDate: dateKeys[0],
+      endDate: dateKeys[dateKeys.length - 1],
+      days,
+      salesSeries,
+      productSeries: [...productSeriesMap.values()]
+        .map((entry) => ({
+          productId: entry.productId,
+          productName: entry.productName,
+          totalQuantity: entry.totalQuantity,
+          totalSalesCents: entry.totalSalesCents,
+          daily: dateKeys.map((dateKey) => entry.daily.get(dateKey) ?? { date: dateKey, quantity: 0, totalCents: 0 }),
+        }))
+        .sort((a, b) => b.totalSalesCents - a.totalSalesCents),
     };
   }
 
