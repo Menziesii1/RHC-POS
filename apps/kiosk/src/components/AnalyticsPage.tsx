@@ -74,7 +74,7 @@ export function AnalyticsPage({
               <button
                 type="button"
                 className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
-                  mode === "financial" ? "bg-[#1be4db] text-[#0f1923]" : "bg-white/[0.03] text-white/45 hover:text-white/65"
+                  mode === "financial" ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.03] text-white/80 hover:text-white/85"
                 }`}
                 onClick={() => setMode("financial")}
               >
@@ -84,7 +84,7 @@ export function AnalyticsPage({
               <button
                 type="button"
                 className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
-                  mode === "inventory" ? "bg-[#1be4db] text-[#0f1923]" : "bg-white/[0.03] text-white/45 hover:text-white/65"
+                  mode === "inventory" ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.03] text-white/80 hover:text-white/85"
                 }`}
                 onClick={() => setMode("inventory")}
               >
@@ -128,7 +128,7 @@ export function AnalyticsPage({
                 <div className="grid gap-2.5 p-5">
                   {salesSeries.map((entry) => (
                     <div key={entry.date} className="grid grid-cols-[88px_1fr_110px] items-center gap-4">
-                      <div className="text-sm font-semibold text-white/50">{entry.date.slice(5)}</div>
+                      <div className="text-sm font-semibold text-white/85">{entry.date.slice(5)}</div>
                       <div className="h-3.5 overflow-hidden rounded-full bg-white/[0.04]">
                         <div className="h-3.5 rounded-full bg-[#1be4db]" style={{ width: barWidth(entry.totalSalesCents, revenueMax) }} />
                       </div>
@@ -178,7 +178,7 @@ export function AnalyticsPage({
                   <div className="grid gap-2.5 p-4">
                     {(summary?.salesByCategory ?? []).map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-white/60">{item.name}</span>
+                        <span className="text-white/80">{item.name}</span>
                         <span className="font-bold text-white">{formatCurrency(item.totalCents)}</span>
                       </div>
                     ))}
@@ -236,7 +236,7 @@ export function AnalyticsPage({
                   <div className="grid gap-2.5 p-4">
                     {slowMovers.map((entry) => (
                       <div key={entry.productId} className="flex items-center justify-between">
-                        <span className="text-white/60">{entry.productName}</span>
+                        <span className="text-white/80">{entry.productName}</span>
                         <span className="font-bold text-white">{entry.totalQuantity}</span>
                       </div>
                     ))}
@@ -250,13 +250,13 @@ export function AnalyticsPage({
                   <div className="grid gap-2.5 p-4">
                     {(summary?.sizeBreakdown ?? []).slice(0, 4).map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-white/60">Size: {item.name}</span>
+                        <span className="text-white/80">Size: {item.name}</span>
                         <span className="font-bold text-white">{item.quantity}</span>
                       </div>
                     ))}
                     {(summary?.flavorBreakdown ?? []).slice(0, 4).map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-white/60">Flavor: {item.name}</span>
+                        <span className="text-white/80">Flavor: {item.name}</span>
                         <span className="font-bold text-white">{item.quantity}</span>
                       </div>
                     ))}

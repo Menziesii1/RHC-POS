@@ -244,7 +244,7 @@ export function InventoryControlPage({
         actions={
           <button
             type="button"
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-b from-[#1be4db] to-[#5191e5] px-4 py-2.5 text-sm font-bold text-[#0f1923] shadow-[0_4px_14px_rgba(27,228,219,0.3)]"
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-b from-[#1be4db] to-[#5191e5] px-4 py-2.5 text-sm font-bold text-[#262626] shadow-[0_4px_14px_rgba(27,228,219,0.3)]"
             onClick={openCreateModal}
           >
             New Product
@@ -272,13 +272,13 @@ export function InventoryControlPage({
       </div>
 
       <section className="mb-5 overflow-hidden rounded-xl ">
-        <div className="bg-[#162231] px-5 py-4 text-white">
+        <div className="bg-[#323232] px-5 py-4 text-white">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Catalog</div>
               <div className="mt-1 font-display text-2xl font-extrabold tracking-tight">Products</div>
             </div>
-            <div className="rounded-full bg-white/[0.05] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/60">
+            <div className="rounded-full bg-white/[0.05] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/80">
               {visibleProducts.length} visible
             </div>
           </div>
@@ -314,7 +314,7 @@ export function InventoryControlPage({
         </div>
         <div className="overflow-auto">
           <table className="w-full text-[13px]">
-            <thead className="sticky top-0 z-10 bg-[#1a2033] text-[10px] uppercase tracking-wider text-white/35">
+            <thead className="sticky top-0 z-10 bg-[#383838] text-[10px] uppercase tracking-wider text-white/75">
               <tr>
                 <th className="px-5 py-3 text-left">Product</th>
                 <th className="px-5 py-3 text-left">Category</th>
@@ -335,14 +335,14 @@ export function InventoryControlPage({
                   >
                     <td className="px-5 py-4">
                       <div className="font-semibold text-white">{product.name}</div>
-                      <div className="mt-1 text-[10px] uppercase tracking-wider text-white/25">{product.id}</div>
+                      <div className="mt-1 text-[10px] uppercase tracking-wider text-white/42">{product.id}</div>
                     </td>
-                    <td className="px-5 py-4 text-white/60">
+                    <td className="px-5 py-4 text-white/80">
                       {categories.find((category) => category.id === product.categoryId)?.name ?? product.categoryId}
                     </td>
                     <td className="px-5 py-4 text-right font-mono text-white">{formatCurrency(product.priceCents)}</td>
                     <td className="px-5 py-4 text-right font-semibold text-white">{metric?.quantity ?? 0}</td>
-                    <td className="px-5 py-4 text-white/50">{metric?.lastActiveDate ?? "No sales yet"}</td>
+                    <td className="px-5 py-4 text-white/85">{metric?.lastActiveDate ?? "No sales yet"}</td>
                     <td className="px-5 py-4 text-center">
                       <span className={`brand-chip text-[10px] ${product.enabled ? "brand-chip-accent" : "brand-chip-soft opacity-55"}`}>
                         {product.enabled ? "Live" : "Hidden"}
@@ -367,12 +367,12 @@ export function InventoryControlPage({
             <input type="number" step="0.01" className="brand-input" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} />
             <button
               type="button"
-              className="touch-button bg-[#1be4db] text-[#0f1923]"
+              className="touch-button bg-[#1be4db] text-[#262626]"
               onClick={() => void handleLibraryAction(() => onTaxSave(Math.round(Number(taxRate || "0") * 100)), "Unable to update tax rate.")}
             >
               Save Tax Rate
             </button>
-            <div className="rounded-lg  bg-white/[0.03] px-3 py-2.5 text-xs font-medium leading-5 text-white/50">
+            <div className="rounded-lg  bg-white/[0.03] px-3 py-2.5 text-xs font-medium leading-5 text-white/85">
               Enabled sizes and enabled flavors are now available to every product.
             </div>
           </div>
@@ -426,7 +426,7 @@ export function InventoryControlPage({
                         Enabled
                       </label>
                     </div>
-                    <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
+                    <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-white/75">
                       <span>{productCount} items</span>
                       <span>{category.id}</span>
                     </div>
@@ -465,7 +465,7 @@ export function InventoryControlPage({
               <input className="brand-input" placeholder="New category" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
               <button
                 type="button"
-                className="touch-button bg-[#1be4db] text-[#0f1923] hover:bg-[#5191e5]"
+                className="touch-button bg-[#1be4db] text-[#262626] hover:bg-[#5191e5]"
                 onClick={() =>
                   void handleLibraryAction(
                     async () => {
@@ -574,7 +574,7 @@ export function InventoryControlPage({
               />
               <button
                 type="button"
-                className="touch-button bg-[#1be4db] text-[#0f1923] hover:bg-[#5191e5]"
+                className="touch-button bg-[#1be4db] text-[#262626] hover:bg-[#5191e5]"
                 onClick={() =>
                   void handleLibraryAction(
                     async () => {
@@ -606,7 +606,7 @@ export function InventoryControlPage({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-semibold text-white">{modifier.name}</div>
-                    <div className="mt-1 text-[10px] uppercase tracking-wider text-white/30">
+                    <div className="mt-1 text-[10px] uppercase tracking-wider text-white/47">
                       {modifier.discountFlavor ? "Discount flavor" : "Standard flavor"}
                     </div>
                   </div>
@@ -614,7 +614,7 @@ export function InventoryControlPage({
                 </div>
                 <button
                   type="button"
-                  className="mt-3 text-[10px] font-bold uppercase tracking-wider text-white/40 hover:text-white/70"
+                  className="mt-3 text-[10px] font-bold uppercase tracking-wider text-white/75 hover:text-white/70"
                   onClick={() =>
                     void handleLibraryAction(
                       () =>
@@ -642,7 +642,7 @@ export function InventoryControlPage({
               </label>
               <button
                 type="button"
-                className="touch-button bg-[#1be4db] text-[#0f1923] hover:bg-[#5191e5]"
+                className="touch-button bg-[#1be4db] text-[#262626] hover:bg-[#5191e5]"
                 onClick={() =>
                   void handleLibraryAction(
                     async () => {
@@ -668,8 +668,8 @@ export function InventoryControlPage({
 
       {productModal ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
-          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[#0f1923] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
-            <div className="bg-[#162231] px-5 py-4 text-white">
+          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[#262626] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+            <div className="bg-[#323232] px-5 py-4 text-white">
               <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">
                 {productModal.mode === "create" ? "New Product" : "Product Inspector"}
               </div>
@@ -747,13 +747,13 @@ export function InventoryControlPage({
                   />
                 </label>
               </div>
-              <div className="rounded-lg  bg-white/[0.03] px-3 py-2.5 text-xs font-medium leading-5 text-white/50">
+              <div className="rounded-lg  bg-white/[0.03] px-3 py-2.5 text-xs font-medium leading-5 text-white/85">
                 Size and flavor assignment is global now. Any enabled size or flavor applies everywhere.
               </div>
               <div className="flex flex-wrap items-center gap-2.5 pt-3">
                 <button
                   type="button"
-                  className="rounded-xl bg-gradient-to-b from-[#1be4db] to-[#5191e5] px-4 py-2.5 text-sm font-bold text-[#0f1923] shadow-[0_4px_14px_rgba(27,228,219,0.3)]"
+                  className="rounded-xl bg-gradient-to-b from-[#1be4db] to-[#5191e5] px-4 py-2.5 text-sm font-bold text-[#262626] shadow-[0_4px_14px_rgba(27,228,219,0.3)]"
                   disabled={!canSubmitProduct}
                   onClick={() => void handleSubmitProduct()}
                 >
