@@ -163,6 +163,8 @@ export function InventoryControlPage({
   const [newFlavorCategoryName, setNewFlavorCategoryName] = useState("");
   const [editingFlavorCategory, setEditingFlavorCategory] = useState<{ id: string; name: string } | null>(null);
   const [editingFlavor, setEditingFlavor] = useState<{ id: string; name: string; price: string; discount: boolean; flavorCategoryId: string } | null>(null);
+  const [showAddFlavorModal, setShowAddFlavorModal] = useState(false);
+  const [showAddGroupInput, setShowAddGroupInput] = useState(false);
 
   const categories = useMemo(() => bootstrap.categories.slice().sort((a, b) => a.sortOrder - b.sortOrder), [bootstrap.categories]);
   const selectedProduct =
@@ -688,15 +690,15 @@ export function InventoryControlPage({
             : m.flavorCategoryId === selectedFlavorCategoryId,
           );
           return (
-            <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
+            <div className="grid grid-cols-[220px_1fr] gap-4" style={{ minWidth: 0, height: "min(70vh, 640px)" }}>
 
               {/* LEFT — flavor categories */}
-              <div className="overflow-hidden rounded-xl">
+              <div className="flex min-h-0 flex-col overflow-hidden rounded-xl">
                 <div className="bg-[#323232] px-5 py-4">
                   <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Groups</div>
                   <div className="mt-1 font-display text-xl font-extrabold text-white">Flavor Categories</div>
                 </div>
-                <div className="divide-y divide-white/[0.04]">
+                <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
                   <button type="button"
                     className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold transition ${selectedFlavorCategoryId === "all" ? "bg-[#1be4db]/10 text-[#1be4db]" : "text-white/70 hover:bg-white/[0.03] hover:text-white"}`}
                     onClick={() => setSelectedFlavorCategoryId("all")}
@@ -729,7 +731,7 @@ export function InventoryControlPage({
                     </button>
                   )}
                 </div>
-                <div className="border-t border-white/5 p-3">
+                <div className="shrink-0 border-t border-white/5 p-3">
                   {editingFlavorCategory ? (
                     <div className="grid gap-2">
                       <input className="brand-input" value={editingFlavorCategory.name} onChange={(e) => setEditingFlavorCategory((s) => s ? { ...s, name: e.target.value } : null)} />
@@ -741,24 +743,41 @@ export function InventoryControlPage({
                         <button type="button" className="touch-button" onClick={() => setEditingFlavorCategory(null)}>Cancel</button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <input className="brand-input flex-1" placeholder="New group name" value={newFlavorCategoryName} onChange={(e) => setNewFlavorCategoryName(e.target.value)} />
-                      <button type="button"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1be4db]/10 text-[#1be4db] hover:bg-[#1be4db]/20"
-                        onClick={() => void handleLibraryAction(async () => {
-                          if (!newFlavorCategoryName.trim()) return;
-                          await onCreateFlavorCategory({ name: newFlavorCategoryName, sortOrder: flavorCategories.length + 1 });
-                          setNewFlavorCategoryName("");
-                        }, "Unable to create category.")}
-                      ><Plus size={16} /></button>
+                  ) : showAddGroupInput ? (
+                    <div className="grid gap-2">
+                      <input
+                        className="brand-input"
+                        placeholder="Group name"
+                        value={newFlavorCategoryName}
+                        autoFocus
+                        onChange={(e) => setNewFlavorCategoryName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Escape") { setShowAddGroupInput(false); setNewFlavorCategoryName(""); } }}
+                      />
+                      <div className="flex gap-2">
+                        <button type="button" className="touch-button flex-1 bg-[#1be4db] text-[#262626]"
+                          onClick={() => void handleLibraryAction(async () => {
+                            if (!newFlavorCategoryName.trim()) return;
+                            await onCreateFlavorCategory({ name: newFlavorCategoryName, sortOrder: flavorCategories.length + 1 });
+                            setNewFlavorCategoryName("");
+                            setShowAddGroupInput(false);
+                          }, "Unable to create category.")}
+                        >Add</button>
+                        <button type="button" className="touch-button" onClick={() => { setShowAddGroupInput(false); setNewFlavorCategoryName(""); }}>Cancel</button>
+                      </div>
                     </div>
+                  ) : (
+                    <button type="button"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/[0.05] py-2 text-xs font-semibold text-white/60 hover:bg-white/[0.09] hover:text-white/80"
+                      onClick={() => setShowAddGroupInput(true)}
+                    >
+                      <Plus size={13} /> New Group
+                    </button>
                   )}
                 </div>
               </div>
 
               {/* RIGHT — flavors list + add/edit form */}
-              <div className="overflow-hidden rounded-xl">
+              <div className="flex min-h-0 flex-col overflow-hidden rounded-xl">
                 <div className="flex items-center justify-between bg-[#323232] px-5 py-4">
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Flavors</div>
@@ -768,7 +787,7 @@ export function InventoryControlPage({
                   </div>
                   <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-semibold text-white/60">{visibleModifiers.length} items</span>
                 </div>
-                <div className="divide-y divide-white/[0.04]">
+                <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
                   {visibleModifiers.map((modifier) => (
                     <div key={modifier.id} className="group flex items-center gap-3 px-5 py-3.5">
                       <div className="min-w-0 flex-1">
@@ -798,51 +817,16 @@ export function InventoryControlPage({
                     <div className="px-5 py-8 text-center text-sm text-white/35">No flavors in this group yet.</div>
                   )}
                 </div>
-                <div className="border-t border-white/5 p-4">
-                  {editingFlavor ? (
-                    <div className="grid gap-2">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Editing: {editingFlavor.name}</div>
-                      <input className="brand-input" value={editingFlavor.name} onChange={(e) => setEditingFlavor((s) => s ? { ...s, name: e.target.value } : null)} />
-                      <input type="text" inputMode="decimal" className="brand-input" placeholder="Price" value={editingFlavor.price}
-                        onChange={(e) => { if (!isMoneyInput(e.target.value)) return; setEditingFlavor((s) => s ? { ...s, price: e.target.value } : null); }}
-                        onBlur={() => setEditingFlavor((s) => s ? { ...s, price: normalizeMoneyInput(s.price) } : null)}
-                      />
-                      <select className="brand-select" value={editingFlavor.flavorCategoryId} onChange={(e) => setEditingFlavor((s) => s ? { ...s, flavorCategoryId: e.target.value } : null)}>
-                        <option value="">Uncategorized</option>
-                        {flavorCategories.map(fc => <option key={fc.id} value={fc.id}>{fc.name}</option>)}
-                      </select>
-                      <label className="brand-chip brand-chip-soft"><input type="checkbox" checked={editingFlavor.discount} onChange={(e) => setEditingFlavor((s) => s ? { ...s, discount: e.target.checked } : null)} /> Discount flavor</label>
-                      <div className="flex gap-2">
-                        <button type="button" className="touch-button flex-1 bg-[#1be4db] text-[#262626]" onClick={() => void handleLibraryAction(async () => {
-                          if (!editingFlavor) return;
-                          const orig = bootstrap.modifiers.find(m => m.id === editingFlavor.id);
-                          await onFlavorSave(editingFlavor.id, { name: editingFlavor.name, priceCents: Math.round(Number(editingFlavor.price || "0") * 100), discountFlavor: editingFlavor.discount, enabled: orig?.enabled ?? true, sortOrder: orig?.sortOrder ?? 0, flavorCategoryId: editingFlavor.flavorCategoryId || null });
-                          setEditingFlavor(null);
-                        }, "Unable to save.")}>Save</button>
-                        <button type="button" className="touch-button" onClick={() => setEditingFlavor(null)}>Cancel</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid gap-2">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Add New Flavor</div>
-                      <input className="brand-input" placeholder="Name" value={newFlavor.name} onChange={(e) => setNewFlavor((s) => ({ ...s, name: e.target.value }))} />
-                      <input type="text" inputMode="decimal" className="brand-input" placeholder="Price (e.g. 0.50)" value={newFlavor.price}
-                        onChange={(e) => { if (!isMoneyInput(e.target.value)) return; setNewFlavor((s) => ({ ...s, price: e.target.value })); }}
-                        onBlur={() => setNewFlavor((s) => ({ ...s, price: normalizeMoneyInput(s.price) }))}
-                      />
-                      <select className="brand-select" value={newFlavor.flavorCategoryId} onChange={(e) => setNewFlavor((s) => ({ ...s, flavorCategoryId: e.target.value }))}>
-                        <option value="">Uncategorized</option>
-                        {flavorCategories.map(fc => <option key={fc.id} value={fc.id}>{fc.name}</option>)}
-                      </select>
-                      <label className="brand-chip brand-chip-soft"><input type="checkbox" checked={newFlavor.discount} onChange={(e) => setNewFlavor((s) => ({ ...s, discount: e.target.checked }))} /> Discount flavor</label>
-                      <button type="button" className="touch-button bg-[#1be4db] text-[#262626]"
-                        onClick={() => void handleLibraryAction(async () => {
-                          await onCreateFlavor({ name: newFlavor.name, priceCents: Math.round(Number(newFlavor.price || "0") * 100), discountFlavor: newFlavor.discount, enabled: true, sortOrder: bootstrap.modifiers.length + 1, flavorCategoryId: newFlavor.flavorCategoryId || null });
-                          setNewFlavor({ name: "", price: "0.00", discount: false, flavorCategoryId: (selectedFlavorCategoryId === "all" || selectedFlavorCategoryId === "uncategorized") ? "" : selectedFlavorCategoryId });
-                        }, "Unable to create flavor.")}
-                      >Add Flavor</button>
-                    </div>
-                  )}
+                <div className="shrink-0 border-t border-white/5 p-2">
+                  <button type="button"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/[0.05] py-2.5 text-xs font-semibold text-white/60 hover:bg-white/[0.09] hover:text-white/80"
+                    onClick={() => {
+                      setNewFlavor({ name: "", price: "0.00", discount: false, flavorCategoryId: (selectedFlavorCategoryId === "all" || selectedFlavorCategoryId === "uncategorized") ? "" : selectedFlavorCategoryId });
+                      setShowAddFlavorModal(true);
+                    }}
+                  >
+                    <Plus size={13} /> Add Flavor
+                  </button>
                 </div>
               </div>
             </div>
@@ -880,6 +864,105 @@ export function InventoryControlPage({
         )}
 
         {/* ── Product modal ── */}
+        {/* ── Add Flavor modal ── */}
+        {showAddFlavorModal && (() => {
+          const flavorCategories = bootstrap.flavorCategories ?? [];
+          return (
+            <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+              <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-[#262626] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+                <div className="bg-[#323232] px-5 py-4">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">New Flavor</div>
+                  <div className="mt-1 font-display text-xl font-extrabold text-white">Add Flavor</div>
+                </div>
+                <div className="grid gap-3 p-5">
+                  <label className="grid gap-1.5">
+                    <span className="brand-kicker">Name</span>
+                    <input className="brand-input" placeholder="e.g. Lavender" autoFocus value={newFlavor.name} onChange={(e) => setNewFlavor((s) => ({ ...s, name: e.target.value }))} />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="brand-kicker">Price adjustment</span>
+                    <input type="text" inputMode="decimal" className="brand-input" placeholder="0.00" value={newFlavor.price}
+                      onChange={(e) => { if (!isMoneyInput(e.target.value)) return; setNewFlavor((s) => ({ ...s, price: e.target.value })); }}
+                      onBlur={() => setNewFlavor((s) => ({ ...s, price: normalizeMoneyInput(s.price) }))}
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="brand-kicker">Category</span>
+                    <select className="brand-select" value={newFlavor.flavorCategoryId} onChange={(e) => setNewFlavor((s) => ({ ...s, flavorCategoryId: e.target.value }))}>
+                      <option value="">Uncategorized</option>
+                      {flavorCategories.map(fc => <option key={fc.id} value={fc.id}>{fc.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="brand-chip brand-chip-soft">
+                    <input type="checkbox" checked={newFlavor.discount} onChange={(e) => setNewFlavor((s) => ({ ...s, discount: e.target.checked }))} />
+                    Discount flavor (reduces price)
+                  </label>
+                  <div className="flex gap-2 pt-1">
+                    <button type="button" className="touch-button flex-1 bg-[#1be4db] text-[#262626]"
+                      onClick={() => void handleLibraryAction(async () => {
+                        await onCreateFlavor({ name: newFlavor.name, priceCents: Math.round(Number(newFlavor.price || "0") * 100), discountFlavor: newFlavor.discount, enabled: true, sortOrder: bootstrap.modifiers.length + 1, flavorCategoryId: newFlavor.flavorCategoryId || null });
+                        setShowAddFlavorModal(false);
+                        setNewFlavor({ name: "", price: "0.00", discount: false, flavorCategoryId: "" });
+                      }, "Unable to create flavor.")}
+                    >Add Flavor</button>
+                    <button type="button" className="touch-button" onClick={() => setShowAddFlavorModal(false)}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Edit Flavor modal ── */}
+        {editingFlavor && (() => {
+          const flavorCategories = bootstrap.flavorCategories ?? [];
+          return (
+            <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+              <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-[#262626] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+                <div className="bg-[#323232] px-5 py-4">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">Edit Flavor</div>
+                  <div className="mt-1 font-display text-xl font-extrabold text-white">{editingFlavor.name}</div>
+                </div>
+                <div className="grid gap-3 p-5">
+                  <label className="grid gap-1.5">
+                    <span className="brand-kicker">Name</span>
+                    <input className="brand-input" autoFocus value={editingFlavor.name} onChange={(e) => setEditingFlavor((s) => s ? { ...s, name: e.target.value } : null)} />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="brand-kicker">Price adjustment</span>
+                    <input type="text" inputMode="decimal" className="brand-input" value={editingFlavor.price}
+                      onChange={(e) => { if (!isMoneyInput(e.target.value)) return; setEditingFlavor((s) => s ? { ...s, price: e.target.value } : null); }}
+                      onBlur={() => setEditingFlavor((s) => s ? { ...s, price: normalizeMoneyInput(s.price) } : null)}
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="brand-kicker">Category</span>
+                    <select className="brand-select" value={editingFlavor.flavorCategoryId} onChange={(e) => setEditingFlavor((s) => s ? { ...s, flavorCategoryId: e.target.value } : null)}>
+                      <option value="">Uncategorized</option>
+                      {flavorCategories.map(fc => <option key={fc.id} value={fc.id}>{fc.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="brand-chip brand-chip-soft">
+                    <input type="checkbox" checked={editingFlavor.discount} onChange={(e) => setEditingFlavor((s) => s ? { ...s, discount: e.target.checked } : null)} />
+                    Discount flavor (reduces price)
+                  </label>
+                  <div className="flex gap-2 pt-1">
+                    <button type="button" className="touch-button flex-1 bg-[#1be4db] text-[#262626]"
+                      onClick={() => void handleLibraryAction(async () => {
+                        if (!editingFlavor) return;
+                        const orig = bootstrap.modifiers.find(m => m.id === editingFlavor.id);
+                        await onFlavorSave(editingFlavor.id, { name: editingFlavor.name, priceCents: Math.round(Number(editingFlavor.price || "0") * 100), discountFlavor: editingFlavor.discount, enabled: orig?.enabled ?? true, sortOrder: orig?.sortOrder ?? 0, flavorCategoryId: editingFlavor.flavorCategoryId || null });
+                        setEditingFlavor(null);
+                      }, "Unable to save.")}
+                    >Save Changes</button>
+                    <button type="button" className="touch-button" onClick={() => setEditingFlavor(null)}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {productModal ? (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
             <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[#262626] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
