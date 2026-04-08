@@ -57,19 +57,26 @@ export class PosService {
     return this.repository.finalizeCashPayment(orderId, tenderedCents);
   }
 
-  async startCardPayment(orderId: string): Promise<DraftOrder> {
+  async startCardPayment(orderId: string, amountCents?: number): Promise<DraftOrder> {
     const order = await this.getOrder(orderId);
     if (order.status === "paid") {
       return order;
     }
 
-    const result = await this.terminalService.startPayment(order);
+    const cardCents = amountCents ?? order.totalCents;
+    const splitCashCents = amountCents != null && amountCents < order.totalCents
+      ? order.totalCents - amountCents
+      : undefined;
+
+    const result = await this.terminalService.startPayment(order, cardCents);
     return this.repository.updateCardPayment(orderId, {
       status: result.status,
       stripePaymentIntentId: result.stripePaymentIntentId,
       stripeReaderActionId: result.stripeReaderActionId,
       stripeReaderId: result.stripeReaderId,
       failureMessage: result.failureMessage,
+      splitCardCents: amountCents != null ? cardCents : undefined,
+      splitCashCents,
     });
   }
 

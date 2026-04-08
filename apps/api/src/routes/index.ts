@@ -7,6 +7,10 @@ const cashPaymentSchema = z.object({
   tenderedCents: z.number().int().nonnegative(),
 });
 
+const startCardSchema = z.object({
+  amountCents: z.number().int().positive().optional(),
+});
+
 const analyticsQuerySchema = z.object({
   days: z.coerce.number().int().positive().max(90).default(14),
 });
@@ -26,9 +30,10 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
     const { tenderedCents } = cashPaymentSchema.parse(request.body);
     return posService.finalizeCashPayment((request.params as { id: string }).id, tenderedCents);
   });
-  app.post("/v1/orders/:id/pay-card/start", async (request) =>
-    posService.startCardPayment((request.params as { id: string }).id),
-  );
+  app.post("/v1/orders/:id/pay-card/start", async (request) => {
+    const { amountCents } = startCardSchema.parse(request.body ?? {});
+    return posService.startCardPayment((request.params as { id: string }).id, amountCents);
+  });
   app.post("/v1/orders/:id/pay-card/cancel", async (request) =>
     posService.cancelCardPayment((request.params as { id: string }).id),
   );

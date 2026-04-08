@@ -1,9 +1,10 @@
-import { Banknote, CreditCard, Trash2, Settings } from "lucide-react";
+import { Banknote, CreditCard, Split, Trash2, Settings } from "lucide-react";
 
 interface ActionBarProps {
   disabled: boolean;
   onCash: () => void;
   onCard: () => void;
+  onSplit: () => void;
   onClear: () => void;
   onAdmin: () => void;
   cardEnabled?: boolean;
@@ -14,6 +15,7 @@ export function ActionBar({
   disabled,
   onCash,
   onCard,
+  onSplit,
   onClear,
   onAdmin,
   cardEnabled = true,
@@ -43,6 +45,18 @@ export function ActionBar({
           </button>
         ) : null}
       </div>
+
+      {cardEnabled ? (
+        <button
+          type="button"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400/15 py-3.5 text-sm font-semibold text-amber-300 transition hover:bg-amber-400/20 active:scale-[0.97] disabled:opacity-30"
+          disabled={disabled}
+          onClick={onSplit}
+        >
+          <Split size={15} />
+          Split Tender
+        </button>
+      ) : null}
 
       <div className={`mt-2 grid gap-2 ${adminEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button

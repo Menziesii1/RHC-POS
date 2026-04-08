@@ -111,7 +111,7 @@ export const paymentStateSchema = z.enum([
   "canceled",
 ]);
 
-export const tenderTypeSchema = z.enum(["cash", "card"]);
+export const tenderTypeSchema = z.enum(["cash", "card", "split"]);
 
 export const orderStatusSchema = z.enum([
   "draft",
@@ -129,6 +129,9 @@ export const paymentSnapshotSchema = z.object({
   failureMessage: z.string().optional(),
   tenderedCents: z.number().int().nonnegative().optional(),
   changeDueCents: z.number().int().nonnegative().optional(),
+  splitCardCents: z.number().int().nonnegative().optional(),
+  splitCashCents: z.number().int().nonnegative().optional(),
+  paidCents: z.number().int().nonnegative().optional(),
 });
 
 export const draftOrderSchema = z.object({

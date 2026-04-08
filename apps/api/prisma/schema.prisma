@@ -26,6 +26,7 @@ enum PaymentStatus {
 enum TenderType {
   cash
   card
+  split
 }
 
 model Location {
@@ -216,6 +217,9 @@ model Payment {
   failureMessage        String?
   tenderedCents         Int?
   changeDueCents        Int?
+  splitCardCents        Int?
+  splitCashCents        Int?
+  paidCents             Int?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 }

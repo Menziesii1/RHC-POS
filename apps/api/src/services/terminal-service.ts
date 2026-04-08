@@ -23,7 +23,7 @@ export interface TerminalWebhookResult {
 
 export interface TerminalService {
   getStatus(lastWebhookAt: string | null): Promise<Pick<RegisterStatus, "reader" | "stripe" | "backend" | "internet" | "lastWebhookAt">>;
-  startPayment(order: DraftOrder): Promise<TerminalStartResult>;
+  startPayment(order: DraftOrder, amountCents?: number): Promise<TerminalStartResult>;
   cancelPayment(order: DraftOrder): Promise<void>;
   parseWebhook(signature: string | undefined, rawBody: string): TerminalWebhookResult | null;
 }
@@ -41,7 +41,7 @@ export class MockTerminalService implements TerminalService {
     };
   }
 
-  async startPayment(order: DraftOrder): Promise<TerminalStartResult> {
+  async startPayment(order: DraftOrder, _amountCents?: number): Promise<TerminalStartResult> {
     return {
       mode: "mock",
       status: "succeeded",
@@ -107,9 +107,9 @@ export class StripeTerminalService implements TerminalService {
     }
   }
 
-  async startPayment(order: DraftOrder): Promise<TerminalStartResult> {
+  async startPayment(order: DraftOrder, amountCents?: number): Promise<TerminalStartResult> {
     const paymentIntent = await this.stripe.paymentIntents.create({
-      amount: order.totalCents,
+      amount: amountCents ?? order.totalCents,
       currency: "usd",
       payment_method_types: ["card_present"],
       capture_method: "automatic",

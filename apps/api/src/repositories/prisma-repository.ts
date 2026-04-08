@@ -242,9 +242,34 @@ export class PrismaPosRepository implements PosRepository {
 
   async finalizeCashPayment(orderId: string, tenderedCents: number): Promise<DraftOrder> {
     const order = await this.requireOrder(orderId);
-    if (tenderedCents < order.totalCents) {
-      throw new HttpError(400, "Cash received is less than the amount due.");
+
+    // In a split tender, card portion may have already been charged
+    const splitCardCents = order.payment?.splitCardCents ?? 0;
+    const effectiveDue = order.totalCents - splitCardCents;
+
+    if (tenderedCents < effectiveDue) {
+      // Partial payment — record it and keep order open
+      const updated = await this.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: "awaiting_payment",
+          payment: {
+            update: {
+              tenderType: splitCardCents > 0 ? "split" : "cash",
+              status: "pending",
+              tenderedCents,
+              paidCents: splitCardCents + tenderedCents,
+              failureMessage: null,
+            },
+          },
+        },
+        include: { items: true, payment: true },
+      });
+      return this.mapOrder(updated);
     }
+
+    const tenderType = splitCardCents > 0 ? "split" : "cash";
+    const changeDueCents = tenderedCents - effectiveDue;
 
     const updated = await this.prisma.order.update({
       where: { id: orderId },
@@ -253,66 +278,67 @@ export class PrismaPosRepository implements PosRepository {
         paidAt: new Date(),
         payment: {
           update: {
-            tenderType: "cash",
+            tenderType,
             status: "succeeded",
             tenderedCents,
-            changeDueCents: tenderedCents - order.totalCents,
+            changeDueCents,
+            paidCents: splitCardCents + tenderedCents - changeDueCents,
             failureMessage: null,
           },
         },
       },
-      include: {
-        items: true,
-        payment: true,
-      },
+      include: { items: true, payment: true },
     });
 
     return this.mapOrder(updated);
   }
 
   async updateCardPayment(orderId: string, input: CardPaymentUpdateInput): Promise<DraftOrder> {
-    await this.requireOrder(orderId);
+    const order = await this.requireOrder(orderId);
+    const existingSplitCashCents = order.payment?.splitCashCents ?? input.splitCashCents ?? null;
+    const isSplitSucceeded = input.status === "succeeded" && existingSplitCashCents != null;
 
     const statusMap = {
       pending: { orderStatus: "awaiting_payment", paymentStatus: "pending" },
-      succeeded: { orderStatus: "paid", paymentStatus: "succeeded" },
+      // For split tender success, keep awaiting_payment until cash is finalized
+      succeeded: { orderStatus: isSplitSucceeded ? "awaiting_payment" : "paid", paymentStatus: "succeeded" },
       failed: { orderStatus: "awaiting_payment", paymentStatus: "failed" },
       canceled: { orderStatus: "draft", paymentStatus: "canceled" },
     } as const;
 
-    const updated = await this.prisma.order.update({
+    const cardPaymentData = {
+      tenderType: "card" as const,
+      status: statusMap[input.status].paymentStatus,
+      stripePaymentIntentId: input.stripePaymentIntentId,
+      stripeReaderActionId: input.stripeReaderActionId,
+      stripeReaderId: input.stripeReaderId,
+      failureMessage: input.failureMessage ?? null,
+      ...(input.splitCardCents != null ? { splitCardCents: input.splitCardCents } : {}),
+      ...(input.splitCashCents != null ? { splitCashCents: input.splitCashCents } : {}),
+    };
+
+    await this.prisma.order.update({
       where: { id: orderId },
       data: {
         status: statusMap[input.status].orderStatus,
-        paidAt: input.status === "succeeded" ? new Date() : null,
+        paidAt: input.status === "succeeded" && !isSplitSucceeded ? new Date() : null,
         payment: {
           upsert: {
-            update: {
-              tenderType: "card",
-              status: statusMap[input.status].paymentStatus,
-              stripePaymentIntentId: input.stripePaymentIntentId,
-              stripeReaderActionId: input.stripeReaderActionId,
-              stripeReaderId: input.stripeReaderId,
-              failureMessage: input.failureMessage ?? null,
-            },
-            create: {
-              tenderType: "card",
-              status: statusMap[input.status].paymentStatus,
-              stripePaymentIntentId: input.stripePaymentIntentId,
-              stripeReaderActionId: input.stripeReaderActionId,
-              stripeReaderId: input.stripeReaderId,
-              failureMessage: input.failureMessage ?? null,
-            },
+            update: cardPaymentData,
+            create: cardPaymentData,
           },
         },
       },
-      include: {
-        items: true,
-        payment: true,
-      },
+      include: { items: true, payment: true },
     });
 
-    return this.mapOrder(updated);
+    // Auto-finalize cash portion for split tender after card succeeds
+    if (isSplitSucceeded) {
+      return this.finalizeCashPayment(orderId, existingSplitCashCents!);
+    }
+
+    const updated = await this.getOrderRecord(orderId);
+    return this.mapOrder(updated!);
   }
 
   async getSummary(date: Date): Promise<SummaryResponse> {
@@ -1037,6 +1063,9 @@ export class PrismaPosRepository implements PosRepository {
         failureMessage: order.payment?.failureMessage ?? undefined,
         tenderedCents: order.payment?.tenderedCents ?? undefined,
         changeDueCents: order.payment?.changeDueCents ?? undefined,
+        splitCardCents: order.payment?.splitCardCents ?? undefined,
+        splitCashCents: order.payment?.splitCashCents ?? undefined,
+        paidCents: order.payment?.paidCents ?? undefined,
       },
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),

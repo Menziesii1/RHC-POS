@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { useAppStore } from "./app-store";
 
-const bootstrapFixture: BootstrapResponse = {
+const bootstrapFixture = {
   settings: {
     locationId: "loc-1",
     locationName: "River Hills",
@@ -41,7 +41,7 @@ const bootstrapFixture: BootstrapResponse = {
   sizes: [{ id: "regular", name: "Regular", priceDeltaCents: 0, enabled: true, sortOrder: 1 }],
   cashiers: [{ id: "cashier-1", name: "Sarah", active: true }],
   flavorCategories: [],
-};
+} as BootstrapResponse;
 
 function resetStore() {
   useAppStore.setState({

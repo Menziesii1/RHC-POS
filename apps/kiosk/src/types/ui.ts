@@ -9,7 +9,7 @@ export interface CartLineState {
   iced: boolean;
 }
 
-export type OverlayState = "none" | "cash" | "card" | "success" | "admin-pin" | "drink-builder";
+export type OverlayState = "none" | "cash" | "card" | "split" | "success" | "admin-pin" | "drink-builder";
 export type AppView = "register" | "inventory" | "analytics";
 
 export interface PendingTransactionSnapshot {

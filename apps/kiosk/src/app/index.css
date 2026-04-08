@@ -43,14 +43,14 @@ body {
   height: 100vh;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 14px;
   background: #262626;
 }
 
 .pos-view-panel {
   height: 100%;
   overflow: auto;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #262626;
 }
 
@@ -58,7 +58,7 @@ body {
   position: relative;
   z-index: 1;
   width: min(92vw, 520px);
-  border-radius: 16px;
+  border-radius: 14px;
   background: #323232;
   padding: 2rem;
   color: white;
@@ -72,13 +72,13 @@ body {
 }
 
 .touch-card {
-  border-radius: 16px;
+  border-radius: 14px;
   background: #323232;
 }
 
 .touch-button {
   @apply px-4 py-3 text-left text-sm font-semibold text-white/70 transition duration-150;
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -105,7 +105,7 @@ body {
 }
 
 .brand-section {
-  border-radius: 12px;
+  border-radius: 10px;
   background: #323232;
 }
 
@@ -120,14 +120,23 @@ body {
 
 .brand-input {
   @apply px-3.5 py-3 text-sm text-white outline-none transition focus:ring-2 focus:ring-[#1be4db]/20;
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
 }
 
 .brand-select {
   @apply px-3.5 py-3 text-sm text-white outline-none transition focus:ring-2 focus:ring-[#1be4db]/20;
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
+}
+
+.brand-select option {
+  color: #262626;
+  background: #f7fbff;
+}
+
+.brand-select optgroup {
+  color: #262626;
 }
 
 .brand-chip {
@@ -147,7 +156,7 @@ body {
 
 .brand-stat {
   @apply px-4 py-3.5;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #323232;
 }
 
@@ -166,13 +175,29 @@ body {
 }
 
 .brand-rail {
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.03);
 }
 
 .brand-rail-active {
   background: rgba(27, 228, 219, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
+}
+
+.rounded-lg {
+  border-radius: 0.6875rem !important;
+}
+
+.rounded-xl {
+  border-radius: 0.8125rem !important;
+}
+
+.rounded-2xl {
+  border-radius: 0.9375rem !important;
+}
+
+.rounded-3xl {
+  border-radius: 1.125rem !important;
 }
 
 @keyframes admin-success-veil {

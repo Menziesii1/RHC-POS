@@ -31,6 +31,10 @@ export interface CardPaymentUpdateInput {
   stripeReaderId?: string;
   status: "pending" | "succeeded" | "failed" | "canceled";
   failureMessage?: string;
+  /** For split tender: card portion charged. When set and status=succeeded, cash is auto-finalized. */
+  splitCardCents?: number;
+  /** For split tender: cash portion to auto-apply after card succeeds. */
+  splitCashCents?: number;
 }
 
 export interface PosRepository {

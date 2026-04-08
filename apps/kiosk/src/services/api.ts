@@ -103,9 +103,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ tenderedCents }),
     }),
-  startCard: (orderId: string) =>
+  startCard: (orderId: string, amountCents?: number) =>
     request<DraftOrder>(`/orders/${orderId}/pay-card/start`, {
       method: "POST",
+      ...(amountCents != null ? { body: JSON.stringify({ amountCents }) } : {}),
     }),
   cancelCard: (orderId: string) =>
     request<DraftOrder>(`/orders/${orderId}/pay-card/cancel`, {

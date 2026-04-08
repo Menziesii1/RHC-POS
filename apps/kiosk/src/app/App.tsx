@@ -7,6 +7,7 @@ import { AnalyticsPage } from "../components/AnalyticsPage";
 import { CardPaymentOverlay } from "../components/CardPaymentOverlay";
 import { CartPanel } from "../components/CartPanel";
 import { CashPaymentOverlay } from "../components/CashPaymentOverlay";
+import { SplitTenderModal } from "../components/SplitTenderModal";
 import { DrinkBuilderOverlay } from "../components/DrinkBuilderOverlay";
 import { InventoryControlPage } from "../components/InventoryControlPage";
 import { ProductGrid } from "../components/ProductGrid";
@@ -77,6 +78,7 @@ export function App() {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsRangeResponse | null>(null);
   const [analyticsRangeDays, setAnalyticsRangeDays] = useState(28);
+  const [splitCardCents, setSplitCardCents] = useState<number | null>(null);
   const hydratedRef = useRef(false);
 
   const cartView = useMemo(
@@ -211,9 +213,11 @@ export function App() {
         }
         store.setPendingOrder(order);
         if (order.status === "paid") {
+          setSplitCardCents(null);
           store.markSuccess(order);
           clearPersistedState();
         } else if (order.payment.status === "failed" || order.payment.status === "canceled") {
+          setSplitCardCents(null);
           store.setPaymentError(order.payment.failureMessage ?? "Card payment did not complete.");
           store.setOverlay("card");
         }
@@ -369,12 +373,82 @@ export function App() {
     }
   };
 
+  const handleStartSplit = () => {
+    if (cartView.lines.length === 0) return;
+    store.setOverlay("split");
+  };
+
+  const handleSplitTender = async (
+    tender1: { type: "cash" | "card"; cents: number },
+    tender2: { type: "cash" | "card"; cents: number },
+  ) => {
+    store.setOverlay("none");
+    store.setPaymentError(null);
+
+    // Normalise: always process card before cash
+    const [cardTender, cashTender] = (tender1.type === "card" ? [tender1, tender2] : [tender2, tender1]) as [
+      { type: "cash" | "card"; cents: number },
+      { type: "cash" | "card"; cents: number },
+    ];
+
+    const hasCard = cardTender.type === "card";
+
+    try {
+      const order = await ensureOrder(
+        store.pendingOrder,
+        store.cashierId,
+        store.cartLines.map((line) => ({
+          productId: line.productId,
+          quantity: line.quantity,
+          sizeOptionId: line.sizeOptionId ?? null,
+          modifierIds: line.modifierIds,
+        })),
+      );
+      store.setPendingOrder(order);
+
+      if (!hasCard) {
+        // Both cash — just combine and pay
+        store.setPendingTransaction({ orderId: order.id, stage: "cash", savedAt: new Date().toISOString() });
+        const paid = await api.payCash(order.id, cardTender.cents + cashTender.cents);
+        if (paid.status === "paid") {
+          store.markSuccess(paid);
+          clearPersistedState();
+        } else {
+          // Partial payment recorded
+          store.setPendingOrder(paid);
+          const remaining = paid.totalCents - (paid.payment.paidCents ?? 0);
+          store.setPaymentError(`Partial payment recorded. Balance remaining: ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(remaining / 100)}`);
+          store.setPendingTransaction(null);
+        }
+        return;
+      }
+
+      // Card + cash: start card for card portion, backend auto-applies cash after success
+      setSplitCardCents(cardTender.cents);
+      store.setPendingTransaction({ orderId: order.id, stage: "card", savedAt: new Date().toISOString() });
+      store.setOverlay("card");
+      const started = await api.startCard(order.id, cardTender.cents);
+      if (started.status === "paid") {
+        setSplitCardCents(null);
+        store.markSuccess(started);
+        clearPersistedState();
+      } else {
+        store.setPendingOrder(started);
+      }
+    } catch (error) {
+      setSplitCardCents(null);
+      store.setOverlay("none");
+      store.setPaymentError(error instanceof Error ? error.message : "Split tender failed.");
+    }
+  };
+
   const handleCancelCard = async () => {
     try {
       if (store.pendingOrder?.id) {
         await api.cancelCard(store.pendingOrder.id);
       }
     } finally {
+      setSplitCardCents(null);
       store.setOverlay("none");
       store.setPendingTransaction(null);
       store.setPaymentError(null);
@@ -456,6 +530,11 @@ export function App() {
 
   const handleFlavorSave = async (modifierId: string, input: Parameters<typeof api.updateFlavor>[2]) => {
     await api.updateFlavor(store.adminPin, modifierId, input);
+    await refreshBootstrap();
+  };
+
+  const handleFlavorDelete = async (modifierId: string) => {
+    await api.deleteFlavor(store.adminPin, modifierId);
     await refreshBootstrap();
   };
 
@@ -564,6 +643,7 @@ export function App() {
                     disabled={cartView.lines.length === 0}
                     onCash={() => void handleStartCash()}
                     onCard={() => void handleStartCard()}
+                    onSplit={handleStartSplit}
                     onClear={() => void handleClearCart()}
                     onAdmin={handleAdminOpen}
                     cardEnabled={CARD_ENABLED}
@@ -591,6 +671,7 @@ export function App() {
                 onSizeSave={handleSizeSave}
                 onSizeDelete={handleSizeDelete}
                 onFlavorSave={handleFlavorSave}
+                onFlavorDelete={handleFlavorDelete}
                 onCreateCategory={handleCreateCategory}
                 onCreateFlavor={handleCreateFlavor}
                 onCreateSize={handleCreateSize}
@@ -626,6 +707,15 @@ export function App() {
         ) : null}
       </section>
 
+      {store.overlay === "split" ? (
+        <SplitTenderModal
+          totalCents={cartView.totalCents}
+          cardEnabled={CARD_ENABLED}
+          onClose={() => store.setOverlay("none")}
+          onConfirm={(t1, t2) => void handleSplitTender(t1, t2)}
+        />
+      ) : null}
+
       {store.overlay === "cash" ? (
         <CashPaymentOverlay
           totalCents={cartView.totalCents}
@@ -654,7 +744,7 @@ export function App() {
 
       {store.overlay === "card" ? (
         <CardPaymentOverlay
-          totalCents={store.pendingOrder?.totalCents ?? cartView.totalCents}
+          totalCents={splitCardCents ?? store.pendingOrder?.totalCents ?? cartView.totalCents}
           statusLabel={
             store.pendingOrder?.payment.status === "pending"
               ? "Customer may tap, insert, or swipe"

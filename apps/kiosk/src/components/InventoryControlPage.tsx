@@ -8,8 +8,8 @@ import {
   type UpsertProductInput,
   type UpsertSizeOptionInput,
 } from "@rhc-pos/shared";
-import { ChevronUp, ChevronDown, Package, Settings, FolderOpen, Ruler, Droplets, ArrowLeft, Pencil, Trash2, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronUp, ChevronDown, Package, Settings, FolderOpen, Ruler, Droplets, ArrowLeft, Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { useConfirm } from "../lib/confirm";
 import { AdminWorkspaceHeader } from "./AdminWorkspaceHeader";
@@ -27,6 +27,7 @@ interface InventoryControlPageProps {
   onSizeSave: (sizeId: string, input: UpsertSizeOptionInput) => Promise<void>;
   onSizeDelete: (sizeId: string) => Promise<void>;
   onFlavorSave: (modifierId: string, input: UpsertModifierInput) => Promise<void>;
+  onFlavorDelete: (modifierId: string) => Promise<void>;
   onCreateCategory: (input: UpsertCategoryInput) => Promise<void>;
   onCreateFlavor: (input: UpsertModifierInput) => Promise<void>;
   onCreateSize: (input: UpsertSizeOptionInput) => Promise<void>;
@@ -39,6 +40,7 @@ interface InventoryControlPageProps {
 type AdminSubPage = "products" | "store" | "categories" | "sizes" | "flavors" | null;
 type CategoryDraft = { name: string; sortOrder: string; enabled: boolean };
 type SizeDraft = { name: string; sortOrder: string; price: string; enabled: boolean };
+type DeleteHoldTarget = { kind: "flavor" | "category"; id: string; label: string };
 
 function toSizeDraft(size: BootstrapResponse["sizes"][number]): SizeDraft {
   return {
@@ -71,6 +73,9 @@ function normalizeIntegerInput(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? String(Math.trunc(parsed)) : "0";
 }
+
+const HOLD_TO_ARM_MS = 1000;
+const HOLD_TO_DELETE_MS = 1000;
 
 function defaultProductDraft(bootstrap: BootstrapResponse): UpsertProductInput {
   return {
@@ -132,6 +137,7 @@ export function InventoryControlPage({
   onSizeSave,
   onSizeDelete,
   onFlavorSave,
+  onFlavorDelete,
   onCreateCategory,
   onCreateFlavor,
   onCreateSize,
@@ -165,6 +171,11 @@ export function InventoryControlPage({
   const [editingFlavor, setEditingFlavor] = useState<{ id: string; name: string; price: string; discount: boolean; flavorCategoryId: string } | null>(null);
   const [showAddFlavorModal, setShowAddFlavorModal] = useState(false);
   const [showAddGroupInput, setShowAddGroupInput] = useState(false);
+  const [deleteHoldTarget, setDeleteHoldTarget] = useState<DeleteHoldTarget | null>(null);
+  const [deleteHoldProgress, setDeleteHoldProgress] = useState(0);
+  const deleteHoldStartRef = useRef<{ target: DeleteHoldTarget; startedAt: number; pointerId: number; originX: number; originY: number } | null>(null);
+  const deleteHoldRafRef = useRef<number | null>(null);
+  const deleteHoldAwaitingConfirmRef = useRef(false);
 
   const categories = useMemo(() => bootstrap.categories.slice().sort((a, b) => a.sortOrder - b.sortOrder), [bootstrap.categories]);
   const selectedProduct =
@@ -235,6 +246,8 @@ export function InventoryControlPage({
     return () => window.clearTimeout(timeout);
   }, [successFlashToken]);
 
+  useEffect(() => () => clearDeleteHold(), []);
+
   const activeProducts = bootstrap.products.filter((product) => product.enabled).length;
   const canSubmitProduct = productDraft.name.trim().length > 0 && productDraft.categoryId.trim().length > 0 && !isSavingProduct;
 
@@ -242,6 +255,106 @@ export function InventoryControlPage({
   const openEditModal = (productId: string) => { setProductError(null); setProductModal({ mode: "edit", productId }); };
   const closeProductModal = () => { setProductError(null); setProductModal(null); };
   const triggerSuccessFlash = () => setSuccessFlashToken(Date.now());
+
+  const clearDeleteHold = () => {
+    if (deleteHoldRafRef.current !== null) {
+      window.cancelAnimationFrame(deleteHoldRafRef.current);
+      deleteHoldRafRef.current = null;
+    }
+    deleteHoldStartRef.current = null;
+    setDeleteHoldTarget(null);
+    setDeleteHoldProgress(0);
+    deleteHoldAwaitingConfirmRef.current = false;
+  };
+
+  const cancelDeleteHold = () => {
+    if (deleteHoldAwaitingConfirmRef.current) {
+      return;
+    }
+    clearDeleteHold();
+  };
+
+  const completeDeleteHold = async (target: DeleteHoldTarget, deleteAction: () => Promise<void>) => {
+    const confirmed = await confirm({
+      title: `Delete ${target.kind === "flavor" ? "Flavor" : "Category"}?`,
+      message: `Delete "${target.label}"? This cannot be undone.`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+    });
+
+      if (!confirmed) {
+        return;
+      }
+
+      await deleteAction();
+  };
+
+  const startDeleteHold =
+    (target: DeleteHoldTarget, deleteAction: () => Promise<void>) => (event: ReactPointerEvent<HTMLElement>) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      cancelDeleteHold();
+
+      const startedAt = performance.now();
+      deleteHoldStartRef.current = {
+        target,
+        startedAt,
+        pointerId: event.pointerId,
+        originX: event.clientX,
+        originY: event.clientY,
+      };
+      setDeleteHoldTarget(target);
+      setDeleteHoldProgress(0);
+
+      const step = (now: number) => {
+        const current = deleteHoldStartRef.current;
+        if (!current || current.target.id !== target.id || current.target.kind !== target.kind) {
+          return;
+        }
+
+        const elapsed = now - current.startedAt;
+        const progress =
+          elapsed < HOLD_TO_ARM_MS
+            ? 0
+            : Math.min(1, (elapsed - HOLD_TO_ARM_MS) / HOLD_TO_DELETE_MS);
+        setDeleteHoldProgress(progress);
+
+        if (progress >= 1) {
+          if (deleteHoldRafRef.current !== null) {
+            window.cancelAnimationFrame(deleteHoldRafRef.current);
+            deleteHoldRafRef.current = null;
+          }
+          deleteHoldStartRef.current = null;
+          deleteHoldAwaitingConfirmRef.current = true;
+          setDeleteHoldProgress(1);
+          void (async () => {
+            try {
+              await completeDeleteHold(target, deleteAction);
+            } finally {
+              clearDeleteHold();
+            }
+          })();
+          return;
+        }
+
+        deleteHoldRafRef.current = window.requestAnimationFrame(step);
+      };
+
+      deleteHoldRafRef.current = window.requestAnimationFrame(step);
+    };
+
+  const updateDeleteHoldPointer = (event: ReactPointerEvent<HTMLElement>) => {
+    const current = deleteHoldStartRef.current;
+    if (!current || event.pointerId !== current.pointerId) {
+      return;
+    }
+
+    const moved = Math.hypot(event.clientX - current.originX, event.clientY - current.originY);
+    if (moved > 12) {
+      cancelDeleteHold();
+    }
+  };
 
   const handleSubmitProduct = async () => {
     if (!canSubmitProduct) return setProductError("Enter a product name before saving.");
@@ -706,21 +819,56 @@ export function InventoryControlPage({
                     <span>All Flavors</span>
                     <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px]">{bootstrap.modifiers.length}</span>
                   </button>
-                  {flavorCategories.map((fc) => (
-                    <div key={fc.id} className={`group flex items-center gap-2 px-4 py-3 transition ${selectedFlavorCategoryId === fc.id ? "bg-[#1be4db]/10" : "hover:bg-white/[0.03]"}`}>
-                      <button type="button"
-                        className={`flex flex-1 items-center justify-between text-left text-sm font-semibold transition ${selectedFlavorCategoryId === fc.id ? "text-[#1be4db]" : "text-white/70 hover:text-white"}`}
-                        onClick={() => setSelectedFlavorCategoryId(fc.id)}
+                  {flavorCategories.map((fc) => {
+                    const selected = selectedFlavorCategoryId === fc.id;
+                    const deleteTarget = { kind: "category" as const, id: fc.id, label: fc.name };
+                    return (
+                      <div
+                        key={fc.id}
+                        className={`relative overflow-hidden flex flex-col gap-2 px-4 py-3 transition ${selected ? "bg-[#1be4db]/10" : "hover:bg-white/[0.03]"}`}
+                        onPointerDown={startDeleteHold(deleteTarget, () =>
+                          handleLibraryAction(() => onFlavorCategoryDelete(fc.id), "Unable to delete category."),
+                        )}
+                        onPointerUp={cancelDeleteHold}
+                        onPointerLeave={cancelDeleteHold}
+                        onPointerCancel={cancelDeleteHold}
+                        onPointerMove={updateDeleteHoldPointer}
+                        onContextMenu={(event) => event.preventDefault()}
                       >
-                        <span>{fc.name}</span>
-                        <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px]">{bootstrap.modifiers.filter(m => m.flavorCategoryId === fc.id).length}</span>
-                      </button>
-                      <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100">
-                        <button type="button" className="rounded p-1 text-white/40 hover:text-white" onClick={() => setEditingFlavorCategory({ id: fc.id, name: fc.name })}><Pencil size={12} /></button>
-                        <button type="button" className="rounded p-1 text-rose-400/60 hover:text-rose-300" onClick={() => void handleLibraryAction(() => onFlavorCategoryDelete(fc.id), "Unable to delete category.")}><Trash2 size={12} /></button>
+                        <button
+                          type="button"
+                          onPointerDown={(event) => event.stopPropagation()}
+                          className={`flex items-center justify-between text-left text-sm font-semibold transition ${selected ? "text-[#1be4db]" : "text-white/70 hover:text-white"}`}
+                          onClick={() => setSelectedFlavorCategoryId(fc.id)}
+                        >
+                          <span>{fc.name}</span>
+                          <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px]">
+                            {bootstrap.modifiers.filter(m => m.flavorCategoryId === fc.id).length}
+                          </span>
+                        </button>
+                        {selected ? (
+                          <div className="ml-auto flex w-fit flex-col items-end gap-2">
+                            <button
+                              type="button"
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-xl bg-white/[0.06] px-3 py-2 text-[11px] font-semibold text-white/85 transition hover:bg-white/[0.09] hover:text-white active:bg-[#1be4db]/15 active:text-white"
+                              onClick={() => setEditingFlavorCategory({ id: fc.id, name: fc.name })}
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        ) : null}
+                        {deleteHoldTarget?.kind === "category" && deleteHoldTarget.id === fc.id && deleteHoldProgress > 0 ? (
+                          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-xl bg-rose-500/10">
+                            <div
+                              className="absolute inset-0 origin-left bg-rose-500/60"
+                              style={{ transform: `scaleX(${deleteHoldProgress})` }}
+                            />
+                          </div>
+                        ) : null}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {bootstrap.modifiers.some(m => !m.flavorCategoryId) && (
                     <button type="button"
                       className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold transition ${selectedFlavorCategoryId === "uncategorized" ? "bg-[#1be4db]/10 text-[#1be4db]" : "text-white/70 hover:bg-white/[0.03] hover:text-white"}`}
@@ -788,9 +936,22 @@ export function InventoryControlPage({
                   <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-semibold text-white/60">{visibleModifiers.length} items</span>
                 </div>
                 <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
-                  {visibleModifiers.map((modifier) => (
-                    <div key={modifier.id} className="group flex items-center gap-3 px-5 py-3.5">
-                      <div className="min-w-0 flex-1">
+                  {visibleModifiers.map((modifier) => {
+                    const deleteTarget = { kind: "flavor" as const, id: modifier.id, label: modifier.name };
+                    return (
+                    <div
+                      key={modifier.id}
+                      className="relative overflow-hidden flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:gap-4"
+                      onPointerDown={startDeleteHold(deleteTarget, () =>
+                        handleLibraryAction(() => onFlavorDelete(modifier.id), "Unable to delete flavor."),
+                      )}
+                      onPointerUp={cancelDeleteHold}
+                      onPointerLeave={cancelDeleteHold}
+                      onPointerCancel={cancelDeleteHold}
+                      onPointerMove={updateDeleteHoldPointer}
+                      onContextMenu={(event) => event.preventDefault()}
+                    >
+                      <div className="relative z-10 min-w-0 flex-1">
                         <div className={`font-semibold ${modifier.enabled ? "text-white" : "text-white/35"}`}>{modifier.name}</div>
                         <div className="mt-0.5 flex items-center gap-2 text-[11px] text-white/45">
                           <span>{modifier.discountFlavor ? "Discount" : "Add-on"}</span>
@@ -800,22 +961,46 @@ export function InventoryControlPage({
                           {!modifier.enabled && <span className="text-white/30">· Hidden</span>}
                         </div>
                       </div>
-                      <div className="shrink-0 text-sm font-semibold text-[#1be4db]">
-                        {modifier.priceCents === 0 ? "Free" : `${modifier.discountFlavor ? "-" : "+"}${formatCurrency(Math.abs(modifier.priceCents))}`}
+                      <div className="relative z-10 flex items-center justify-between gap-3 md:shrink-0 md:flex-col md:items-end">
+                        <div className="shrink-0 text-sm font-semibold text-[#1be4db]">
+                          {modifier.priceCents === 0 ? "Free" : `${modifier.discountFlavor ? "-" : "+"}${formatCurrency(Math.abs(modifier.priceCents))}`}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            className="rounded-xl bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/[0.09] hover:text-white active:bg-[#1be4db]/15 active:text-white"
+                            onClick={() => void handleLibraryAction(() => onFlavorSave(modifier.id, { ...modifier, enabled: !modifier.enabled }), "Unable to update.")}
+                          >
+                            {modifier.enabled ? "Hide" : "Show"}
+                          </button>
+                          <button
+                            type="button"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            className="rounded-xl bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/[0.09] hover:text-white active:bg-[#1be4db]/15 active:text-white"
+                            onClick={() => setEditingFlavor({ id: modifier.id, name: modifier.name, price: (modifier.priceCents / 100).toFixed(2), discount: modifier.discountFlavor, flavorCategoryId: modifier.flavorCategoryId ?? "" })}
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
-                        <button type="button" className="rounded-lg bg-white/[0.06] px-2 py-1 text-[11px] font-semibold text-white/70 hover:text-white"
-                          onClick={() => void handleLibraryAction(() => onFlavorSave(modifier.id, { ...modifier, enabled: !modifier.enabled }), "Unable to update.")}
-                        >{modifier.enabled ? "Hide" : "Show"}</button>
-                        <button type="button" className="rounded p-1.5 text-white/40 hover:text-white"
-                          onClick={() => setEditingFlavor({ id: modifier.id, name: modifier.name, price: (modifier.priceCents / 100).toFixed(2), discount: modifier.discountFlavor, flavorCategoryId: modifier.flavorCategoryId ?? "" })}
-                        ><Pencil size={13} /></button>
-                      </div>
+                      {deleteHoldTarget?.kind === "flavor" && deleteHoldTarget.id === modifier.id && deleteHoldProgress > 0 ? (
+                        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-xl bg-rose-500/10">
+                          <div
+                            className="absolute inset-0 origin-left bg-rose-500/60"
+                            style={{ transform: `scaleX(${deleteHoldProgress})` }}
+                          />
+                        </div>
+                      ) : null}
                     </div>
-                  ))}
+                    );
+                  })}
                   {visibleModifiers.length === 0 && (
                     <div className="px-5 py-8 text-center text-sm text-white/35">No flavors in this group yet.</div>
                   )}
+                </div>
+                <div className="border-t border-white/5 px-5 py-3 text-[11px] font-medium text-white/45">
+                  Hold a flavor for 1 second to delete it.
                 </div>
                 <div className="shrink-0 border-t border-white/5 p-2">
                   <button type="button"
@@ -888,10 +1073,36 @@ export function InventoryControlPage({
                   </label>
                   <label className="grid gap-1.5">
                     <span className="brand-kicker">Category</span>
-                    <select className="brand-select" value={newFlavor.flavorCategoryId} onChange={(e) => setNewFlavor((s) => ({ ...s, flavorCategoryId: e.target.value }))}>
-                      <option value="">Uncategorized</option>
-                      {flavorCategories.map(fc => <option key={fc.id} value={fc.id}>{fc.name}</option>)}
-                    </select>
+                    <div className="grid gap-2">
+                      <button
+                        type="button"
+                        className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
+                          !newFlavor.flavorCategoryId ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
+                        }`}
+                        onClick={() => setNewFlavor((s) => ({ ...s, flavorCategoryId: "" }))}
+                      >
+                        <span>Uncategorized</span>
+                        {!newFlavor.flavorCategoryId ? <span className="text-xs font-bold uppercase tracking-wider">Selected</span> : null}
+                      </button>
+                      <div className="grid gap-2 max-h-[220px] overflow-y-auto pr-1">
+                        {flavorCategories.map((fc) => {
+                          const selected = newFlavor.flavorCategoryId === fc.id;
+                          return (
+                            <button
+                              key={fc.id}
+                              type="button"
+                              className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
+                                selected ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
+                              }`}
+                              onClick={() => setNewFlavor((s) => ({ ...s, flavorCategoryId: fc.id }))}
+                            >
+                              <span>{fc.name}</span>
+                              {selected ? <span className="text-xs font-bold uppercase tracking-wider">Selected</span> : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </label>
                   <label className="brand-chip brand-chip-soft">
                     <input type="checkbox" checked={newFlavor.discount} onChange={(e) => setNewFlavor((s) => ({ ...s, discount: e.target.checked }))} />
@@ -937,10 +1148,36 @@ export function InventoryControlPage({
                   </label>
                   <label className="grid gap-1.5">
                     <span className="brand-kicker">Category</span>
-                    <select className="brand-select" value={editingFlavor.flavorCategoryId} onChange={(e) => setEditingFlavor((s) => s ? { ...s, flavorCategoryId: e.target.value } : null)}>
-                      <option value="">Uncategorized</option>
-                      {flavorCategories.map(fc => <option key={fc.id} value={fc.id}>{fc.name}</option>)}
-                    </select>
+                    <div className="grid gap-2">
+                      <button
+                        type="button"
+                        className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
+                          !editingFlavor.flavorCategoryId ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
+                        }`}
+                        onClick={() => setEditingFlavor((s) => (s ? { ...s, flavorCategoryId: "" } : null))}
+                      >
+                        <span>Uncategorized</span>
+                        {!editingFlavor.flavorCategoryId ? <span className="text-xs font-bold uppercase tracking-wider">Selected</span> : null}
+                      </button>
+                      <div className="grid gap-2 max-h-[220px] overflow-y-auto pr-1">
+                        {flavorCategories.map((fc) => {
+                          const selected = editingFlavor.flavorCategoryId === fc.id;
+                          return (
+                            <button
+                              key={fc.id}
+                              type="button"
+                              className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
+                                selected ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
+                              }`}
+                              onClick={() => setEditingFlavor((s) => (s ? { ...s, flavorCategoryId: fc.id } : null))}
+                            >
+                              <span>{fc.name}</span>
+                              {selected ? <span className="text-xs font-bold uppercase tracking-wider">Selected</span> : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </label>
                   <label className="brand-chip brand-chip-soft">
                     <input type="checkbox" checked={editingFlavor.discount} onChange={(e) => setEditingFlavor((s) => s ? { ...s, discount: e.target.checked } : null)} />

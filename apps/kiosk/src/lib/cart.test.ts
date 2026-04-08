@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildCartView, getSizeAdjustmentCents } from "./cart";
 
-const bootstrapFixture: BootstrapResponse = {
+const bootstrapFixture = {
   settings: {
     locationId: "loc-1",
     locationName: "River Hills",
@@ -47,7 +47,7 @@ const bootstrapFixture: BootstrapResponse = {
   ],
   cashiers: [{ id: "cashier-1", name: "Sarah", active: true }],
   flavorCategories: [],
-};
+} as BootstrapResponse;
 
 describe("cart pricing", () => {
   it("prefers product-specific size adjustments over the global size delta", () => {
