@@ -24,7 +24,7 @@ export function ActionBar({
       <div className={`grid gap-2 ${cardEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button
           type="button"
-          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-5 text-sm font-bold text-white transition active:scale-[0.97] disabled:opacity-30"
+          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-7 text-sm font-bold text-white transition active:scale-[0.97] disabled:opacity-30"
           disabled={disabled}
           onClick={onCash}
         >
@@ -34,7 +34,7 @@ export function ActionBar({
         {cardEnabled ? (
           <button
             type="button"
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#5191e5] py-5 text-sm font-bold text-white transition active:scale-[0.97] disabled:opacity-30"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#5191e5] py-7 text-sm font-bold text-white transition active:scale-[0.97] disabled:opacity-30"
             disabled={disabled}
             onClick={onCard}
           >

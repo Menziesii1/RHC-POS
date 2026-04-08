@@ -40,6 +40,7 @@ const bootstrapFixture: BootstrapResponse = {
   modifiers: [{ id: "vanilla", name: "Vanilla", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 1 }],
   sizes: [{ id: "regular", name: "Regular", priceDeltaCents: 0, enabled: true, sortOrder: 1 }],
   cashiers: [{ id: "cashier-1", name: "Sarah", active: true }],
+  flavorCategories: [],
 };
 
 function resetStore() {
@@ -123,6 +124,7 @@ describe("app store product cleanup", () => {
         modifierIds: ["vanilla"],
         quantity: 1,
         iced: false,
+        editingLineId: null,
       },
       overlay: "drink-builder",
     });

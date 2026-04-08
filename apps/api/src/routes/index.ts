@@ -51,6 +51,10 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
       "admin-pin",
     );
   });
+  app.delete("/v1/admin/categories/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.deleteCategory((request.params as { id: string }).id);
+  });
   app.get("/v1/admin/flavors", async () => posService.listModifiers());
   app.post("/v1/admin/flavors", async (request) => {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
@@ -79,6 +83,10 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
       "admin-pin",
     );
   });
+  app.delete("/v1/admin/sizes/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.deleteSize((request.params as { id: string }).id);
+  });
   app.get("/v1/admin/products", async () => posService.listProducts());
   app.post("/v1/admin/products", async (request) => {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
@@ -94,6 +102,22 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
   app.delete("/v1/admin/products/:id", async (request) => {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
     return posService.deleteProduct((request.params as { id: string }).id);
+  });
+  app.get("/v1/admin/flavor-categories", async () => posService.listFlavorCategories());
+  app.post("/v1/admin/flavor-categories", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.upsertFlavorCategory(request.body, "admin-pin");
+  });
+  app.patch("/v1/admin/flavor-categories/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.upsertFlavorCategory(
+      { ...(request.body as Record<string, unknown>), id: (request.params as { id: string }).id },
+      "admin-pin",
+    );
+  });
+  app.delete("/v1/admin/flavor-categories/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.deleteFlavorCategory((request.params as { id: string }).id);
   });
   app.patch("/v1/admin/settings", async (request) => {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });

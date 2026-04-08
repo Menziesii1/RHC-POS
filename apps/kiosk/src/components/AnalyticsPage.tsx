@@ -10,7 +10,16 @@ interface AnalyticsPageProps {
   onClose: () => void;
   onNavigateInventory: () => void;
   canOpenInventory: boolean;
+  selectedRangeDays: number;
+  onSelectRangeDays: (days: number) => void;
 }
+
+export const ANALYTICS_RANGE_OPTIONS = [
+  { label: "1 Service", days: 7, description: "Last weekly service" },
+  { label: "4 Services", days: 28, description: "About one month" },
+  { label: "8 Services", days: 56, description: "About two months" },
+  { label: "12 Services", days: 84, description: "About a quarter" },
+] as const;
 
 function barWidth(value: number, max: number) {
   if (max <= 0) {
@@ -19,18 +28,55 @@ function barWidth(value: number, max: number) {
   return `${Math.max(8, Math.round((value / max) * 100))}%`;
 }
 
+function formatDayLabel(date: string) {
+  const value = new Date(date);
+  return value.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function groupWeeklySeries(series: AnalyticsRangeResponse["salesSeries"]) {
+  const grouped: Array<{
+    key: string;
+    label: string;
+    totalSalesCents: number;
+    cashSalesCents: number;
+    cardSalesCents: number;
+    orderCount: number;
+  }> = [];
+
+  for (let index = 0; index < series.length; index += 7) {
+    const chunk = series.slice(index, index + 7);
+    if (chunk.length === 0) {
+      continue;
+    }
+
+    grouped.push({
+      key: `${chunk[0]?.date ?? index}-${chunk[chunk.length - 1]?.date ?? index}`,
+      label: `${formatDayLabel(chunk[0].date)} - ${formatDayLabel(chunk[chunk.length - 1].date)}`,
+      totalSalesCents: chunk.reduce((sum, entry) => sum + entry.totalSalesCents, 0),
+      cashSalesCents: chunk.reduce((sum, entry) => sum + entry.cashSalesCents, 0),
+      cardSalesCents: chunk.reduce((sum, entry) => sum + entry.cardSalesCents, 0),
+      orderCount: chunk.reduce((sum, entry) => sum + entry.orderCount, 0),
+    });
+  }
+
+  return grouped;
+}
+
 export function AnalyticsPage({
   summary,
   analytics,
   onClose,
   onNavigateInventory,
   canOpenInventory,
+  selectedRangeDays,
+  onSelectRangeDays,
 }: AnalyticsPageProps) {
   const [mode, setMode] = useState<"financial" | "inventory">("financial");
 
   const salesSeries = analytics?.salesSeries ?? [];
   const productSeries = analytics?.productSeries ?? [];
-  const revenueMax = Math.max(1, ...salesSeries.map((entry) => entry.totalSalesCents));
+  const weeklySeries = useMemo(() => groupWeeklySeries(salesSeries), [salesSeries]);
+  const revenueMax = Math.max(1, ...weeklySeries.map((entry) => entry.totalSalesCents));
   const quantityMax = Math.max(1, ...productSeries.map((entry) => entry.totalQuantity));
   const totalOrdersOverRange = salesSeries.reduce((sum, entry) => sum + entry.orderCount, 0);
   const totalSalesOverRange = salesSeries.reduce((sum, entry) => sum + entry.totalSalesCents, 0);
@@ -54,6 +100,8 @@ export function AnalyticsPage({
         .slice(0, 5),
     [productSeries],
   );
+  const selectedRange = ANALYTICS_RANGE_OPTIONS.find((option) => option.days === selectedRangeDays) ?? ANALYTICS_RANGE_OPTIONS[1];
+  const serviceWindowCount = Math.max(1, Math.round(selectedRangeDays / 7));
 
   return (
     <div className="min-h-[760px] p-4 md:p-5">
@@ -61,7 +109,7 @@ export function AnalyticsPage({
         <AdminWorkspaceHeader
           eyebrow="Sales Intelligence"
           title="Analytics"
-          description="Review financial performance and product demand over time."
+          description="Review financial performance and product demand in church-friendly service windows. Each preset is measured in weekly services, not arbitrary days."
           activeTab="analytics"
           onSelectTab={(tab) => {
             if (tab === "inventory" && canOpenInventory) {
@@ -70,27 +118,49 @@ export function AnalyticsPage({
           }}
           onClose={onClose}
           actions={
-            <div className="inline-flex overflow-hidden rounded-xl bg-white/[0.02]">
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
-                  mode === "financial" ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.03] text-white/80 hover:text-white/85"
-                }`}
-                onClick={() => setMode("financial")}
-              >
-                <DollarSign size={13} />
-                Financial
-              </button>
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
-                  mode === "inventory" ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.03] text-white/80 hover:text-white/85"
-                }`}
-                onClick={() => setMode("inventory")}
-              >
-                <Package size={13} />
-                Demand
-              </button>
+            <div className="grid gap-2">
+              <div className="inline-flex overflow-hidden rounded-xl bg-white/[0.02]">
+                <button
+                  type="button"
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
+                    mode === "financial" ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.03] text-white/80 hover:text-white/85"
+                  }`}
+                  onClick={() => setMode("financial")}
+                >
+                  <DollarSign size={13} />
+                  Financial
+                </button>
+                <button
+                  type="button"
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
+                    mode === "inventory" ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.03] text-white/80 hover:text-white/85"
+                  }`}
+                  onClick={() => setMode("inventory")}
+                >
+                  <Package size={13} />
+                  Demand
+                </button>
+              </div>
+              <div className="inline-flex flex-wrap gap-2">
+                {ANALYTICS_RANGE_OPTIONS.map((option) => {
+                  const active = option.days === selectedRangeDays;
+                  return (
+                    <button
+                      key={option.days}
+                      type="button"
+                      className={`rounded-xl border px-3 py-2 text-left transition ${
+                        active
+                          ? "border-[#1be4db] bg-[#1be4db]/12 text-[#1be4db]"
+                          : "border-white/8 bg-white/[0.03] text-white/78 hover:border-white/16 hover:text-white"
+                      }`}
+                      onClick={() => onSelectRangeDays(option.days)}
+                    >
+                      <span className="block text-[10px] font-bold uppercase tracking-wider">{option.label}</span>
+                      <span className="mt-0.5 block text-[10px] font-medium opacity-70">{option.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           }
         />
@@ -103,7 +173,7 @@ export function AnalyticsPage({
                 <div className="brand-stat-value">{formatCurrency(totalSalesOverRange)}</div>
               </div>
               <div className="brand-stat">
-                <div className="flex items-center gap-1.5 brand-stat-label"><DollarSign size={11} /> Today</div>
+                <div className="flex items-center gap-1.5 brand-stat-label"><DollarSign size={11} /> Current Day</div>
                 <div className="brand-stat-value">{formatCurrency(summary?.totalSalesCents ?? 0)}</div>
               </div>
               <div className="brand-stat">
@@ -124,11 +194,14 @@ export function AnalyticsPage({
               <section className="overflow-hidden rounded-xl bg-white/[0.02]">
                 <div className="bg-white/[0.02] px-5 py-3">
                   <div className="brand-section-title">Revenue Over Time</div>
+                  <div className="mt-1 text-[11px] font-medium text-white/55">
+                    {selectedRange.label} across {serviceWindowCount} service window{serviceWindowCount === 1 ? "" : "s"}.
+                  </div>
                 </div>
                 <div className="grid gap-2.5 p-5">
-                  {salesSeries.map((entry) => (
-                    <div key={entry.date} className="grid grid-cols-[88px_1fr_110px] items-center gap-4">
-                      <div className="text-sm font-semibold text-white/85">{entry.date.slice(5)}</div>
+                  {weeklySeries.map((entry) => (
+                    <div key={entry.key} className="grid grid-cols-[120px_1fr_110px] items-center gap-4">
+                      <div className="text-sm font-semibold text-white/85">{entry.label}</div>
                       <div className="h-3.5 overflow-hidden rounded-full bg-white/[0.04]">
                         <div className="h-3.5 rounded-full bg-[#1be4db]" style={{ width: barWidth(entry.totalSalesCents, revenueMax) }} />
                       </div>
@@ -142,6 +215,7 @@ export function AnalyticsPage({
                 <div className="overflow-hidden rounded-xl bg-white/[0.02]">
                   <div className="bg-white/[0.02] px-4 py-3">
                     <div className="brand-section-title">Tender Mix</div>
+                    <div className="mt-1 text-[11px] font-medium text-white/55">Aggregated over the selected service range.</div>
                   </div>
                   <div className="grid gap-4 p-4">
                     <div>
@@ -174,6 +248,7 @@ export function AnalyticsPage({
                 <div className="overflow-hidden rounded-xl bg-white/[0.02]">
                   <div className="bg-white/[0.02] px-4 py-3">
                     <div className="brand-section-title">Category Performance</div>
+                    <div className="mt-1 text-[11px] font-medium text-white/55">Totals for the selected range.</div>
                   </div>
                   <div className="grid gap-2.5 p-4">
                     {(summary?.salesByCategory ?? []).map((item) => (
@@ -204,7 +279,9 @@ export function AnalyticsPage({
               </div>
               <div className="brand-stat">
                 <div className="flex items-center gap-1.5 brand-stat-label"><Calendar size={11} /> Range</div>
-                <div className="brand-stat-value text-2xl">{analytics?.days ?? 0} days</div>
+                <div className="brand-stat-value text-2xl">
+                  {selectedRange.label}
+                </div>
               </div>
             </div>
 
@@ -212,6 +289,9 @@ export function AnalyticsPage({
               <section className="overflow-hidden rounded-xl bg-white/[0.02]">
                 <div className="bg-white/[0.02] px-5 py-3">
                   <div className="brand-section-title">Top Movers</div>
+                  <div className="mt-1 text-[11px] font-medium text-white/55">
+                    Ranked over {serviceWindowCount} service window{serviceWindowCount === 1 ? "" : "s"}.
+                  </div>
                 </div>
                 <div className="grid gap-3 p-5">
                   {productSeries.slice(0, 8).map((entry) => (
@@ -232,6 +312,7 @@ export function AnalyticsPage({
                 <div className="overflow-hidden rounded-xl bg-white/[0.02]">
                   <div className="bg-white/[0.02] px-4 py-3">
                     <div className="brand-section-title">Slow Movers</div>
+                    <div className="mt-1 text-[11px] font-medium text-white/55">Items with the lowest volume in the selected range.</div>
                   </div>
                   <div className="grid gap-2.5 p-4">
                     {slowMovers.map((entry) => (
@@ -246,6 +327,7 @@ export function AnalyticsPage({
                 <div className="overflow-hidden rounded-xl bg-white/[0.02]">
                   <div className="bg-white/[0.02] px-4 py-3">
                     <div className="brand-section-title">Size & Flavor Signals</div>
+                    <div className="mt-1 text-[11px] font-medium text-white/55">What people chose inside the selected service window.</div>
                   </div>
                   <div className="grid gap-2.5 p-4">
                     {(summary?.sizeBreakdown ?? []).slice(0, 4).map((item) => (

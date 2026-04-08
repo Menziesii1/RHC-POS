@@ -33,4 +33,5 @@ export interface DrinkLineDraft {
   modifierIds: string[];
   quantity: number;
   iced: boolean;
+  editingLineId: string | null;
 }

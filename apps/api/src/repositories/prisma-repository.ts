@@ -8,12 +8,14 @@ import {
   type CartInput,
   type Category,
   type DraftOrder,
+  type FlavorCategory,
   type Modifier,
   type PatchSettingsInput,
   type Product,
   type SizeOption,
   type SummaryResponse,
   type UpsertCategoryInput,
+  type UpsertFlavorCategoryInput,
   type UpsertModifierInput,
   type UpsertProductInput,
   type UpsertSizeOptionInput,
@@ -45,7 +47,7 @@ export class PrismaPosRepository implements PosRepository {
   ) {}
 
   async getBootstrapBase(): Promise<Omit<BootstrapResponse, "status">> {
-    const [location, register, categories, sizes, modifiers, products, cashiers, recoverySetting] = await Promise.all([
+    const [location, register, categories, sizes, modifiers, products, cashiers, recoverySetting, flavorCategories] = await Promise.all([
       this.prisma.location.findUnique({ where: { id: this.config.LOCATION_ID } }),
       this.prisma.register.findUnique({ where: { id: this.config.REGISTER_ID } }),
       this.prisma.category.findMany({
@@ -66,6 +68,10 @@ export class PrismaPosRepository implements PosRepository {
         orderBy: { name: "asc" },
       }),
       this.prisma.appSetting.findUnique({ where: { key: "recovery_ttl_seconds" } }),
+      this.prisma.modifierCategory.findMany({
+        where: { locationId: this.config.LOCATION_ID },
+        orderBy: { sortOrder: "asc" },
+      }),
     ]);
 
     if (!location || !register) {
@@ -102,12 +108,18 @@ export class PrismaPosRepository implements PosRepository {
         discountFlavor: modifier.discountFlavor,
         enabled: modifier.enabled,
         sortOrder: modifier.sortOrder,
+        flavorCategoryId: modifier.flavorCategoryId ?? undefined,
       })),
       products: products.map((product) => this.mapProduct(product)),
       cashiers: cashiers.map((cashier) => ({
         id: cashier.id,
         name: cashier.name,
         active: cashier.active,
+      })),
+      flavorCategories: flavorCategories.map((fc) => ({
+        id: fc.id,
+        name: fc.name,
+        sortOrder: fc.sortOrder,
       })),
     };
   }
@@ -632,6 +644,7 @@ export class PrismaPosRepository implements PosRepository {
         discountFlavor: input.discountFlavor,
         enabled: input.enabled,
         sortOrder: input.sortOrder,
+        flavorCategoryId: input.flavorCategoryId ?? null,
       },
       create: {
         id: modifierId,
@@ -641,6 +654,7 @@ export class PrismaPosRepository implements PosRepository {
         discountFlavor: input.discountFlavor,
         enabled: input.enabled,
         sortOrder: input.sortOrder,
+        flavorCategoryId: input.flavorCategoryId ?? null,
       },
     });
 
@@ -659,7 +673,36 @@ export class PrismaPosRepository implements PosRepository {
       discountFlavor: modifier.discountFlavor,
       enabled: modifier.enabled,
       sortOrder: modifier.sortOrder,
+      flavorCategoryId: modifier.flavorCategoryId ?? undefined,
     };
+  }
+
+  async listFlavorCategories(): Promise<FlavorCategory[]> {
+    const items = await this.prisma.modifierCategory.findMany({
+      where: { locationId: this.config.LOCATION_ID },
+      orderBy: { sortOrder: "asc" },
+    });
+    return items.map((fc) => ({ id: fc.id, name: fc.name, sortOrder: fc.sortOrder }));
+  }
+
+  async upsertFlavorCategory(input: UpsertFlavorCategoryInput, actorLabel: string): Promise<FlavorCategory> {
+    const fcId = input.id ?? input.name.toLowerCase().replaceAll(/\s+/g, "-");
+    const fc = await this.prisma.modifierCategory.upsert({
+      where: { id: fcId },
+      update: { name: input.name, sortOrder: input.sortOrder },
+      create: { id: fcId, locationId: this.config.LOCATION_ID, name: input.name, sortOrder: input.sortOrder },
+    });
+    await this.appendAuditEvent({ action: "flavorCategory.upserted", entityType: "flavorCategory", entityId: fc.id, actorLabel, payload: input as Record<string, unknown> });
+    return { id: fc.id, name: fc.name, sortOrder: fc.sortOrder };
+  }
+
+  async deleteFlavorCategory(categoryId: string): Promise<void> {
+    await this.prisma.modifier.updateMany({
+      where: { flavorCategoryId: categoryId },
+      data: { flavorCategoryId: null },
+    });
+    await this.prisma.modifierCategory.delete({ where: { id: categoryId } });
+    await this.appendAuditEvent({ action: "flavorCategory.deleted", entityType: "flavorCategory", entityId: categoryId, actorLabel: "system", payload: { categoryId } });
   }
 
   async listSizes(): Promise<SizeOption[]> {

@@ -8,6 +8,8 @@ import {
 } from "@rhc-pos/shared";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
+import { useConfirm } from "../lib/confirm";
+
 interface AdminPanelProps {
   bootstrap: BootstrapResponse;
   adminPin: string;
@@ -26,6 +28,29 @@ interface AdminPanelProps {
 }
 
 // ── Drag handle icon ────────────────────────────────────────────────────────
+function isMoneyInput(value: string) {
+  return /^-?\d*\.?\d{0,2}$/.test(value) || value === "-" || value === "";
+}
+
+function normalizeMoneyInput(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
+}
+
+function moneyInputToCents(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0;
+}
+
+function isIntegerInput(value: string) {
+  return /^-?\d*$/.test(value);
+}
+
+function normalizeIntegerInput(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? String(Math.trunc(parsed)) : "0";
+}
+
 function DragHandle() {
   return (
     <div className="flex cursor-grab flex-col gap-[4px] px-1 py-0.5 active:cursor-grabbing">
@@ -53,9 +78,11 @@ export function AdminPanel({
   onTaxSave,
 }: AdminPanelProps) {
   // ── Form state ─────────────────────────────────────────────────────────────
+  const confirm = useConfirm();
   const [taxRate, setTaxRate] = useState(
     (bootstrap.settings.taxRateBasisPoints / 100).toFixed(2),
   );
+  const [newCategorySortOrderStr, setNewCategorySortOrderStr] = useState(String(bootstrap.categories.length + 1));
   const [newCategory, setNewCategory] = useState<UpsertCategoryInput>({
     name: "",
     sortOrder: bootstrap.categories.length + 1,
@@ -77,6 +104,14 @@ export function AdminPanel({
   const [newSizePriceStr, setNewSizePriceStr] = useState("0.00");
   // Raw string values for size edit price inputs (allows typing negative numbers)
   const [sizePriceInputs, setSizePriceInputs] = useState<Record<string, string>>({});
+  const [sizeSortInputs, setSizeSortInputs] = useState<Record<string, string>>({});
+  const [newFlavorPriceStr, setNewFlavorPriceStr] = useState("0.00");
+  const [newProductPriceStr, setNewProductPriceStr] = useState("0.00");
+  const [newProductSortOrderStr, setNewProductSortOrderStr] = useState(String(bootstrap.products.length + 1));
+  const [productPriceInputs, setProductPriceInputs] = useState<Record<string, string>>({});
+  const [productSortInputs, setProductSortInputs] = useState<Record<string, string>>({});
+  const [flavorPriceInputs, setFlavorPriceInputs] = useState<Record<string, string>>({});
+  const [flavorSortInputs, setFlavorSortInputs] = useState<Record<string, string>>({});
   const [newProduct, setNewProduct] = useState<UpsertProductInput>({
     name: "",
     categoryId: bootstrap.categories[0]?.id ?? "",
@@ -219,6 +254,30 @@ export function AdminPanel({
     setDraggedId(null);
   };
 
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    const confirmed = await confirm({
+      message: `Delete "${productName}"? This cannot be undone.`,
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    await onProductDelete(productId);
+    setExpandedProduct(null);
+  };
+
+  const handleDeleteFlavor = async (modifierId: string, modifierName: string) => {
+    const confirmed = await confirm({
+      message: `Delete "${modifierName}"? This cannot be undone.`,
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    await onFlavorDelete(modifierId);
+    setExpandedFlavor(null);
+  };
+
   return (
     <div className="touch-card min-h-[720px] p-6">
       {/* ── Header ── */}
@@ -239,8 +298,8 @@ export function AdminPanel({
           <div className="brand-section-title">Store Settings</div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               className="brand-input w-full max-w-[160px] text-lg"
               value={taxRate}
               onChange={(e) => setTaxRate(e.target.value)}
@@ -290,18 +349,28 @@ export function AdminPanel({
               onChange={(e) => setNewCategory((c) => ({ ...c, name: e.target.value }))}
             />
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               className="brand-input"
-              value={newCategory.sortOrder}
-              onChange={(e) => setNewCategory((c) => ({ ...c, sortOrder: Number(e.target.value || "0") }))}
+              value={newCategorySortOrderStr}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (!isIntegerInput(raw)) return;
+                setNewCategorySortOrderStr(raw);
+              }}
+              onBlur={() => setNewCategorySortOrderStr(normalizeIntegerInput(newCategorySortOrderStr))}
             />
             <button
               type="button"
               className="touch-button bg-[#263362] text-white"
               onClick={() =>
-                void onCreateCategory(newCategory).then(() =>
-                  setNewCategory({ name: "", sortOrder: bootstrap.categories.length + 2, enabled: true }),
-                )
+                void onCreateCategory({
+                  ...newCategory,
+                  sortOrder: Number(newCategorySortOrderStr || "0"),
+                }).then(() => {
+                  setNewCategory({ name: "", sortOrder: bootstrap.categories.length + 2, enabled: true });
+                  setNewCategorySortOrderStr(String(bootstrap.categories.length + 2));
+                })
               }
             >
               Add
@@ -427,11 +496,20 @@ export function AdminPanel({
                                   <label className="grid gap-1">
                                     <span className="brand-kicker">Sort #</span>
                                     <input
-                                      type="number"
+                                      type="text"
+                                      inputMode="numeric"
                                       className="brand-input"
-                                      value={draft.sortOrder}
-                                      onChange={(e) =>
-                                        patchSizeDraft(size.id, { sortOrder: Number(e.target.value || "0") })
+                                      value={sizeSortInputs[size.id] ?? String(draft.sortOrder)}
+                                      onChange={(e) => {
+                                        const raw = e.target.value;
+                                        if (!isIntegerInput(raw)) return;
+                                        setSizeSortInputs((cur) => ({ ...cur, [size.id]: raw }));
+                                      }}
+                                      onBlur={() =>
+                                        setSizeSortInputs((cur) => ({
+                                          ...cur,
+                                          [size.id]: normalizeIntegerInput(cur[size.id] ?? String(draft.sortOrder)),
+                                        }))
                                       }
                                     />
                                   </label>
@@ -449,9 +527,13 @@ export function AdminPanel({
                                     type="button"
                                     className="touch-button bg-[#5190E6] text-white"
                                     onClick={() =>
-                                      void onSizeSave(size.id, draft).then(() => {
+                                      void onSizeSave(size.id, {
+                                        ...draft,
+                                        sortOrder: Number(sizeSortInputs[size.id] ?? String(draft.sortOrder)),
+                                      }).then(() => {
                                         discardSizeDraft(size.id);
                                         setSizePriceInputs((cur) => { const n = { ...cur }; delete n[size.id]; return n; });
+                                        setSizeSortInputs((cur) => { const n = { ...cur }; delete n[size.id]; return n; });
                                         setExpandedSize(null);
                                       })
                                     }
@@ -464,6 +546,7 @@ export function AdminPanel({
                                     onClick={() => {
                                       discardSizeDraft(size.id);
                                       setSizePriceInputs((cur) => { const n = { ...cur }; delete n[size.id]; return n; });
+                                      setSizeSortInputs((cur) => { const n = { ...cur }; delete n[size.id]; return n; });
                                       setExpandedSize(null);
                                     }}
                                   >
@@ -495,16 +578,16 @@ export function AdminPanel({
                 onChange={(e) => setNewFlavor((f) => ({ ...f, name: e.target.value }))}
               />
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 className="brand-input"
-                value={(newFlavor.priceCents / 100).toFixed(2)}
-                onChange={(e) =>
-                  setNewFlavor((f) => ({
-                    ...f,
-                    priceCents: Math.round(Number(e.target.value || "0") * 100),
-                  }))
-                }
+                value={newFlavorPriceStr}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (!isMoneyInput(raw)) return;
+                  setNewFlavorPriceStr(raw);
+                }}
+                onBlur={() => setNewFlavorPriceStr(normalizeMoneyInput(newFlavorPriceStr))}
               />
             </div>
             <label className="brand-chip brand-chip-soft w-fit">
@@ -519,15 +602,19 @@ export function AdminPanel({
               type="button"
               className="touch-button bg-[#263362] text-white"
               onClick={() =>
-                void onCreateFlavor(newFlavor).then(() =>
+                void onCreateFlavor({
+                  ...newFlavor,
+                  priceCents: moneyInputToCents(newFlavorPriceStr),
+                }).then(() => {
                   setNewFlavor({
                     name: "",
                     priceCents: 0,
                     discountFlavor: false,
                     enabled: true,
                     sortOrder: bootstrap.modifiers.length + 2,
-                  }),
-                )
+                  });
+                  setNewFlavorPriceStr("0.00");
+                })
               }
             >
               Add Flavor
@@ -556,26 +643,30 @@ export function AdminPanel({
                 ))}
               </select>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 className="brand-input"
                 placeholder="Base price"
-                value={(newProduct.priceCents / 100).toFixed(2)}
-                onChange={(e) =>
-                  setNewProduct((p) => ({
-                    ...p,
-                    priceCents: Math.round(Number(e.target.value || "0") * 100),
-                  }))
-                }
+                value={newProductPriceStr}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (!isMoneyInput(raw)) return;
+                  setNewProductPriceStr(raw);
+                }}
+                onBlur={() => setNewProductPriceStr(normalizeMoneyInput(newProductPriceStr))}
               />
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 className="brand-input"
                 placeholder="Sort order"
-                value={newProduct.sortOrder}
-                onChange={(e) =>
-                  setNewProduct((p) => ({ ...p, sortOrder: Number(e.target.value || "0") }))
-                }
+                value={newProductSortOrderStr}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (!isIntegerInput(raw)) return;
+                  setNewProductSortOrderStr(raw);
+                }}
+                onBlur={() => setNewProductSortOrderStr(normalizeIntegerInput(newProductSortOrderStr))}
               />
             </div>
 
@@ -623,7 +714,11 @@ export function AdminPanel({
               type="button"
               className="touch-button bg-[#5190E6] text-white"
               onClick={() =>
-                void onCreateProduct(newProduct).then(() =>
+                void onCreateProduct({
+                  ...newProduct,
+                  priceCents: moneyInputToCents(newProductPriceStr),
+                  sortOrder: Number(newProductSortOrderStr || "0"),
+                }).then(() => {
                   setNewProduct({
                     name: "",
                     categoryId: bootstrap.categories[0]?.id ?? "",
@@ -636,8 +731,10 @@ export function AdminPanel({
                     sizeOptionIds: [],
                     sizeOptionPrices: [],
                     defaultSizeOptionId: null,
-                  }),
-                )
+                  });
+                  setNewProductPriceStr("0.00");
+                  setNewProductSortOrderStr(String(bootstrap.products.length + 2));
+                })
               }
             >
               Add Product
@@ -741,25 +838,42 @@ export function AdminPanel({
                             <label className="grid gap-1">
                               <span className="brand-kicker">Price</span>
                               <input
-                                type="number"
-                                step="0.01"
+                                type="text"
+                                inputMode="decimal"
                                 className="brand-input"
-                                value={(draft.priceCents / 100).toFixed(2)}
-                                onChange={(e) =>
-                                  patchDraft(product.id, {
-                                    priceCents: Math.round(Number(e.target.value || "0") * 100),
-                                  })
+                                value={productPriceInputs[product.id] ?? (draft.priceCents / 100).toFixed(2)}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  if (!isMoneyInput(raw)) return;
+                                  setProductPriceInputs((cur) => ({ ...cur, [product.id]: raw }));
+                                }}
+                                onBlur={() =>
+                                  setProductPriceInputs((cur) => ({
+                                    ...cur,
+                                    [product.id]: normalizeMoneyInput(
+                                      cur[product.id] ?? (draft.priceCents / 100).toFixed(2),
+                                    ),
+                                  }))
                                 }
                               />
                             </label>
                             <label className="grid gap-1">
                               <span className="brand-kicker">Sort #</span>
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 className="brand-input"
-                                value={draft.sortOrder}
-                                onChange={(e) =>
-                                  patchDraft(product.id, { sortOrder: Number(e.target.value || "0") })
+                                value={productSortInputs[product.id] ?? String(draft.sortOrder)}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  if (!isIntegerInput(raw)) return;
+                                  setProductSortInputs((cur) => ({ ...cur, [product.id]: raw }));
+                                }}
+                                onBlur={() =>
+                                  setProductSortInputs((cur) => ({
+                                    ...cur,
+                                    [product.id]: normalizeIntegerInput(cur[product.id] ?? String(draft.sortOrder)),
+                                  }))
                                 }
                               />
                             </label>
@@ -842,8 +956,24 @@ export function AdminPanel({
                               type="button"
                               className="touch-button bg-[#5190E6] text-white"
                               onClick={() =>
-                                void onProductSave(product.id, draft).then(() => {
+                                void onProductSave(product.id, {
+                                  ...draft,
+                                  priceCents: moneyInputToCents(
+                                    productPriceInputs[product.id] ?? (draft.priceCents / 100).toFixed(2),
+                                  ),
+                                  sortOrder: Number(productSortInputs[product.id] ?? String(draft.sortOrder)),
+                                }).then(() => {
                                   discardDraft(product.id);
+                                  setProductPriceInputs((cur) => {
+                                    const next = { ...cur };
+                                    delete next[product.id];
+                                    return next;
+                                  });
+                                  setProductSortInputs((cur) => {
+                                    const next = { ...cur };
+                                    delete next[product.id];
+                                    return next;
+                                  });
                                   setExpandedProduct(null);
                                 })
                               }
@@ -855,6 +985,16 @@ export function AdminPanel({
                               className="touch-button bg-[#f7fbff] text-[#263362]"
                               onClick={() => {
                                 discardDraft(product.id);
+                                setProductPriceInputs((cur) => {
+                                  const next = { ...cur };
+                                  delete next[product.id];
+                                  return next;
+                                });
+                                setProductSortInputs((cur) => {
+                                  const next = { ...cur };
+                                  delete next[product.id];
+                                  return next;
+                                });
                                 setExpandedProduct(null);
                               }}
                             >
@@ -863,11 +1003,7 @@ export function AdminPanel({
                             <button
                               type="button"
                               className="touch-button ml-auto border-red-200 bg-red-50 text-red-600 hover:border-red-400 hover:bg-red-100"
-                              onClick={() => {
-                                if (window.confirm(`Delete "${product.name}"? This cannot be undone.`)) {
-                                  void onProductDelete(product.id).then(() => setExpandedProduct(null));
-                                }
-                              }}
+                              onClick={() => void handleDeleteProduct(product.id, product.name)}
                             >
                               Delete Product
                             </button>
@@ -954,27 +1090,42 @@ export function AdminPanel({
                             <label className="grid gap-1">
                               <span className="brand-kicker">Price</span>
                               <input
-                                type="number"
-                                step="0.01"
+                                type="text"
+                                inputMode="decimal"
                                 className="brand-input"
-                                value={(draft.priceCents / 100).toFixed(2)}
-                                onChange={(e) =>
-                                  patchFlavorDraft(modifier.id, {
-                                    priceCents: Math.round(Number(e.target.value || "0") * 100),
-                                  })
+                                value={flavorPriceInputs[modifier.id] ?? (draft.priceCents / 100).toFixed(2)}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  if (!isMoneyInput(raw)) return;
+                                  setFlavorPriceInputs((cur) => ({ ...cur, [modifier.id]: raw }));
+                                }}
+                                onBlur={() =>
+                                  setFlavorPriceInputs((cur) => ({
+                                    ...cur,
+                                    [modifier.id]: normalizeMoneyInput(
+                                      cur[modifier.id] ?? (draft.priceCents / 100).toFixed(2),
+                                    ),
+                                  }))
                                 }
                               />
                             </label>
                             <label className="grid gap-1">
                               <span className="brand-kicker">Sort #</span>
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 className="brand-input"
-                                value={draft.sortOrder}
-                                onChange={(e) =>
-                                  patchFlavorDraft(modifier.id, {
-                                    sortOrder: Number(e.target.value || "0"),
-                                  })
+                                value={flavorSortInputs[modifier.id] ?? String(draft.sortOrder)}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  if (!isIntegerInput(raw)) return;
+                                  setFlavorSortInputs((cur) => ({ ...cur, [modifier.id]: raw }));
+                                }}
+                                onBlur={() =>
+                                  setFlavorSortInputs((cur) => ({
+                                    ...cur,
+                                    [modifier.id]: normalizeIntegerInput(cur[modifier.id] ?? String(draft.sortOrder)),
+                                  }))
                                 }
                               />
                             </label>
@@ -1004,8 +1155,24 @@ export function AdminPanel({
                               type="button"
                               className="touch-button bg-[#5190E6] text-white"
                               onClick={() =>
-                                void onFlavorSave(modifier.id, draft).then(() => {
+                                void onFlavorSave(modifier.id, {
+                                  ...draft,
+                                  priceCents: moneyInputToCents(
+                                    flavorPriceInputs[modifier.id] ?? (draft.priceCents / 100).toFixed(2),
+                                  ),
+                                  sortOrder: Number(flavorSortInputs[modifier.id] ?? String(draft.sortOrder)),
+                                }).then(() => {
                                   discardFlavorDraft(modifier.id);
+                                  setFlavorPriceInputs((cur) => {
+                                    const next = { ...cur };
+                                    delete next[modifier.id];
+                                    return next;
+                                  });
+                                  setFlavorSortInputs((cur) => {
+                                    const next = { ...cur };
+                                    delete next[modifier.id];
+                                    return next;
+                                  });
                                   setExpandedFlavor(null);
                                 })
                               }
@@ -1017,6 +1184,16 @@ export function AdminPanel({
                               className="touch-button bg-[#f7fbff] text-[#263362]"
                               onClick={() => {
                                 discardFlavorDraft(modifier.id);
+                                setFlavorPriceInputs((cur) => {
+                                  const next = { ...cur };
+                                  delete next[modifier.id];
+                                  return next;
+                                });
+                                setFlavorSortInputs((cur) => {
+                                  const next = { ...cur };
+                                  delete next[modifier.id];
+                                  return next;
+                                });
                                 setExpandedFlavor(null);
                               }}
                             >
@@ -1025,11 +1202,7 @@ export function AdminPanel({
                             <button
                               type="button"
                               className="touch-button ml-auto border-red-200 bg-red-50 text-red-600 hover:border-red-400 hover:bg-red-100"
-                              onClick={() => {
-                                if (window.confirm(`Delete "${modifier.name}"? This cannot be undone.`)) {
-                                  void onFlavorDelete(modifier.id).then(() => setExpandedFlavor(null));
-                                }
-                              }}
+                              onClick={() => void handleDeleteFlavor(modifier.id, modifier.name)}
                             >
                               Delete Flavor
                             </button>

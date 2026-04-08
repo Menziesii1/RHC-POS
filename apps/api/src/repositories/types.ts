@@ -3,6 +3,7 @@ import type {
   BootstrapResponse,
   CartInput,
   DraftOrder,
+  FlavorCategory,
   Modifier,
   Category,
   PatchSettingsInput,
@@ -10,6 +11,7 @@ import type {
   SizeOption,
   SummaryResponse,
   UpsertCategoryInput,
+  UpsertFlavorCategoryInput,
   UpsertModifierInput,
   UpsertProductInput,
   UpsertSizeOptionInput,
@@ -41,11 +43,16 @@ export interface PosRepository {
   getAnalyticsRange(date: Date, days: number): Promise<AnalyticsRangeResponse>;
   listCategories(): Promise<Category[]>;
   upsertCategory(input: UpsertCategoryInput, actorLabel: string): Promise<Category>;
+  deleteCategory(categoryId: string): Promise<void>;
   listModifiers(): Promise<Modifier[]>;
   upsertModifier(input: UpsertModifierInput, actorLabel: string): Promise<Modifier>;
   deleteModifier(modifierId: string): Promise<void>;
+  listFlavorCategories(): Promise<FlavorCategory[]>;
+  upsertFlavorCategory(input: UpsertFlavorCategoryInput, actorLabel: string): Promise<FlavorCategory>;
+  deleteFlavorCategory(categoryId: string): Promise<void>;
   listSizes(): Promise<SizeOption[]>;
   upsertSize(input: UpsertSizeOptionInput, actorLabel: string): Promise<SizeOption>;
+  deleteSize(sizeId: string): Promise<void>;
   listProducts(): Promise<Product[]>;
   upsertProduct(input: UpsertProductInput, actorLabel: string): Promise<Product>;
   deleteProduct(productId: string): Promise<void>;

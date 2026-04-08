@@ -15,7 +15,7 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
         <div>
           <div className="brand-kicker">Sales dashboard</div>
           <div className="mt-2 font-display text-4xl font-extrabold text-white">Daily Summary</div>
-          <div className="text-sm text-white/50">Today&apos;s totals and item counts.</div>
+          <div className="text-sm text-white/65">Today&apos;s totals and item counts.</div>
         </div>
         <button type="button" className="touch-button" onClick={onClose}>
           Back
@@ -67,7 +67,7 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
                 <div className="brand-chip brand-chip-soft">
                   Best seller: {peakItem ? peakItem.productName : "None yet"}
                 </div>
-                <div className="text-sm leading-6 text-white/50">
+                <div className="text-sm leading-6 text-white/65">
                   Sales are grouped by tender type, category, size, and flavor so volunteers can answer the daily
                   traffic questions without needing a back-office report.
                 </div>
@@ -121,7 +121,7 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
           </div>
         </>
       ) : (
-        <div className="brand-section p-5 text-lg text-white/50">Loading summary...</div>
+        <div className="brand-section p-5 text-lg text-white/65">Loading summary...</div>
       )}
     </div>
   );

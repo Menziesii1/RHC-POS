@@ -6,12 +6,14 @@ import {
   type CartInput,
   type Category,
   type DraftOrder,
+  type FlavorCategory,
   type Modifier,
   type PatchSettingsInput,
   type Product,
   type SizeOption,
   type SummaryResponse,
   type UpsertCategoryInput,
+  type UpsertFlavorCategoryInput,
   type UpsertModifierInput,
   type UpsertProductInput,
   type UpsertSizeOptionInput,
@@ -56,14 +58,19 @@ export class MemoryPosRepository implements PosRepository {
       { id: "regular", name: "Regular", priceDeltaCents: 0, enabled: true, sortOrder: 1 },
       { id: "kids", name: "Kids", priceDeltaCents: -100, enabled: true, sortOrder: 2 },
     ],
+    flavorCategories: [
+      { id: "classic-syrups", name: "Classic Syrups", sortOrder: 1 },
+      { id: "sugar-free", name: "Sugar Free", sortOrder: 2 },
+      { id: "extras", name: "Extras", sortOrder: 3 },
+    ],
     modifiers: [
-      { id: "vanilla", name: "Vanilla", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 1 },
-      { id: "caramel", name: "Caramel", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 2 },
-      { id: "hazelnut", name: "Hazelnut", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 3 },
-      { id: "raspberry", name: "Raspberry", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 4 },
-      { id: "extra-shot", name: "Extra Shot", priceCents: 100, discountFlavor: false, enabled: true, sortOrder: 5 },
-      { id: "sugar-free-vanilla", name: "Sugar Free Vanilla", priceCents: -100, discountFlavor: true, enabled: true, sortOrder: 6 },
-      { id: "sugar-free-caramel", name: "Sugar Free Caramel", priceCents: -100, discountFlavor: true, enabled: true, sortOrder: 7 },
+      { id: "vanilla", name: "Vanilla", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 1, flavorCategoryId: "classic-syrups" },
+      { id: "caramel", name: "Caramel", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 2, flavorCategoryId: "classic-syrups" },
+      { id: "hazelnut", name: "Hazelnut", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 3, flavorCategoryId: "classic-syrups" },
+      { id: "raspberry", name: "Raspberry", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 4, flavorCategoryId: "classic-syrups" },
+      { id: "extra-shot", name: "Extra Shot", priceCents: 100, discountFlavor: false, enabled: true, sortOrder: 5, flavorCategoryId: "extras" },
+      { id: "sugar-free-vanilla", name: "Sugar Free Vanilla", priceCents: -100, discountFlavor: true, enabled: true, sortOrder: 6, flavorCategoryId: "sugar-free" },
+      { id: "sugar-free-caramel", name: "Sugar Free Caramel", priceCents: -100, discountFlavor: true, enabled: true, sortOrder: 7, flavorCategoryId: "sugar-free" },
     ],
     products: [
       {
@@ -275,15 +282,11 @@ export class MemoryPosRepository implements PosRepository {
 
       const selectedSizeId = item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
       const size = selectedSizeId ? sizes.get(selectedSizeId) ?? null : null;
-      if (selectedSizeId && (!size || !size.enabled || (product.sizeOptionIds.length > 0 && !product.sizeOptionIds.includes(selectedSizeId)))) {
+      if (selectedSizeId && (!size || !size.enabled)) {
         throw new HttpError(400, `Size ${selectedSizeId} is not allowed for ${product.name}.`);
       }
 
       const modifierSummary: LineSummary = item.modifierIds.map((modifierId) => {
-        if (!product.modifierIds.includes(modifierId)) {
-          throw new HttpError(400, `Flavor ${modifierId} is not allowed for ${product.name}.`);
-        }
-
         const modifier = modifiers.get(modifierId);
         if (!modifier || !modifier.enabled) {
           throw new HttpError(400, `Flavor ${modifierId} is not available.`);
@@ -624,6 +627,27 @@ export class MemoryPosRepository implements PosRepository {
     return structuredClone(category);
   }
 
+  async deleteCategory(categoryId: string): Promise<void> {
+    const category = this.bootstrap.categories.find((entry) => entry.id === categoryId);
+    if (!category) {
+      throw new HttpError(404, "Category not found.");
+    }
+
+    if (this.bootstrap.products.some((product) => product.categoryId === categoryId)) {
+      throw new HttpError(400, "Move products out of this category before deleting it.");
+    }
+
+    this.bootstrap.categories = this.bootstrap.categories.filter((entry) => entry.id !== categoryId);
+
+    await this.appendAuditEvent({
+      action: "category.deleted",
+      entityType: "category",
+      entityId: categoryId,
+      actorLabel: "system",
+      payload: { categoryId },
+    });
+  }
+
   async listModifiers(): Promise<Modifier[]> {
     return structuredClone(this.bootstrap.modifiers);
   }
@@ -636,6 +660,7 @@ export class MemoryPosRepository implements PosRepository {
       discountFlavor: input.discountFlavor,
       enabled: input.enabled,
       sortOrder: input.sortOrder,
+      flavorCategoryId: input.flavorCategoryId ?? null,
     };
 
     const index = this.bootstrap.modifiers.findIndex((entry) => entry.id === modifier.id);
@@ -677,6 +702,36 @@ export class MemoryPosRepository implements PosRepository {
     });
   }
 
+  async listFlavorCategories(): Promise<FlavorCategory[]> {
+    return structuredClone(this.bootstrap.flavorCategories);
+  }
+
+  async upsertFlavorCategory(input: UpsertFlavorCategoryInput, actorLabel: string): Promise<FlavorCategory> {
+    const fc: FlavorCategory = {
+      id: input.id ?? slugify(input.name),
+      name: input.name,
+      sortOrder: input.sortOrder,
+    };
+    const index = this.bootstrap.flavorCategories.findIndex((c) => c.id === fc.id);
+    if (index >= 0) {
+      this.bootstrap.flavorCategories[index] = fc;
+    } else {
+      this.bootstrap.flavorCategories.push(fc);
+    }
+    await this.appendAuditEvent({ action: index >= 0 ? "flavorCategory.updated" : "flavorCategory.created", entityType: "flavorCategory", entityId: fc.id, actorLabel, payload: fc as unknown as Record<string, unknown> });
+    return structuredClone(fc);
+  }
+
+  async deleteFlavorCategory(categoryId: string): Promise<void> {
+    const fc = this.bootstrap.flavorCategories.find((c) => c.id === categoryId);
+    if (!fc) throw new HttpError(404, "Flavor category not found.");
+    this.bootstrap.flavorCategories = this.bootstrap.flavorCategories.filter((c) => c.id !== categoryId);
+    this.bootstrap.modifiers = this.bootstrap.modifiers.map((m) =>
+      m.flavorCategoryId === categoryId ? { ...m, flavorCategoryId: null } : m,
+    );
+    await this.appendAuditEvent({ action: "flavorCategory.deleted", entityType: "flavorCategory", entityId: categoryId, actorLabel: "system", payload: { categoryId } });
+  }
+
   async listSizes(): Promise<SizeOption[]> {
     return structuredClone(this.bootstrap.sizes);
   }
@@ -706,6 +761,29 @@ export class MemoryPosRepository implements PosRepository {
     });
 
     return structuredClone(size);
+  }
+
+  async deleteSize(sizeId: string): Promise<void> {
+    const size = this.bootstrap.sizes.find((entry) => entry.id === sizeId);
+    if (!size) {
+      throw new HttpError(404, "Size not found.");
+    }
+
+    this.bootstrap.sizes = this.bootstrap.sizes.filter((entry) => entry.id !== sizeId);
+    this.bootstrap.products = this.bootstrap.products.map((product) => ({
+      ...product,
+      sizeOptionIds: product.sizeOptionIds.filter((id) => id !== sizeId),
+      sizeOptionPrices: product.sizeOptionPrices.filter((entry) => entry.sizeOptionId !== sizeId),
+      defaultSizeOptionId: product.defaultSizeOptionId === sizeId ? null : product.defaultSizeOptionId,
+    }));
+
+    await this.appendAuditEvent({
+      action: "size.deleted",
+      entityType: "size",
+      entityId: sizeId,
+      actorLabel: "system",
+      payload: { sizeId },
+    });
   }
 
   async listProducts(): Promise<Product[]> {

@@ -80,18 +80,11 @@ export class KioskSyncService implements LocalSyncService {
 
       const selectedSizeId = item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
       const size = selectedSizeId ? sizes.get(selectedSizeId) ?? null : null;
-      if (
-        selectedSizeId &&
-        (!size || !size.enabled || (product.sizeOptionIds.length > 0 && !product.sizeOptionIds.includes(selectedSizeId)))
-      ) {
+      if (selectedSizeId && (!size || !size.enabled)) {
         throw new HttpError(400, `Size ${selectedSizeId} is not allowed for ${product.name}.`);
       }
 
       const modifierSummary = item.modifierIds.map((modifierId) => {
-        if (!product.modifierIds.includes(modifierId)) {
-          throw new HttpError(400, `Flavor ${modifierId} is not allowed for ${product.name}.`);
-        }
-
         const modifier = modifiers.get(modifierId);
         if (!modifier || !modifier.enabled) {
           throw new HttpError(400, `Flavor ${modifierId} is not available.`);

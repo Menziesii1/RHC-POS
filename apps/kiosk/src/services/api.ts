@@ -3,7 +3,9 @@ import type {
   BootstrapResponse,
   CartInput,
   DraftOrder,
+  FlavorCategory,
   UpsertCategoryInput,
+  UpsertFlavorCategoryInput,
   UpsertModifierInput,
   PatchSettingsInput,
   Product,
@@ -131,6 +133,24 @@ export const api = {
     }),
   deleteProduct: (pin: string, productId: string) =>
     request<{ ok: true }>(`/admin/products/${productId}`, {
+      method: "DELETE",
+      headers: { "x-admin-pin": pin },
+    }),
+  listFlavorCategories: () => request<FlavorCategory[]>("/admin/flavor-categories"),
+  createFlavorCategory: (pin: string, payload: UpsertFlavorCategoryInput) =>
+    request<FlavorCategory>("/admin/flavor-categories", {
+      method: "POST",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify(payload),
+    }),
+  updateFlavorCategory: (pin: string, categoryId: string, payload: Partial<UpsertFlavorCategoryInput>) =>
+    request<FlavorCategory>(`/admin/flavor-categories/${categoryId}`, {
+      method: "PATCH",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify(payload),
+    }),
+  deleteFlavorCategory: (pin: string, categoryId: string) =>
+    request<{ ok: true }>(`/admin/flavor-categories/${categoryId}`, {
       method: "DELETE",
       headers: { "x-admin-pin": pin },
     }),

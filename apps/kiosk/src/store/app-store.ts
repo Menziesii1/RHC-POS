@@ -25,6 +25,7 @@ interface AppState {
   setSelectedCategoryId: (selectedCategoryId: string) => void;
   addProduct: (productId: string) => void;
   beginDraftLine: (productId: string, sizeOptionId?: string | null, iced?: boolean) => void;
+  beginDraftLineFromCartLine: (lineId: string) => void;
   setDraftLineSize: (sizeOptionId: string | null) => void;
   setDraftLineIced: (iced: boolean) => void;
   toggleDraftLineFlavor: (modifierId: string) => void;
@@ -171,7 +172,23 @@ export const useAppStore = create<AppState>((set) => ({
         modifierIds: [],
         quantity: 1,
         iced,
+        editingLineId: null,
       },
+    }),
+  beginDraftLineFromCartLine: (lineId) =>
+    set((state) => {
+      const line = state.cartLines.find((l) => l.id === lineId);
+      if (!line) return {};
+      return {
+        draftLine: {
+          productId: line.productId,
+          sizeOptionId: line.sizeOptionId ?? null,
+          modifierIds: [...line.modifierIds],
+          quantity: line.quantity,
+          iced: line.iced,
+          editingLineId: lineId,
+        },
+      };
     }),
   setDraftLineSize: (sizeOptionId) =>
     set((state) => ({
@@ -196,6 +213,22 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => {
       if (!state.draftLine?.productId) {
         return {};
+      }
+      const { editingLineId } = state.draftLine;
+      if (editingLineId) {
+        return {
+          cartLines: state.cartLines.map((line) =>
+            line.id === editingLineId
+              ? {
+                  ...line,
+                  sizeOptionId: state.draftLine!.sizeOptionId,
+                  modifierIds: state.draftLine!.modifierIds,
+                  iced: state.draftLine!.iced,
+                }
+              : line,
+          ),
+          draftLine: null,
+        };
       }
       return {
         cartLines: [

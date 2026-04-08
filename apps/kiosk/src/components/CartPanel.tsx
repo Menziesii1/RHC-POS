@@ -1,6 +1,8 @@
 import { formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
-import { Minus, Plus, ShoppingBag, Trash2, Droplets } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
+
+import logoUrl from "../../assets/River Hills Logo without text Colored.svg?url";
 
 import type { CartLineState } from "../types/ui";
 
@@ -24,7 +26,7 @@ interface CartPanelProps {
   onSelectLine: (lineId: string) => void;
   onAdjustLineQuantity: (lineId: string, delta: number) => void;
   onRemoveLine: (lineId: string) => void;
-  onToggleModifier: (lineId: string, modifierId: string) => void;
+  onEditLine: (lineId: string) => void;
   footer?: ReactNode;
 }
 
@@ -37,14 +39,14 @@ export function CartPanel({
   onSelectLine,
   onAdjustLineQuantity,
   onRemoveLine,
-  onToggleModifier,
+  onEditLine,
   footer,
 }: CartPanelProps) {
   const selectedLine = lines.find((line) => line.id === selectedLineId) ?? null;
   const allowedModifiers = selectedLine ? bootstrap.modifiers.filter((m) => m.enabled) : [];
 
   return (
-    <section className="flex w-[340px] shrink-0 flex-col overflow-hidden bg-[#0c1520]">
+    <section className="flex w-[340px] shrink-0 flex-col overflow-hidden bg-[#303030]">
       {/* Header */}
       <div className="shrink-0 px-4 pb-2 pt-5">
         <div className="flex items-center justify-between">
@@ -53,7 +55,7 @@ export function CartPanel({
             <h2 className="font-display text-base font-bold text-white">Order</h2>
           </div>
           {lines.length > 0 && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1be4db] text-[10px] font-bold text-[#0f1923]">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1be4db] text-[10px] font-bold text-[#262626]">
               {lines.length}
             </span>
           )}
@@ -61,9 +63,15 @@ export function CartPanel({
       </div>
 
       {/* Line items */}
-      <div className="flex-1 overflow-y-auto px-3 py-2">
+      <div className="relative flex-1 overflow-y-auto px-3 py-2">
+        <img
+          src={logoUrl}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 m-auto h-[80%] w-[80%] object-contain opacity-[0.04]"
+          draggable={false}
+        />
         {lines.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-white/20">
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-white/37">
             <ShoppingBag size={32} strokeWidth={1.5} />
             <span className="text-sm">Tap items to start</span>
           </div>
@@ -77,7 +85,7 @@ export function CartPanel({
                 <button
                   type="button"
                   className={`w-full rounded-xl px-3 py-2.5 text-left transition ${
-                    isSelected ? "bg-[#162231]" : "hover:bg-[#162231]/50"
+                    isSelected ? "bg-[#323232]" : "hover:bg-[#323232]/50"
                   }`}
                   onClick={() => onSelectLine(line.id)}
                 >
@@ -94,7 +102,7 @@ export function CartPanel({
                         </span>
                       </div>
                       {(line.sizeOption || line.modifiers.length > 0 || line.iced !== undefined) && (
-                        <div className="mt-0.5 truncate text-[11px] text-white/35">
+                        <div className="mt-0.5 truncate text-[11px] text-white/52">
                           {[
                             line.iced ? "Iced" : "Hot",
                             line.sizeOption?.name,
@@ -110,7 +118,7 @@ export function CartPanel({
                 </button>
 
                 {isSelected && (
-                  <div className="mx-3 mb-1 mt-1 rounded-xl bg-[#162231] px-3 py-2.5">
+                  <div className="mx-3 mb-1 mt-1 rounded-xl bg-[#323232] px-3 py-2.5">
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -140,37 +148,14 @@ export function CartPanel({
                     </div>
 
                     {allowedModifiers.length > 0 && (
-                      <div className="mt-2.5">
-                        <div className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-white/25">
-                          <Droplets size={10} />
-                          Flavors
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {allowedModifiers.map((modifier) => {
-                            const active = line.modifierIds.includes(modifier.id);
-                            return (
-                              <button
-                                key={modifier.id}
-                                type="button"
-                                className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
-                                  active
-                                    ? "bg-[#1be4db] text-[#0f1923]"
-                                    : "bg-white/5 text-white/50 hover:text-white/70"
-                                }`}
-                                onClick={() => onToggleModifier(line.id, modifier.id)}
-                              >
-                                {modifier.name}
-                                {modifier.priceCents !== 0 && (
-                                  <span className="ml-1 opacity-70">
-                                    {modifier.priceCents > 0 ? "+" : ""}
-                                    {formatCurrency(modifier.priceCents)}
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                      <button
+                        type="button"
+                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/[0.06] py-2 text-[11px] font-semibold text-white/70 transition hover:bg-white/[0.10] hover:text-white"
+                        onClick={() => onEditLine(line.id)}
+                      >
+                        <Pencil size={11} />
+                        Edit Drink
+                      </button>
                     )}
                   </div>
                 )}
@@ -192,7 +177,7 @@ export function CartPanel({
       <div className="shrink-0 px-4 py-3">
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Total</div>
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-white/47">Total</div>
             <div className="font-display text-2xl font-bold text-white">
               {formatCurrency(totalCents)}
             </div>

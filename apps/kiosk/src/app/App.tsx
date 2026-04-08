@@ -76,6 +76,7 @@ export function App() {
   const [adminError, setAdminError] = useState<string | null>(null);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsRangeResponse | null>(null);
+  const [analyticsRangeDays, setAnalyticsRangeDays] = useState(28);
   const hydratedRef = useRef(false);
 
   const cartView = useMemo(
@@ -259,7 +260,7 @@ export function App() {
     return bootstrap;
   };
 
-  const refreshAnalytics = async (days = 14) => {
+  const refreshAnalytics = async (days = analyticsRangeDays) => {
     const [dashboard, range] = await Promise.all([
       api.getDashboard().catch(() => null),
       api.getAnalyticsRange(days).catch(() => null),
@@ -386,7 +387,7 @@ export function App() {
     }
     if (store.adminUnlocked) {
       store.setView("inventory");
-      void refreshAnalytics();
+      void refreshAnalytics(analyticsRangeDays);
       return;
     }
     setAdminError(null);
@@ -398,7 +399,7 @@ export function App() {
       await api.verifyAdminPin(pin);
       setAdminError(null);
       store.unlockAdmin(pin);
-      await refreshAnalytics();
+      await refreshAnalytics(analyticsRangeDays);
     } catch (error) {
       setAdminError(error instanceof Error ? error.message : "Admin PIN is invalid.");
     }
@@ -406,7 +407,12 @@ export function App() {
 
   const handleSummaryOpen = async () => {
     store.setView("analytics");
-    await refreshAnalytics();
+    await refreshAnalytics(analyticsRangeDays);
+  };
+
+  const handleAnalyticsRangeChange = async (days: number) => {
+    setAnalyticsRangeDays(days);
+    await refreshAnalytics(days);
   };
 
   const handleClearCart = async () => {
@@ -474,6 +480,21 @@ export function App() {
     await refreshBootstrap();
   };
 
+  const handleCreateFlavorCategory = async (input: Parameters<typeof api.createFlavorCategory>[1]) => {
+    await api.createFlavorCategory(store.adminPin, input);
+    await refreshBootstrap();
+  };
+
+  const handleFlavorCategorySave = async (categoryId: string, input: Parameters<typeof api.updateFlavorCategory>[2]) => {
+    await api.updateFlavorCategory(store.adminPin, categoryId, input);
+    await refreshBootstrap();
+  };
+
+  const handleFlavorCategoryDelete = async (categoryId: string) => {
+    await api.deleteFlavorCategory(store.adminPin, categoryId);
+    await refreshBootstrap();
+  };
+
   const handleCreateSize = async (input: Parameters<typeof api.createSize>[1]) => {
     await api.createSize(store.adminPin, input);
     await refreshBootstrap();
@@ -534,7 +555,10 @@ export function App() {
                 onSelectLine={store.selectLine}
                 onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
                 onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
-                onToggleModifier={(lineId, modifierId) => mutateCart(() => store.toggleModifier(lineId, modifierId))}
+                onEditLine={(lineId) => {
+                  store.beginDraftLineFromCartLine(lineId);
+                  store.setOverlay("drink-builder");
+                }}
                 footer={
                   <ActionBar
                     disabled={cartView.lines.length === 0}
@@ -570,6 +594,9 @@ export function App() {
                 onCreateCategory={handleCreateCategory}
                 onCreateFlavor={handleCreateFlavor}
                 onCreateSize={handleCreateSize}
+                onCreateFlavorCategory={handleCreateFlavorCategory}
+                onFlavorCategorySave={handleFlavorCategorySave}
+                onFlavorCategoryDelete={handleFlavorCategoryDelete}
                 onTaxSave={handleTaxSave}
               />
             </div>
@@ -591,6 +618,8 @@ export function App() {
                   handleAdminOpen();
                 }}
                 canOpenInventory={ADMIN_ENABLED && store.adminUnlocked}
+                selectedRangeDays={analyticsRangeDays}
+                onSelectRangeDays={(days) => void handleAnalyticsRangeChange(days)}
               />
             </div>
           </div>

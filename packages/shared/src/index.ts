@@ -22,6 +22,12 @@ export const productSizePriceSchema = z.object({
   priceDeltaCents: z.number().int().default(0),
 });
 
+export const flavorCategorySchema = z.object({
+  id: idSchema,
+  name: z.string().min(1),
+  sortOrder: z.number().int().default(0),
+});
+
 export const modifierSchema = z.object({
   id: idSchema,
   name: z.string().min(1),
@@ -29,6 +35,7 @@ export const modifierSchema = z.object({
   discountFlavor: z.boolean().default(false),
   enabled: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
+  flavorCategoryId: idSchema.nullable().optional(),
 });
 
 export const productTypeSchema = z.enum(["drink", "food", "discount", "kids"]);
@@ -233,6 +240,7 @@ export const bootstrapResponseSchema = z.object({
   modifiers: z.array(modifierSchema),
   sizes: z.array(sizeOptionSchema),
   cashiers: z.array(staffProfileSchema),
+  flavorCategories: z.array(flavorCategorySchema).default([]),
 });
 
 export const adminPinSchema = z.object({
@@ -260,6 +268,13 @@ export const upsertModifierSchema = z.object({
   priceCents: z.number().int().default(0),
   discountFlavor: z.boolean().default(false),
   enabled: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+  flavorCategoryId: idSchema.nullable().optional(),
+});
+
+export const upsertFlavorCategorySchema = z.object({
+  id: idSchema.optional(),
+  name: z.string().min(1),
   sortOrder: z.number().int().default(0),
 });
 
@@ -298,7 +313,9 @@ export type SummaryResponse = z.infer<typeof summaryResponseSchema>;
 export type AnalyticsRangeResponse = z.infer<typeof analyticsRangeResponseSchema>;
 export type UpsertCategoryInput = z.infer<typeof upsertCategorySchema>;
 export type UpsertSizeOptionInput = z.infer<typeof upsertSizeOptionSchema>;
+export type FlavorCategory = z.infer<typeof flavorCategorySchema>;
 export type UpsertModifierInput = z.infer<typeof upsertModifierSchema>;
+export type UpsertFlavorCategoryInput = z.infer<typeof upsertFlavorCategorySchema>;
 export type UpsertProductInput = z.infer<typeof upsertProductSchema>;
 export type PatchSettingsInput = z.infer<typeof patchSettingsSchema>;
 

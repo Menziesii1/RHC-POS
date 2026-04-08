@@ -1,5 +1,6 @@
 import { calculateFlavorAdjustment, calculateLinePrice, formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
 import { Flame, Snowflake, Ruler, Droplets, Plus, X } from "lucide-react";
+import { useState } from "react";
 
 import { getSizeAdjustmentCents } from "../lib/cart";
 import { getProductImage } from "../lib/product-images";
@@ -13,6 +14,112 @@ interface DrinkBuilderOverlayProps {
   onSetIced: (iced: boolean) => void;
   onToggleFlavor: (modifierId: string) => void;
   onConfirm: () => void;
+}
+
+function FlavorPicker({
+  bootstrap,
+  selectedIds,
+  onToggle,
+}: {
+  bootstrap: BootstrapResponse;
+  selectedIds: string[];
+  onToggle: (id: string) => void;
+}) {
+  const flavorCategories = bootstrap.flavorCategories ?? [];
+  const allFlavors = bootstrap.modifiers.filter((m) => m.enabled);
+
+  // Build tab list: flavor categories that have at least one enabled modifier, plus uncategorized if any exist
+  const tabs: Array<{ id: string; label: string }> = flavorCategories
+    .filter((fc) => allFlavors.some((m) => m.flavorCategoryId === fc.id))
+    .map((fc) => ({ id: fc.id, label: fc.name }));
+  const uncategorized = allFlavors.filter((m) => !m.flavorCategoryId);
+  if (uncategorized.length > 0) tabs.push({ id: "__uncategorized__", label: "Other" });
+
+  const [activeTab, setActiveTab] = useState<string>(tabs[0]?.id ?? "__uncategorized__");
+
+  const visibleFlavors = activeTab === "__uncategorized__"
+    ? uncategorized
+    : allFlavors.filter((m) => m.flavorCategoryId === activeTab);
+
+  if (tabs.length === 0) {
+    // Fallback: no categories at all, show flat grid
+    return (
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {allFlavors.map((modifier) => {
+          const active = selectedIds.includes(modifier.id);
+          return (
+            <button key={modifier.id} type="button"
+              className={`rounded-xl px-4 py-3 text-left transition ${active ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.06] text-white/80 hover:bg-white/[0.09]"}`}
+              onClick={() => onToggle(modifier.id)}
+            >
+              <span className="block text-sm font-semibold leading-snug">{modifier.name}</span>
+              <span className={`mt-0.5 block text-xs ${active ? "text-[#0a8f89]" : "text-white/65"}`}>
+                {modifier.discountFlavor ? `${formatCurrency(modifier.priceCents)} off` : modifier.priceCents === 0 ? "Included" : `+${formatCurrency(modifier.priceCents)}`}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Tab strip */}
+      <div className="mb-3 flex gap-1 overflow-x-auto pb-0.5">
+        {tabs.map((tab) => {
+          const count = (tab.id === "__uncategorized__" ? uncategorized : allFlavors.filter(m => m.flavorCategoryId === tab.id))
+            .filter(m => selectedIds.includes(m.id)).length;
+          return (
+            <button key={tab.id} type="button"
+              className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${activeTab === tab.id ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.07] text-white/65 hover:bg-white/[0.11] hover:text-white"}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${activeTab === tab.id ? "bg-[#0a8f89] text-white" : "bg-[#1be4db]/20 text-[#1be4db]"}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {/* Flavor grid for active tab */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {visibleFlavors.map((modifier) => {
+          const active = selectedIds.includes(modifier.id);
+          return (
+            <button key={modifier.id} type="button"
+              className={`rounded-xl px-4 py-3 text-left transition ${active ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.06] text-white/80 hover:bg-white/[0.09]"}`}
+              onClick={() => onToggle(modifier.id)}
+            >
+              <span className="block text-sm font-semibold leading-snug">{modifier.name}</span>
+              <span className={`mt-0.5 block text-xs ${active ? "text-[#0a8f89]" : "text-white/65"}`}>
+                {modifier.discountFlavor ? `${formatCurrency(modifier.priceCents)} off` : modifier.priceCents === 0 ? "Included" : `+${formatCurrency(modifier.priceCents)}`}
+              </span>
+            </button>
+          );
+        })}
+        {visibleFlavors.length === 0 && (
+          <div className="col-span-3 py-4 text-center text-sm text-white/35">No flavors in this group.</div>
+        )}
+      </div>
+      {/* Selected summary across all tabs */}
+      {selectedIds.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {allFlavors.filter(m => selectedIds.includes(m.id)).map((m) => (
+            <button key={m.id} type="button"
+              className="flex items-center gap-1 rounded-full bg-[#1be4db]/15 px-2.5 py-1 text-[11px] font-semibold text-[#1be4db]"
+              onClick={() => onToggle(m.id)}
+            >
+              {m.name} <X size={10} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function DrinkBuilderOverlay({
@@ -172,28 +279,11 @@ export function DrinkBuilderOverlay({
                   <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/70">
                     <Droplets size={13} /> Flavors
                   </div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                    {allowedFlavors.map((modifier) => {
-                      const active = draftLine.modifierIds.includes(modifier.id);
-                      return (
-                        <button
-                          key={modifier.id}
-                          type="button"
-                          className={`rounded-xl px-4 py-3 text-left transition ${
-                            active ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.06] text-white/80 hover:bg-white/[0.09]"
-                          }`}
-                          onClick={() => onToggleFlavor(modifier.id)}
-                        >
-                          <span className="block text-sm font-semibold leading-snug">{modifier.name}</span>
-                          <span className={`mt-0.5 block text-xs ${active ? "text-[#0a8f89]" : "text-white/65"}`}>
-                            {modifier.discountFlavor
-                              ? `${formatCurrency(modifier.priceCents)} off`
-                              : modifier.priceCents === 0 ? "Included" : `+${formatCurrency(modifier.priceCents)}`}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <FlavorPicker
+                    bootstrap={bootstrap}
+                    selectedIds={draftLine.modifierIds}
+                    onToggle={onToggleFlavor}
+                  />
                 </div>
               )}
             </div>
@@ -214,7 +304,7 @@ export function DrinkBuilderOverlay({
                 className="flex items-center gap-1.5 rounded-xl bg-[#1be4db] px-5 py-2.5 text-sm font-bold text-[#1a1a1a]"
                 onClick={onConfirm}
               >
-                <Plus size={15} /> Add to Order
+                <Plus size={15} /> {draftLine.editingLineId ? "Save Changes" : "Add to Order"}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import {
   bootstrapResponseSchema,
   cartInputSchema,
   upsertCategorySchema,
+  upsertFlavorCategorySchema,
   upsertModifierSchema,
   summaryResponseSchema,
   upsertProductSchema,
@@ -13,6 +14,7 @@ import {
   type AnalyticsRangeResponse,
   type DraftOrder,
   type Category,
+  type FlavorCategory,
   type Modifier,
   type SizeOption,
   type SummaryResponse,
@@ -98,6 +100,11 @@ export class PosService {
     return this.repository.upsertCategory(upsertCategorySchema.parse(input), actorLabel);
   }
 
+  async deleteCategory(categoryId: string): Promise<{ ok: true }> {
+    await this.repository.deleteCategory(categoryId);
+    return { ok: true };
+  }
+
   async listModifiers(): Promise<Modifier[]> {
     return this.repository.listModifiers();
   }
@@ -112,6 +119,11 @@ export class PosService {
 
   async upsertSize(input: unknown, actorLabel: string) {
     return this.repository.upsertSize(upsertSizeOptionSchema.parse(input), actorLabel);
+  }
+
+  async deleteSize(sizeId: string): Promise<{ ok: true }> {
+    await this.repository.deleteSize(sizeId);
+    return { ok: true };
   }
 
   async listProducts() {
@@ -138,6 +150,19 @@ export class PosService {
 
   async deleteFlavor(modifierId: string): Promise<{ ok: true }> {
     await this.repository.deleteModifier(modifierId);
+    return { ok: true };
+  }
+
+  async listFlavorCategories(): Promise<FlavorCategory[]> {
+    return this.repository.listFlavorCategories();
+  }
+
+  async upsertFlavorCategory(input: unknown, actorLabel: string) {
+    return this.repository.upsertFlavorCategory(upsertFlavorCategorySchema.parse(input), actorLabel);
+  }
+
+  async deleteFlavorCategory(categoryId: string): Promise<{ ok: true }> {
+    await this.repository.deleteFlavorCategory(categoryId);
     return { ok: true };
   }
 
