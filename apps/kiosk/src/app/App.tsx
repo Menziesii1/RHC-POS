@@ -644,7 +644,7 @@ export function App() {
                 type="button"
                 aria-label="Open order panel"
                 onClick={() => setMobileCartOpen(true)}
-                className="absolute bottom-10 -right-3 z-50 flex items-center gap-3 rounded-l-2xl bg-[#1be4db] px-6 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.15)] transition active:scale-[0.97] lg:hidden"
+                className="absolute bottom-[90px] -right-3 z-50 flex items-center gap-3 rounded-l-2xl bg-[#1be4db] px-6 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.15)] transition active:scale-[0.97] lg:hidden"
               >
                 <ShoppingBag size={18} className="text-[#0d1a1a]" />
                 <span className="text-base font-bold text-[#0d1a1a]">Order</span>
