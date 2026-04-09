@@ -644,10 +644,10 @@ export function App() {
                 type="button"
                 aria-label="Open order panel"
                 onClick={() => setMobileCartOpen(true)}
-                className="absolute bottom-4 right-3 z-50 flex items-center gap-2.5 rounded-2xl bg-[#1be4db] px-5 py-3.5 shadow-[0_8px_24px_rgba(27,228,219,0.35)] transition active:scale-[0.97] lg:hidden"
+                className="absolute bottom-7 right-5 z-50 flex items-center gap-3 rounded-2xl bg-[#1be4db] px-6 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.15)] transition active:scale-[0.97] lg:hidden"
               >
-                <ShoppingBag size={16} className="text-[#0d1a1a]" />
-                <span className="text-sm font-bold text-[#0d1a1a]">Order</span>
+                <ShoppingBag size={18} className="text-[#0d1a1a]" />
+                <span className="text-base font-bold text-[#0d1a1a]">Order</span>
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0d1a1a]/20 text-[10px] font-bold text-[#0d1a1a]">
                   {cartView.lines.length}
                 </span>
