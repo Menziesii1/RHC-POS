@@ -45,6 +45,7 @@ export async function createApp(options: CreateAppOptions) {
     repository,
     createTerminalService(options.config),
     new AdminAuthService(options.config.ADMIN_PIN, options.config.ADMIN_PIN_HASH),
+    options.config.REFUND_PIN,
   );
 
   await app.register(cors, {

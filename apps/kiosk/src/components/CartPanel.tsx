@@ -1,5 +1,5 @@
 import { formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
-import { Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
 
 import coloredLogoUrl from "../../assets/River Hills Logo without text Colored.svg?url";
@@ -25,6 +25,8 @@ interface CartPanelProps {
   selectedLineId: string | null;
   totalCents: number;
   paymentError?: string | null;
+  mobileOpen: boolean;
+  onToggleMobile: () => void;
   onSelectLine: (lineId: string) => void;
   onAdjustLineQuantity: (lineId: string, delta: number) => void;
   onRemoveLine: (lineId: string) => void;
@@ -38,6 +40,8 @@ export function CartPanel({
   selectedLineId,
   totalCents,
   paymentError,
+  mobileOpen,
+  onToggleMobile,
   onSelectLine,
   onAdjustLineQuantity,
   onRemoveLine,
@@ -48,9 +52,33 @@ export function CartPanel({
   const selectedLine = lines.find((line) => line.id === selectedLineId) ?? null;
   const allowedModifiers = selectedLine ? bootstrap.modifiers.filter((m) => m.enabled) : [];
   const logoUrl = theme === "light" ? blackLogoUrl : coloredLogoUrl;
+  const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   return (
-    <section className="flex w-[340px] shrink-0 flex-col overflow-hidden bg-[var(--bg-surface)]">
+    <>
+      <button
+        type="button"
+        aria-label={mobileOpen ? "Close order panel" : "Open order panel"}
+        onClick={onToggleMobile}
+        className="fixed right-0 top-[4.25rem] z-50 flex items-center gap-2 rounded-l-2xl border border-white/10 bg-[var(--bg-surface)] px-3 py-3 text-left shadow-[0_18px_40px_rgba(0,0,0,0.35)] transition active:scale-[0.98] lg:hidden"
+      >
+        <div className="flex flex-col items-start gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <ShoppingBag size={14} className="text-[#1be4db]" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-primary)]">Order</span>
+          </div>
+          <span className="text-[10px] font-medium text-[var(--text-dimmer)]">{itemCount} items</span>
+        </div>
+        <div className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.05] text-[var(--text-primary)]">
+          {mobileOpen ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </div>
+      </button>
+
+      <section
+        className={`fixed right-0 top-14 z-40 flex h-[calc(100dvh-3.5rem)] w-[min(88vw,360px)] flex-col overflow-hidden bg-[var(--bg-surface)] shadow-[0_24px_64px_rgba(0,0,0,0.42)] transition-transform duration-300 ease-out lg:static lg:h-full lg:w-[340px] lg:shrink-0 lg:translate-x-0 lg:shadow-none ${
+          mobileOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
       {/* Header */}
       <div className="shrink-0 px-4 pb-2 pt-5">
         <div className="flex items-center justify-between">
@@ -71,7 +99,7 @@ export function CartPanel({
         <img
           src={logoUrl}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 m-auto h-[160%] w-[160%] translate-y-32 object-contain opacity-[0.04]"
+          className="pointer-events-none absolute inset-0 m-auto h-[80%] w-[80%] object-contain opacity-[0.09]"
           draggable={false}
         />
         {lines.length === 0 ? (
@@ -195,6 +223,7 @@ export function CartPanel({
       </div>
 
       {footer}
-    </section>
+      </section>
+    </>
   );
 }

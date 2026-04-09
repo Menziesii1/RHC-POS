@@ -7,6 +7,20 @@ const cashPaymentSchema = z.object({
   tenderedCents: z.number().int().nonnegative(),
 });
 
+const transactionQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).default(25),
+});
+
+const sendReceiptSchema = z.object({
+  email: z.string().email(),
+});
+
+const refundSchema = z.object({
+  refundPin: z.string().min(1),
+  amountCents: z.number().int().positive().optional(),
+});
+
 const startCardSchema = z.object({
   amountCents: z.number().int().positive().optional(),
 });
@@ -128,6 +142,26 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
     return posService.patchSettings(request.body, "admin-pin");
   });
+  app.get("/v1/admin/transactions", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    const { page, pageSize } = transactionQuerySchema.parse(request.query ?? {});
+    return posService.listTransactions(page, pageSize);
+  });
+  app.get("/v1/admin/transactions/:id", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    return posService.getOrder((request.params as { id: string }).id);
+  });
+  app.post("/v1/admin/transactions/:id/send-receipt", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    const { email } = sendReceiptSchema.parse(request.body);
+    return posService.sendReceipt((request.params as { id: string }).id, email);
+  });
+  app.post("/v1/admin/transactions/:id/refund", async (request) => {
+    await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });
+    const { refundPin, amountCents } = refundSchema.parse(request.body);
+    return posService.refundOrder((request.params as { id: string }).id, refundPin, amountCents);
+  });
+
   app.post(
     "/v1/stripe/webhooks",
     {

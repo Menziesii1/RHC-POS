@@ -42,6 +42,8 @@
   --selector-inactive-bg: rgba(255, 255, 255, 0.06);
   --selector-inactive-text: rgba(228, 230, 236, 0.80);
   --selector-inactive-sub:  rgba(228, 230, 236, 0.65);
+  --selected-flavor-chip-bg: rgba(27, 228, 219, 0.15);
+  --selected-flavor-chip-text: #1be4db;
 
   /* Inset light surface (price cards, summary rows on dark panels) */
   --inset-surface: #f0f0f0;
@@ -83,6 +85,8 @@
   --selector-inactive-bg: rgba(0, 0, 0, 0.05);
   --selector-inactive-text: rgba(26, 18, 11, 0.65);
   --selector-inactive-sub:  rgba(26, 18, 11, 0.50);
+  --selected-flavor-chip-bg: rgba(26, 18, 11, 0.16);
+  --selected-flavor-chip-text: #1a120b;
 
   /* Inset surface */
   --inset-surface: #faf7f4;

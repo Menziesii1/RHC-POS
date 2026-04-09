@@ -24,7 +24,7 @@ import {
 import type { AppConfig } from "../config.js";
 import { HttpError } from "../lib/http-error.js";
 import { createOrderNumber } from "../lib/order-number.js";
-import type { AuditEventInput, CardPaymentUpdateInput, PosRepository } from "./types.js";
+import type { AuditEventInput, CardPaymentUpdateInput, PosRepository, TransactionListResponse, TransactionRow } from "./types.js";
 
 type ProductRecord = Awaited<ReturnType<PrismaPosRepository["getProductRecords"]>>[number];
 type OrderRecord = Awaited<ReturnType<PrismaPosRepository["getOrderRecord"]>>;
@@ -974,6 +974,47 @@ export class PrismaPosRepository implements PosRepository {
       orderBy: { processedAt: "desc" },
     });
     return event?.processedAt.toISOString() ?? null;
+  }
+
+  async listTransactions(page: number, pageSize: number): Promise<TransactionListResponse> {
+    const skip = (page - 1) * pageSize;
+    const [total, orders] = await Promise.all([
+      this.prisma.order.count({ where: { locationId: this.config.LOCATION_ID } }),
+      this.prisma.order.findMany({
+        where: { locationId: this.config.LOCATION_ID },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+        include: { payment: true },
+      }),
+    ]);
+
+    const data: TransactionRow[] = orders.map((order) => {
+      const meta = order.stripeMetadataJson as Record<string, unknown> | null;
+      return {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status as TransactionRow["status"],
+        totalCents: order.totalCents,
+        tenderType: (order.payment?.tenderType ?? undefined) as TransactionRow["tenderType"],
+        cashierName: order.cashierName,
+        stripePaymentIntentId: order.payment?.stripePaymentIntentId ?? undefined,
+        refunded: meta?.refunded === true,
+        createdAt: order.createdAt.toISOString(),
+        paidAt: order.paidAt?.toISOString() ?? null,
+      };
+    });
+
+    return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  }
+
+  async markOrderRefunded(orderId: string): Promise<void> {
+    const order = await this.requireOrder(orderId);
+    const existing = (order.stripeMetadataJson as Record<string, unknown> | null) ?? {};
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: { stripeMetadataJson: { ...existing, refunded: true, refundedAt: new Date().toISOString() } },
+    });
   }
 
   private async getProductRecords() {

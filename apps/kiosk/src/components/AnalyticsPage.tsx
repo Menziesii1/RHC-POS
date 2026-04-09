@@ -9,6 +9,7 @@ interface AnalyticsPageProps {
   analytics: AnalyticsRangeResponse | null;
   onClose: () => void;
   onNavigateInventory: () => void;
+  onNavigateTransactions: () => void;
   canOpenInventory: boolean;
   selectedRangeDays: number;
   onSelectRangeDays: (days: number) => void;
@@ -67,6 +68,7 @@ export function AnalyticsPage({
   analytics,
   onClose,
   onNavigateInventory,
+  onNavigateTransactions,
   canOpenInventory,
   selectedRangeDays,
   onSelectRangeDays,
@@ -112,9 +114,8 @@ export function AnalyticsPage({
           description="Review financial performance and product demand in church-friendly service windows. Each preset is measured in weekly services, not arbitrary days."
           activeTab="analytics"
           onSelectTab={(tab) => {
-            if (tab === "inventory" && canOpenInventory) {
-              onNavigateInventory();
-            }
+            if (tab === "inventory" && canOpenInventory) onNavigateInventory();
+            else if (tab === "transactions") onNavigateTransactions();
           }}
           onClose={onClose}
           actions={

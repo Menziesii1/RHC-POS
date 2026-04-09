@@ -19,6 +19,7 @@ interface InventoryControlPageProps {
   analytics: AnalyticsRangeResponse | null;
   onClose: () => void;
   onNavigateAnalytics: () => void;
+  onNavigateTransactions: () => void;
   onCategorySave: (categoryId: string, input: Partial<UpsertCategoryInput>) => Promise<void>;
   onCategoryDelete: (categoryId: string) => Promise<void>;
   onProductSave: (productId: string, input: UpsertProductInput) => Promise<void>;
@@ -129,6 +130,7 @@ export function InventoryControlPage({
   analytics,
   onClose,
   onNavigateAnalytics,
+  onNavigateTransactions,
   onCategorySave,
   onCategoryDelete,
   onProductSave,
@@ -471,7 +473,10 @@ export function InventoryControlPage({
             title="Inventory Control"
             description="Select a section below to manage your catalog, sizes, flavors, categories, or store settings."
             activeTab="inventory"
-            onSelectTab={(tab) => { if (tab === "analytics") onNavigateAnalytics(); }}
+            onSelectTab={(tab) => {
+              if (tab === "analytics") onNavigateAnalytics();
+              else if (tab === "transactions") onNavigateTransactions();
+            }}
             onClose={onClose}
           />
         )}

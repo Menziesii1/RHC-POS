@@ -21,7 +21,7 @@ import {
 } from "@rhc-pos/shared";
 
 import { HttpError } from "../lib/http-error.js";
-import type { PosRepository } from "../repositories/types.js";
+import type { PosRepository, TransactionListResponse } from "../repositories/types.js";
 import type { AdminAuthService } from "./admin-auth-service.js";
 import type { TerminalService } from "./terminal-service.js";
 
@@ -30,6 +30,7 @@ export class PosService {
     private readonly repository: PosRepository,
     private readonly terminalService: TerminalService,
     private readonly adminAuthService: AdminAuthService,
+    private readonly refundPin: string,
   ) {}
 
   async getBootstrap(): Promise<BootstrapResponse> {
@@ -175,6 +176,37 @@ export class PosService {
 
   async patchSettings(input: unknown, actorLabel: string) {
     return this.repository.patchSettings(patchSettingsSchema.parse(input), actorLabel);
+  }
+
+  async listTransactions(page: number, pageSize: number): Promise<TransactionListResponse> {
+    return this.repository.listTransactions(page, pageSize);
+  }
+
+  async sendReceipt(orderId: string, email: string): Promise<{ ok: true }> {
+    const order = await this.getOrder(orderId);
+    const piId = order.payment.stripePaymentIntentId;
+    if (!piId) {
+      throw new HttpError(400, "No card payment on this order — Stripe receipt not available.");
+    }
+    await this.terminalService.sendReceipt(piId, email);
+    return { ok: true };
+  }
+
+  async refundOrder(orderId: string, refundPin: string, amountCents?: number): Promise<{ ok: true; refundId: string }> {
+    if (!this.refundPin || refundPin !== this.refundPin) {
+      throw new HttpError(401, "Refund PIN is invalid.");
+    }
+    const order = await this.getOrder(orderId);
+    if (order.status !== "paid") {
+      throw new HttpError(400, "Only paid orders can be refunded.");
+    }
+    const piId = order.payment.stripePaymentIntentId;
+    if (!piId) {
+      throw new HttpError(400, "Cash-only orders cannot be refunded via Stripe.");
+    }
+    const refundId = await this.terminalService.refundPaymentIntent(piId, amountCents);
+    await this.repository.markOrderRefunded(orderId);
+    return { ok: true, refundId };
   }
 
   async handleStripeWebhook(signature: string | undefined, rawBody: string): Promise<{ received: true }> {

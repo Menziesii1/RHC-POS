@@ -26,6 +26,8 @@ export interface TerminalService {
   startPayment(order: DraftOrder, amountCents?: number): Promise<TerminalStartResult>;
   cancelPayment(order: DraftOrder): Promise<void>;
   parseWebhook(signature: string | undefined, rawBody: string): TerminalWebhookResult | null;
+  sendReceipt(paymentIntentId: string, email: string): Promise<void>;
+  refundPaymentIntent(paymentIntentId: string, amountCents?: number): Promise<string>;
 }
 
 type TerminalStatus = Pick<RegisterStatus, "reader" | "stripe" | "backend" | "internet" | "lastWebhookAt">;
@@ -55,6 +57,12 @@ export class MockTerminalService implements TerminalService {
 
   parseWebhook(): TerminalWebhookResult | null {
     return null;
+  }
+
+  async sendReceipt(_paymentIntentId: string, _email: string): Promise<void> {}
+
+  async refundPaymentIntent(_paymentIntentId: string, _amountCents?: number): Promise<string> {
+    return "mock_refund";
   }
 }
 
@@ -179,6 +187,25 @@ export class StripeTerminalService implements TerminalService {
     if (order.payment.stripePaymentIntentId) {
       await this.stripe.paymentIntents.cancel(order.payment.stripePaymentIntentId).catch(() => undefined);
     }
+  }
+
+  async sendReceipt(paymentIntentId: string, email: string): Promise<void> {
+    const pi = await this.stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ["latest_charge"],
+    });
+    const charge = pi.latest_charge as Stripe.Charge | null;
+    if (!charge) {
+      throw new Error("No charge found for this payment intent.");
+    }
+    await this.stripe.charges.update(charge.id, { receipt_email: email });
+  }
+
+  async refundPaymentIntent(paymentIntentId: string, amountCents?: number): Promise<string> {
+    const refund = await this.stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      ...(amountCents != null ? { amount: amountCents } : {}),
+    });
+    return refund.id;
   }
 
   parseWebhook(signature: string | undefined, rawBody: string): TerminalWebhookResult | null {

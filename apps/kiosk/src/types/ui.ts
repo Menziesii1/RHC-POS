@@ -10,7 +10,7 @@ export interface CartLineState {
 }
 
 export type OverlayState = "none" | "cash" | "card" | "split" | "success" | "admin-pin" | "drink-builder";
-export type AppView = "register" | "inventory" | "analytics";
+export type AppView = "register" | "inventory" | "analytics" | "transactions";
 
 export interface PendingTransactionSnapshot {
   orderId: string;

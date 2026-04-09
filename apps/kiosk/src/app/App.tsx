@@ -10,6 +10,7 @@ import { CashPaymentOverlay } from "../components/CashPaymentOverlay";
 import { SplitTenderModal } from "../components/SplitTenderModal";
 import { DrinkBuilderOverlay } from "../components/DrinkBuilderOverlay";
 import { InventoryControlPage } from "../components/InventoryControlPage";
+import { TransactionsPage } from "../components/TransactionsPage";
 import { ProductGrid } from "../components/ProductGrid";
 import { SuccessScreen } from "../components/SuccessScreen";
 import { TopStatusBar } from "../components/TopStatusBar";
@@ -79,6 +80,7 @@ export function App() {
   const [analytics, setAnalytics] = useState<AnalyticsRangeResponse | null>(null);
   const [analyticsRangeDays, setAnalyticsRangeDays] = useState(28);
   const [splitCardCents, setSplitCardCents] = useState<number | null>(null);
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const hydratedRef = useRef(false);
 
   const cartView = useMemo(
@@ -239,6 +241,12 @@ export function App() {
       window.clearInterval(interval);
     };
   }, [store.pendingTransaction, store]);
+
+  useEffect(() => {
+    if (store.view !== "register") {
+      setMobileCartOpen(false);
+    }
+  }, [store.view]);
 
   useEffect(() => {
     if (store.overlay !== "success") {
@@ -488,6 +496,10 @@ export function App() {
     await refreshAnalytics(analyticsRangeDays);
   };
 
+  const handleTransactionsOpen = () => {
+    store.setView("transactions");
+  };
+
   const handleAnalyticsRangeChange = async (days: number) => {
     setAnalyticsRangeDays(days);
     await refreshAnalytics(days);
@@ -635,6 +647,8 @@ export function App() {
                 selectedLineId={store.selectedLineId}
                 totalCents={cartView.totalCents}
                 paymentError={store.paymentError}
+                mobileOpen={mobileCartOpen}
+                onToggleMobile={() => setMobileCartOpen((value) => !value)}
                 onSelectLine={store.selectLine}
                 onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
                 onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
@@ -667,6 +681,7 @@ export function App() {
                 analytics={analytics}
                 onClose={() => store.setView("register")}
                 onNavigateAnalytics={() => void handleSummaryOpen()}
+                onNavigateTransactions={handleTransactionsOpen}
                 onCategorySave={handleCategorySave}
                 onCategoryDelete={handleCategoryDelete}
                 onProductSave={handleProductSave}
@@ -702,9 +717,23 @@ export function App() {
                   }
                   handleAdminOpen();
                 }}
+                onNavigateTransactions={handleTransactionsOpen}
                 canOpenInventory={ADMIN_ENABLED && store.adminUnlocked}
                 selectedRangeDays={analyticsRangeDays}
                 onSelectRangeDays={(days) => void handleAnalyticsRangeChange(days)}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {store.view === "transactions" && ADMIN_ENABLED ? (
+          <div className="flex min-h-0 flex-1 flex-col overflow-auto p-3 lg:p-4">
+            <div className="pos-view-panel flex min-h-0 flex-1 flex-col p-5 lg:p-6">
+              <TransactionsPage
+                adminPin={store.adminPin}
+                onClose={() => store.setView("register")}
+                onNavigateInventory={() => store.setView("inventory")}
+                onNavigateAnalytics={() => void handleSummaryOpen()}
               />
             </div>
           </div>

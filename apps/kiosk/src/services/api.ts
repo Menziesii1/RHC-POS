@@ -15,6 +15,27 @@ import type {
   UpsertProductInput,
 } from "@rhc-pos/shared";
 
+export interface TransactionRow {
+  id: string;
+  orderNumber: string;
+  status: "draft" | "awaiting_payment" | "paid" | "canceled";
+  totalCents: number;
+  tenderType: "cash" | "card" | "split" | undefined;
+  cashierName: string;
+  stripePaymentIntentId: string | undefined;
+  refunded: boolean;
+  createdAt: string;
+  paidAt: string | null;
+}
+
+export interface TransactionListResponse {
+  data: TransactionRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/v1";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -160,5 +181,25 @@ export const api = {
       method: "PATCH",
       headers: { "x-admin-pin": pin },
       body: JSON.stringify(payload),
+    }),
+  listTransactions: (pin: string, page = 1, pageSize = 25) =>
+    request<TransactionListResponse>(`/admin/transactions?page=${page}&pageSize=${pageSize}`, {
+      headers: { "x-admin-pin": pin },
+    }),
+  getTransaction: (pin: string, id: string) =>
+    request<DraftOrder>(`/admin/transactions/${id}`, {
+      headers: { "x-admin-pin": pin },
+    }),
+  sendReceipt: (pin: string, id: string, email: string) =>
+    request<{ ok: true }>(`/admin/transactions/${id}/send-receipt`, {
+      method: "POST",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify({ email }),
+    }),
+  refundTransaction: (pin: string, id: string, refundPin: string, amountCents?: number) =>
+    request<{ ok: true; refundId: string }>(`/admin/transactions/${id}/refund`, {
+      method: "POST",
+      headers: { "x-admin-pin": pin },
+      body: JSON.stringify({ refundPin, ...(amountCents != null ? { amountCents } : {}) }),
     }),
 };

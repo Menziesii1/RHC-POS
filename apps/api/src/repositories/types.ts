@@ -37,6 +37,27 @@ export interface CardPaymentUpdateInput {
   splitCashCents?: number;
 }
 
+export interface TransactionRow {
+  id: string;
+  orderNumber: string;
+  status: "draft" | "awaiting_payment" | "paid" | "canceled";
+  totalCents: number;
+  tenderType: "cash" | "card" | "split" | undefined;
+  cashierName: string;
+  stripePaymentIntentId: string | undefined;
+  refunded: boolean;
+  createdAt: string;
+  paidAt: string | null;
+}
+
+export interface TransactionListResponse {
+  data: TransactionRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface PosRepository {
   getBootstrapBase(): Promise<Omit<BootstrapResponse, "status">>;
   createDraftOrder(input: CartInput): Promise<DraftOrder>;
@@ -65,4 +86,6 @@ export interface PosRepository {
   recordWebhookEvent(stripeEventId: string, eventType: string, payload: Record<string, unknown>): Promise<boolean>;
   getOrderByStripePaymentIntentId(paymentIntentId: string): Promise<DraftOrder | null>;
   getLastWebhookAt(): Promise<string | null>;
+  listTransactions(page: number, pageSize: number): Promise<TransactionListResponse>;
+  markOrderRefunded(orderId: string): Promise<void>;
 }

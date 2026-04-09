@@ -110,7 +110,7 @@ function FlavorPicker({
         <div className="mt-3 flex flex-wrap gap-1.5">
           {allFlavors.filter(m => selectedIds.includes(m.id)).map((m) => (
             <button key={m.id} type="button"
-              className="flex items-center gap-1 rounded-full bg-[#1be4db]/15 px-2.5 py-1 text-[11px] font-semibold text-[#1be4db]"
+              className="flex items-center gap-1 rounded-full bg-[var(--selected-flavor-chip-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--selected-flavor-chip-text)]"
               onClick={() => onToggle(m.id)}
             >
               {m.name} <X size={10} />

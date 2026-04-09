@@ -21,7 +21,7 @@ import {
 
 import { HttpError } from "../lib/http-error.js";
 import { createOrderNumber } from "../lib/order-number.js";
-import type { AuditEventInput, CardPaymentUpdateInput, PosRepository } from "./types.js";
+import type { AuditEventInput, CardPaymentUpdateInput, PosRepository, TransactionListResponse } from "./types.js";
 
 type LineSummary = DraftOrder["lines"][number]["modifierSummary"];
 
@@ -889,6 +889,28 @@ export class MemoryPosRepository implements PosRepository {
   async getLastWebhookAt(): Promise<string | null> {
     return this.lastWebhookAt;
   }
+
+  async listTransactions(page: number, pageSize: number): Promise<TransactionListResponse> {
+    const all = [...this.orders.values()].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    const total = all.length;
+    const data = all.slice((page - 1) * pageSize, page * pageSize).map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status as TransactionListResponse["data"][number]["status"],
+      totalCents: order.totalCents,
+      tenderType: order.payment.tenderType,
+      cashierName: order.cashierName,
+      stripePaymentIntentId: order.payment.stripePaymentIntentId,
+      refunded: false,
+      createdAt: order.createdAt,
+      paidAt: null,
+    }));
+    return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  }
+
+  async markOrderRefunded(_orderId: string): Promise<void> {}
 
   private requireOrder(orderId: string): DraftOrder {
     const order = this.orders.get(orderId);

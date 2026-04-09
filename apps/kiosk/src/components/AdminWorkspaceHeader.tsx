@@ -1,17 +1,17 @@
-import { ArrowLeft, Package, BarChart3 } from "lucide-react";
+import { ArrowLeft, Package, BarChart3, ReceiptText } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface AdminWorkspaceHeaderProps {
   title: string;
   eyebrow: string;
   description: string;
-  activeTab: "inventory" | "analytics";
-  onSelectTab: (tab: "inventory" | "analytics") => void;
+  activeTab: "inventory" | "analytics" | "transactions";
+  onSelectTab: (tab: "inventory" | "analytics" | "transactions") => void;
   onClose: () => void;
   actions?: ReactNode;
 }
 
-const TAB_ICONS = { inventory: Package, analytics: BarChart3 };
+const TAB_ICONS = { inventory: Package, analytics: BarChart3, transactions: ReceiptText };
 
 export function AdminWorkspaceHeader({ title, eyebrow, description, activeTab, onSelectTab, onClose, actions }: AdminWorkspaceHeaderProps) {
   return (
@@ -33,7 +33,7 @@ export function AdminWorkspaceHeader({ title, eyebrow, description, activeTab, o
       </div>
       <div className="flex bg-[var(--bg-surface)]">
         {(
-          [["inventory", "Inventory Control"], ["analytics", "Analytics"]] as const
+          [["inventory", "Inventory Control"], ["analytics", "Analytics"], ["transactions", "Transactions"]] as const
         ).map(([key, label]) => {
           const Icon = TAB_ICONS[key];
           return (

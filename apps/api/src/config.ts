@@ -15,6 +15,7 @@ const configSchema = z.object({
   RECOVERY_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   ADMIN_PIN: z.string().min(4).max(12).default("2468"),
   ADMIN_PIN_HASH: z.string().optional().default(""),
+  REFUND_PIN: z.string().min(4).max(12).default(""),
   STRIPE_SECRET_KEY: z.string().optional().default(""),
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(""),
   STRIPE_LOCATION_ID: z.string().optional().default(""),

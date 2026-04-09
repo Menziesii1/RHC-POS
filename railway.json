@@ -16,8 +16,8 @@
   },
   "deploy": {
     "preDeployCommand": "if [ \"$DEPLOY_TARGET\" = kiosk ]; then exit 0; else npm run prisma:deploy --workspace @rhc-pos/api; fi",
-    "startCommand": "if [ \"$DEPLOY_TARGET\" = kiosk ]; then npm run preview --workspace @rhc-pos/kiosk -- --host 0.0.0.0 --port \"$PORT\"; else npm run start --workspace @rhc-pos/api; fi",
-    "healthcheckPath": "/",
+    "startCommand": "if [ \"$DEPLOY_TARGET\" = kiosk ]; then node apps/kiosk/server.mjs; else npm run start --workspace @rhc-pos/api; fi",
+    "healthcheckPath": "/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
