@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
     },
     preview: {
       host: true,
-      port: 4173,
+      port: parseInt(env.PORT ?? "4173"),
       strictPort: true,
     },
     test: {

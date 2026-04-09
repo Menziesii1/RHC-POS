@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Clock, RefreshCw, ShoppingBag, Flame, Snowflake } from "lucide-react";
+import { X, Clock, RefreshCw, ShoppingBag, Snowflake } from "lucide-react";
 import type { DraftOrder } from "@rhc-pos/shared";
 import { api } from "../services/api";
 
@@ -51,8 +51,12 @@ function OrderCard({ order }: { order: DraftOrder }) {
                 <div className="flex items-center gap-1.5">
                   {showTemp && (
                     line.isIced
-                      ? <Snowflake size={11} className="shrink-0 text-sky-400" />
-                      : <Flame size={11} className="shrink-0 text-orange-400" />
+                      ? <Snowflake size={15} className="shrink-0 text-sky-400" />
+                      : (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="shrink-0 text-orange-500" aria-hidden="true">
+                          <path d="M12 23a7.5 7.5 0 0 1-5.138-12.963C8.204 8.774 11.5 6.5 11 1.5c6 4 9 8 3 14 1 0 2.5 0 3.5-1.5.5 2.5-1 5-5.5 9z" />
+                        </svg>
+                      )
                   )}
                   <span className="font-medium text-[var(--text-primary)]">{line.productName}</span>
                 </div>
