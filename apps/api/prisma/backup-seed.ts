@@ -22,7 +22,6 @@ const registers = [
 ] as const;
 
 const staffProfiles = [
-  { id: "alex", name: "Alex", active: true },
   { id: "jamie", name: "Jamie", active: true },
   { id: "sarah", name: "Sarah", active: true },
 ] as const;

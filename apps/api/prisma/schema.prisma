@@ -197,6 +197,7 @@ model OrderItem {
   sizeOptionId       String?
   sizeOptionName     String?
   sizeAdjustmentCents Int      @default(0)
+  isIced             Boolean?
   modifierIdsJson    Json
   modifierSummaryJson Json
   flavorAdjustmentCents Int    @default(0)

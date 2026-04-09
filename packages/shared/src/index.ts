@@ -66,6 +66,7 @@ export const cartItemInputSchema = z.object({
   quantity: z.number().int().positive(),
   sizeOptionId: idSchema.nullable().optional(),
   modifierIds: z.array(idSchema).default([]),
+  isIced: z.boolean().optional(),
 });
 
 export const cartInputSchema = z.object({
@@ -97,6 +98,7 @@ export const orderLineSchema = z.object({
       discountFlavor: z.boolean().default(false),
     }),
   ),
+  isIced: z.boolean().nullable().optional(),
   flavorAdjustmentCents: z.number().int().default(0),
   discountCents: z.number().int().default(0),
   lineTotalCents: z.number().int().nonnegative(),

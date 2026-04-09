@@ -335,6 +335,7 @@ export function App() {
           quantity: line.quantity,
           sizeOptionId: line.sizeOptionId ?? null,
           modifierIds: line.modifierIds,
+          isIced: line.iced,
         })),
       );
       store.setPendingOrder(order);
@@ -367,6 +368,7 @@ export function App() {
           quantity: line.quantity,
           sizeOptionId: line.sizeOptionId ?? null,
           modifierIds: line.modifierIds,
+          isIced: line.iced,
         })),
       );
       store.setPendingOrder(order);
@@ -414,6 +416,7 @@ export function App() {
           quantity: line.quantity,
           sizeOptionId: line.sizeOptionId ?? null,
           modifierIds: line.modifierIds,
+          isIced: line.iced,
         })),
       );
       store.setPendingOrder(order);

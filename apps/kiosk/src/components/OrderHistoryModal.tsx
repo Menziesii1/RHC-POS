@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Clock, User, RefreshCw, ShoppingBag } from "lucide-react";
+import { X, Clock, User, RefreshCw, ShoppingBag, Flame, Snowflake } from "lucide-react";
 import type { DraftOrder } from "@rhc-pos/shared";
 import { api } from "../services/api";
 
@@ -46,13 +46,22 @@ function OrderCard({ order }: { order: DraftOrder }) {
           const discounts = line.modifierSummary.filter((m) => m.discountFlavor).map((m) => m.name).join(", ");
           const parts = [line.sizeOptionName, flavors, discounts].filter(Boolean).join(" · ");
 
+          const showTemp = line.isIced != null;
+
           return (
             <li key={line.id} className="flex gap-2 text-sm">
               <span className="shrink-0 font-semibold text-[var(--text-primary)]">{line.quantity}×</span>
-              <div className="min-w-0">
-                <span className="font-medium text-[var(--text-primary)]">{line.productName}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  {showTemp && (
+                    line.isIced
+                      ? <Snowflake size={11} className="shrink-0 text-sky-400" />
+                      : <Flame size={11} className="shrink-0 text-orange-400" />
+                  )}
+                  <span className="font-medium text-[var(--text-primary)]">{line.productName}</span>
+                </div>
                 {parts && (
-                  <span className="ml-1.5 text-xs text-[var(--text-muted)]">{parts}</span>
+                  <span className="text-xs text-[var(--text-muted)]">{parts}</span>
                 )}
               </div>
             </li>

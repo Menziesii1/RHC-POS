@@ -60,7 +60,7 @@ export function CartPanel({
         type="button"
         aria-label={mobileOpen ? "Collapse order panel" : "Open order panel"}
         onClick={onToggleMobile}
-        className="fixed top-[3.75rem] right-0 z-50 flex items-center gap-2 rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-3 py-2.5 shadow-lg transition active:scale-[0.97] pointer-events-auto lg:hidden"
+        className="fixed top-[5.25rem] right-[min(88vw,360px)] z-50 flex items-center gap-2 rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-3 py-2.5 shadow-lg transition active:scale-[0.97] pointer-events-auto lg:hidden"
       >
         {mobileOpen ? (
           <ChevronRight size={16} className="text-[#1be4db]" />

@@ -250,7 +250,7 @@ export class MemoryPosRepository implements PosRepository {
     ],
     cashiers: [
       { id: "sarah", name: "Sarah", active: true },
-      { id: "alex", name: "Alex", active: true },
+      { id: "jamie", name: "Jamie", active: true },
     ],
   };
 
