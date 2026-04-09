@@ -7,6 +7,8 @@
 /* ─── Theme tokens ─────────────────────────────────────────── */
 
 :root {
+  font-size: 17px;
+
   /* Brand accents */
   --brand-teal: #1be4db;
   --brand-blue: #5191e5;
@@ -32,6 +34,19 @@
   --rail:            rgba(255, 255, 255, 0.03);
   --rail-active:     rgba(27, 228, 219, 0.08);
   --stat-label:      rgba(255, 255, 255, 0.35);
+
+  /* Option/selector button states (DrinkBuilder, tab strips) */
+  --selector-active-bg:   #f0f0f0;
+  --selector-active-text: #1a1a1a;
+  --selector-active-sub:  #0a8f89;
+  --selector-inactive-bg: rgba(255, 255, 255, 0.06);
+  --selector-inactive-text: rgba(228, 230, 236, 0.80);
+  --selector-inactive-sub:  rgba(228, 230, 236, 0.65);
+
+  /* Inset light surface (price cards, summary rows on dark panels) */
+  --inset-surface: #f0f0f0;
+  --inset-text:    #1a1a1a;
+  --inset-muted:   #888888;
 
   color: var(--text-primary);
   background: var(--bg-base);
@@ -60,6 +75,19 @@
   --rail:            rgba(0, 0, 0, 0.03);
   --rail-active:     rgba(27, 228, 219, 0.10);
   --stat-label:      rgba(26, 18, 11, 0.45);
+
+  /* Option/selector button states */
+  --selector-active-bg:   rgba(27, 228, 219, 0.13);
+  --selector-active-text: #0a6a65;
+  --selector-active-sub:  #0a8f89;
+  --selector-inactive-bg: rgba(0, 0, 0, 0.05);
+  --selector-inactive-text: rgba(26, 18, 11, 0.65);
+  --selector-inactive-sub:  rgba(26, 18, 11, 0.50);
+
+  /* Inset surface */
+  --inset-surface: #faf7f4;
+  --inset-text:    #1a120b;
+  --inset-muted:   rgba(26, 18, 11, 0.50);
 
   color-scheme: light;
 }

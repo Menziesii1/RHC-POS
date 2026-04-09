@@ -31,18 +31,18 @@ export function ConfirmDialog({ open, title, message, confirmLabel, cancelLabel,
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm" onClick={onCancel}>
       <div
-        className="w-full max-w-md rounded-2xl bg-[#323232] p-6"
+        className="w-full max-w-md rounded-2xl bg-[var(--bg-elevated)] p-6"
         role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={messageId}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex justify-center"><AlertTriangle size={28} className="text-amber-400" /></div>
-        <div id={titleId} className="mt-3 text-center font-display text-xl font-extrabold text-white">{title}</div>
-        <p id={messageId} className="mt-2 text-center text-sm text-white/60">{message}</p>
+        <div className="flex justify-center"><AlertTriangle size={28} className="text-amber-500" /></div>
+        <div id={titleId} className="mt-3 text-center font-display text-xl font-extrabold text-[var(--text-primary)]">{title}</div>
+        <p id={messageId} className="mt-2 text-center text-sm text-[var(--text-muted)]">{message}</p>
         <div className="mt-6 flex justify-center gap-2">
-          <button ref={cancelButtonRef} type="button" className="min-w-[110px] rounded-xl bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-300 hover:bg-red-500/15" onClick={onCancel}>
+          <button ref={cancelButtonRef} type="button" className="min-w-[110px] rounded-xl bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/15" onClick={onCancel}>
             {cancelLabel}
           </button>
-          <button type="button" className="min-w-[110px] rounded-xl bg-white/[0.05] px-4 py-2.5 text-sm font-medium text-white/60 hover:bg-white/[0.08]" onClick={onConfirm}>
+          <button type="button" className="min-w-[110px] rounded-xl bg-[var(--overlay-soft)] px-4 py-2.5 text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--overlay-hover)]" onClick={onConfirm}>
             {confirmLabel}
           </button>
         </div>

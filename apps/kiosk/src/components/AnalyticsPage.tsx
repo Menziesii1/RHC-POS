@@ -119,11 +119,11 @@ export function AnalyticsPage({
           onClose={onClose}
           actions={
             <div className="grid gap-2">
-              <div className="inline-flex overflow-hidden rounded-xl bg-white/[0.02]">
+              <div className="inline-flex overflow-hidden rounded-xl bg-[var(--overlay-soft)]">
                 <button
                   type="button"
                   className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
-                    mode === "financial" ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.03] text-white/80 hover:text-white/85"
+                    mode === "financial" ? "bg-[#1be4db] text-[#262626]" : "bg-[var(--overlay-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                   onClick={() => setMode("financial")}
                 >
@@ -133,7 +133,7 @@ export function AnalyticsPage({
                 <button
                   type="button"
                   className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition ${
-                    mode === "inventory" ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.03] text-white/80 hover:text-white/85"
+                    mode === "inventory" ? "bg-[#1be4db] text-[#262626]" : "bg-[var(--overlay-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                   onClick={() => setMode("inventory")}
                 >
@@ -151,7 +151,7 @@ export function AnalyticsPage({
                       className={`rounded-xl border px-3 py-2 text-left transition ${
                         active
                           ? "border-[#1be4db] bg-[#1be4db]/12 text-[#1be4db]"
-                          : "border-white/8 bg-white/[0.03] text-white/78 hover:border-white/16 hover:text-white"
+                          : "border-[var(--divider)] bg-[var(--overlay-soft)] text-[var(--text-muted)] hover:border-[var(--overlay-hover)] hover:text-[var(--text-primary)]"
                       }`}
                       onClick={() => onSelectRangeDays(option.days)}
                     >
@@ -191,39 +191,39 @@ export function AnalyticsPage({
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-              <section className="overflow-hidden rounded-xl bg-white/[0.02]">
-                <div className="bg-white/[0.02] px-5 py-3">
+              <section className="overflow-hidden rounded-xl bg-[var(--overlay-soft)]">
+                <div className="bg-[var(--overlay-soft)] px-5 py-3">
                   <div className="brand-section-title">Revenue Over Time</div>
-                  <div className="mt-1 text-[11px] font-medium text-white/55">
+                  <div className="mt-1 text-[11px] font-medium text-[var(--text-dimmer)]">
                     {selectedRange.label} across {serviceWindowCount} service window{serviceWindowCount === 1 ? "" : "s"}.
                   </div>
                 </div>
                 <div className="grid gap-2.5 p-5">
                   {weeklySeries.map((entry) => (
                     <div key={entry.key} className="grid grid-cols-[120px_1fr_110px] items-center gap-4">
-                      <div className="text-sm font-semibold text-white/85">{entry.label}</div>
-                      <div className="h-3.5 overflow-hidden rounded-full bg-white/[0.04]">
+                      <div className="text-sm font-semibold text-[var(--text-muted)]">{entry.label}</div>
+                      <div className="h-3.5 overflow-hidden rounded-full bg-[var(--overlay-soft)]">
                         <div className="h-3.5 rounded-full bg-[#1be4db]" style={{ width: barWidth(entry.totalSalesCents, revenueMax) }} />
                       </div>
-                      <div className="text-right font-semibold text-white">{formatCurrency(entry.totalSalesCents)}</div>
+                      <div className="text-right font-semibold text-[var(--text-primary)]">{formatCurrency(entry.totalSalesCents)}</div>
                     </div>
                   ))}
                 </div>
               </section>
 
               <section className="grid gap-4">
-                <div className="overflow-hidden rounded-xl bg-white/[0.02]">
-                  <div className="bg-white/[0.02] px-4 py-3">
+                <div className="overflow-hidden rounded-xl bg-[var(--overlay-soft)]">
+                  <div className="bg-[var(--overlay-soft)] px-4 py-3">
                     <div className="brand-section-title">Tender Mix</div>
-                    <div className="mt-1 text-[11px] font-medium text-white/55">Aggregated over the selected service range.</div>
+                    <div className="mt-1 text-[11px] font-medium text-[var(--text-dimmer)]">Aggregated over the selected service range.</div>
                   </div>
                   <div className="grid gap-4 p-4">
                     <div>
-                      <div className="mb-2 flex items-center justify-between text-sm font-semibold text-white/70">
+                      <div className="mb-2 flex items-center justify-between text-sm font-semibold text-[var(--text-muted)]">
                         <span className="flex items-center gap-1.5"><Banknote size={13} /> Cash</span>
                         <span>{formatCurrency(summary?.cashSalesCents ?? 0)}</span>
                       </div>
-                      <div className="h-3.5 overflow-hidden rounded-full bg-white/[0.04]">
+                      <div className="h-3.5 overflow-hidden rounded-full bg-[var(--overlay-soft)]">
                         <div
                           className="h-3.5 rounded-full bg-[#1be4db]"
                           style={{ width: barWidth(summary?.cashSalesCents ?? 0, Math.max(summary?.totalSalesCents ?? 0, 1)) }}
@@ -231,11 +231,11 @@ export function AnalyticsPage({
                       </div>
                     </div>
                     <div>
-                      <div className="mb-2 flex items-center justify-between text-sm font-semibold text-white/70">
+                      <div className="mb-2 flex items-center justify-between text-sm font-semibold text-[var(--text-muted)]">
                         <span className="flex items-center gap-1.5"><CreditCard size={13} /> Card</span>
                         <span>{formatCurrency(summary?.cardSalesCents ?? 0)}</span>
                       </div>
-                      <div className="h-3.5 overflow-hidden rounded-full bg-white/[0.04]">
+                      <div className="h-3.5 overflow-hidden rounded-full bg-[var(--overlay-soft)]">
                         <div
                           className="h-3.5 rounded-full bg-emerald-500"
                           style={{ width: barWidth(summary?.cardSalesCents ?? 0, Math.max(summary?.totalSalesCents ?? 0, 1)) }}
@@ -245,16 +245,16 @@ export function AnalyticsPage({
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-xl bg-white/[0.02]">
-                  <div className="bg-white/[0.02] px-4 py-3">
+                <div className="overflow-hidden rounded-xl bg-[var(--overlay-soft)]">
+                  <div className="bg-[var(--overlay-soft)] px-4 py-3">
                     <div className="brand-section-title">Category Performance</div>
-                    <div className="mt-1 text-[11px] font-medium text-white/55">Totals for the selected range.</div>
+                    <div className="mt-1 text-[11px] font-medium text-[var(--text-dimmer)]">Totals for the selected range.</div>
                   </div>
                   <div className="grid gap-2.5 p-4">
                     {(summary?.salesByCategory ?? []).map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-white/80">{item.name}</span>
-                        <span className="font-bold text-white">{formatCurrency(item.totalCents)}</span>
+                        <span className="text-[var(--text-muted)]">{item.name}</span>
+                        <span className="font-bold text-[var(--text-primary)]">{formatCurrency(item.totalCents)}</span>
                       </div>
                     ))}
                   </div>
@@ -286,10 +286,10 @@ export function AnalyticsPage({
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-              <section className="overflow-hidden rounded-xl bg-white/[0.02]">
-                <div className="bg-white/[0.02] px-5 py-3">
+              <section className="overflow-hidden rounded-xl bg-[var(--overlay-soft)]">
+                <div className="bg-[var(--overlay-soft)] px-5 py-3">
                   <div className="brand-section-title">Top Movers</div>
-                  <div className="mt-1 text-[11px] font-medium text-white/55">
+                  <div className="mt-1 text-[11px] font-medium text-[var(--text-dimmer)]">
                     Ranked over {serviceWindowCount} service window{serviceWindowCount === 1 ? "" : "s"}.
                   </div>
                 </div>
@@ -297,49 +297,49 @@ export function AnalyticsPage({
                   {productSeries.slice(0, 8).map((entry) => (
                     <div key={entry.productId} className="grid grid-cols-[minmax(0,1fr)_90px] items-center gap-4">
                       <div>
-                        <div className="font-semibold text-white/80">{entry.productName}</div>
-                        <div className="mt-1.5 h-3 overflow-hidden rounded-full bg-white/[0.04]">
+                        <div className="font-semibold text-[var(--text-muted)]">{entry.productName}</div>
+                        <div className="mt-1.5 h-3 overflow-hidden rounded-full bg-[var(--overlay-soft)]">
                           <div className="h-3 rounded-full bg-[#1be4db]" style={{ width: barWidth(entry.totalQuantity, quantityMax) }} />
                         </div>
                       </div>
-                      <div className="text-right font-bold text-white">{entry.totalQuantity}</div>
+                      <div className="text-right font-bold text-[var(--text-primary)]">{entry.totalQuantity}</div>
                     </div>
                   ))}
                 </div>
               </section>
 
               <section className="grid gap-4">
-                <div className="overflow-hidden rounded-xl bg-white/[0.02]">
-                  <div className="bg-white/[0.02] px-4 py-3">
+                <div className="overflow-hidden rounded-xl bg-[var(--overlay-soft)]">
+                  <div className="bg-[var(--overlay-soft)] px-4 py-3">
                     <div className="brand-section-title">Slow Movers</div>
-                    <div className="mt-1 text-[11px] font-medium text-white/55">Items with the lowest volume in the selected range.</div>
+                    <div className="mt-1 text-[11px] font-medium text-[var(--text-dimmer)]">Items with the lowest volume in the selected range.</div>
                   </div>
                   <div className="grid gap-2.5 p-4">
                     {slowMovers.map((entry) => (
                       <div key={entry.productId} className="flex items-center justify-between">
-                        <span className="text-white/80">{entry.productName}</span>
-                        <span className="font-bold text-white">{entry.totalQuantity}</span>
+                        <span className="text-[var(--text-muted)]">{entry.productName}</span>
+                        <span className="font-bold text-[var(--text-primary)]">{entry.totalQuantity}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-xl bg-white/[0.02]">
-                  <div className="bg-white/[0.02] px-4 py-3">
+                <div className="overflow-hidden rounded-xl bg-[var(--overlay-soft)]">
+                  <div className="bg-[var(--overlay-soft)] px-4 py-3">
                     <div className="brand-section-title">Size & Flavor Signals</div>
-                    <div className="mt-1 text-[11px] font-medium text-white/55">What people chose inside the selected service window.</div>
+                    <div className="mt-1 text-[11px] font-medium text-[var(--text-dimmer)]">What people chose inside the selected service window.</div>
                   </div>
                   <div className="grid gap-2.5 p-4">
                     {(summary?.sizeBreakdown ?? []).slice(0, 4).map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-white/80">Size: {item.name}</span>
-                        <span className="font-bold text-white">{item.quantity}</span>
+                        <span className="text-[var(--text-muted)]">Size: {item.name}</span>
+                        <span className="font-bold text-[var(--text-primary)]">{item.quantity}</span>
                       </div>
                     ))}
                     {(summary?.flavorBreakdown ?? []).slice(0, 4).map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-white/80">Flavor: {item.name}</span>
-                        <span className="font-bold text-white">{item.quantity}</span>
+                        <span className="text-[var(--text-muted)]">Flavor: {item.name}</span>
+                        <span className="font-bold text-[var(--text-primary)]">{item.quantity}</span>
                       </div>
                     ))}
                   </div>

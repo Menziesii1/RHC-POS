@@ -14,8 +14,8 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="brand-kicker">Sales dashboard</div>
-          <div className="mt-2 font-display text-4xl font-extrabold text-white">Daily Summary</div>
-          <div className="text-sm text-white/65">Today&apos;s totals and item counts.</div>
+          <div className="mt-2 font-display text-4xl font-extrabold text-[var(--text-primary)]">Daily Summary</div>
+          <div className="text-sm text-[var(--text-dimmer)]">Today&apos;s totals and item counts.</div>
         </div>
         <button type="button" className="touch-button" onClick={onClose}>
           Back
@@ -47,11 +47,11 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
                   const width = `${Math.max(14, Math.round((item.quantity / maxQuantity) * 100))}%`;
                   return (
                     <div key={item.productId} className="space-y-2">
-                      <div className="flex justify-between text-lg text-white">
+                      <div className="flex justify-between text-lg text-[var(--text-primary)]">
                         <span>{item.productName}</span>
                         <span className="font-bold">{item.quantity}</span>
                       </div>
-                      <div className="h-3 rounded-full bg-white/[0.04]">
+                      <div className="h-3 rounded-full bg-[var(--overlay-soft)]">
                         <div className="h-3 rounded-full bg-[#1be4db]" style={{ width }} />
                       </div>
                     </div>
@@ -67,7 +67,7 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
                 <div className="brand-chip brand-chip-soft">
                   Best seller: {peakItem ? peakItem.productName : "None yet"}
                 </div>
-                <div className="text-sm leading-6 text-white/65">
+                <div className="text-sm leading-6 text-[var(--text-dimmer)]">
                   Sales are grouped by tender type, category, size, and flavor so volunteers can answer the daily
                   traffic questions without needing a back-office report.
                 </div>
@@ -80,7 +80,7 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
               <div className="brand-section-title">By Category</div>
               <div className="mt-4 space-y-3">
                 {summary.salesByCategory.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-white">
+                  <div key={item.id} className="flex items-center justify-between text-[var(--text-primary)]">
                     <span>{item.name}</span>
                     <span className="font-bold">
                       {item.quantity} / {formatCurrency(item.totalCents)}
@@ -94,7 +94,7 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
               <div className="brand-section-title">By Size</div>
               <div className="mt-4 space-y-3">
                 {summary.sizeBreakdown.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-white">
+                  <div key={item.id} className="flex items-center justify-between text-[var(--text-primary)]">
                     <span>{item.name}</span>
                     <span className="font-bold">
                       {item.quantity} / {formatCurrency(item.totalCents)}
@@ -108,7 +108,7 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
               <div className="brand-section-title">Flavor Insights</div>
               <div className="mt-4 space-y-3">
                 {summary.flavorBreakdown.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-3 text-white">
+                  <div key={item.id} className="flex items-center justify-between gap-3 text-[var(--text-primary)]">
                     <span>
                       {item.name}
                       {item.discountFlavor ? " (discount)" : ""}
@@ -121,7 +121,7 @@ export function SummaryPanel({ summary, onClose }: SummaryPanelProps) {
           </div>
         </>
       ) : (
-        <div className="brand-section p-5 text-lg text-white/65">Loading summary...</div>
+        <div className="brand-section p-5 text-lg text-[var(--text-dimmer)]">Loading summary...</div>
       )}
     </div>
   );

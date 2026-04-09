@@ -2,9 +2,11 @@ import { formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
 import { Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
 
-import logoUrl from "../../assets/River Hills Logo without text Colored.svg?url";
+import coloredLogoUrl from "../../assets/River Hills Logo without text Colored.svg?url";
+import blackLogoUrl from "../../assets/River Hills Logo without text Black.svg?url";
 
 import type { CartLineState } from "../types/ui";
+import { useAppStore } from "../store/app-store";
 
 interface EnrichedLine extends CartLineState {
   product: BootstrapResponse["products"][number];
@@ -42,8 +44,10 @@ export function CartPanel({
   onEditLine,
   footer,
 }: CartPanelProps) {
+  const { theme } = useAppStore();
   const selectedLine = lines.find((line) => line.id === selectedLineId) ?? null;
   const allowedModifiers = selectedLine ? bootstrap.modifiers.filter((m) => m.enabled) : [];
+  const logoUrl = theme === "light" ? blackLogoUrl : coloredLogoUrl;
 
   return (
     <section className="flex w-[340px] shrink-0 flex-col overflow-hidden bg-[var(--bg-surface)]">
@@ -67,7 +71,7 @@ export function CartPanel({
         <img
           src={logoUrl}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 m-auto h-[80%] w-[80%] object-contain opacity-[0.04]"
+          className="pointer-events-none absolute inset-0 m-auto h-[160%] w-[160%] translate-y-32 object-contain opacity-[0.04]"
           draggable={false}
         />
         {lines.length === 0 ? (

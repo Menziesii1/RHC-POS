@@ -49,11 +49,11 @@ function FlavorPicker({
           const active = selectedIds.includes(modifier.id);
           return (
             <button key={modifier.id} type="button"
-              className={`rounded-xl px-4 py-3 text-left transition ${active ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.06] text-white/80 hover:bg-white/[0.09]"}`}
+              className={`rounded-xl px-4 py-3 text-left transition ${active ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)]" : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"}`}
               onClick={() => onToggle(modifier.id)}
             >
               <span className="block text-sm font-semibold leading-snug">{modifier.name}</span>
-              <span className={`mt-0.5 block text-xs ${active ? "text-[#0a8f89]" : "text-white/65"}`}>
+              <span className={`mt-0.5 block text-xs ${active ? "text-[var(--selector-active-sub)]" : "text-[var(--selector-inactive-sub)]"}`}>
                 {modifier.discountFlavor ? `${formatCurrency(modifier.priceCents)} off` : modifier.priceCents === 0 ? "Included" : `+${formatCurrency(modifier.priceCents)}`}
               </span>
             </button>
@@ -72,7 +72,7 @@ function FlavorPicker({
             .filter(m => selectedIds.includes(m.id)).length;
           return (
             <button key={tab.id} type="button"
-              className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${activeTab === tab.id ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.07] text-white/65 hover:bg-white/[0.11] hover:text-white"}`}
+              className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${activeTab === tab.id ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)]" : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)]"}`}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
@@ -91,18 +91,18 @@ function FlavorPicker({
           const active = selectedIds.includes(modifier.id);
           return (
             <button key={modifier.id} type="button"
-              className={`rounded-xl px-4 py-3 text-left transition ${active ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.06] text-white/80 hover:bg-white/[0.09]"}`}
+              className={`rounded-xl px-4 py-3 text-left transition ${active ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)]" : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"}`}
               onClick={() => onToggle(modifier.id)}
             >
               <span className="block text-sm font-semibold leading-snug">{modifier.name}</span>
-              <span className={`mt-0.5 block text-xs ${active ? "text-[#0a8f89]" : "text-white/65"}`}>
+              <span className={`mt-0.5 block text-xs ${active ? "text-[var(--selector-active-sub)]" : "text-[var(--selector-inactive-sub)]"}`}>
                 {modifier.discountFlavor ? `${formatCurrency(modifier.priceCents)} off` : modifier.priceCents === 0 ? "Included" : `+${formatCurrency(modifier.priceCents)}`}
               </span>
             </button>
           );
         })}
         {visibleFlavors.length === 0 && (
-          <div className="col-span-3 py-4 text-center text-sm text-white/35">No flavors in this group.</div>
+          <div className="col-span-3 py-4 text-center text-sm text-[var(--text-dimmest)]">No flavors in this group.</div>
         )}
       </div>
       {/* Selected summary across all tabs */}
@@ -153,17 +153,17 @@ export function DrinkBuilderOverlay({
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm md:p-6">
       <div
-        className="flex w-full flex-col overflow-hidden rounded-2xl bg-[#2a2a2a] md:grid md:grid-cols-[0.75fr_1.25fr]"
+        className="flex w-full flex-col overflow-hidden rounded-2xl bg-[var(--bg-grid)] md:grid md:grid-cols-[0.75fr_1.25fr]"
         style={{ width: "min(92vw, 1080px)", height: "calc(100dvh - 2.5rem)", maxHeight: "760px" }}
       >
         {/* Left — dark panel with photo */}
-        <div className="hidden overflow-y-auto bg-[#222222] p-6 md:block">
+        <div className="hidden overflow-y-auto bg-[var(--bg-base)] p-6 md:block">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">Customize</div>
-          <div className="mt-3 font-display text-2xl font-extrabold text-white">{product.name}</div>
+          <div className="mt-3 font-display text-2xl font-extrabold text-[var(--text-primary)]">{product.name}</div>
 
-          {/* Price card — light */}
-          <div className="mt-5 rounded-xl bg-[#f0f0f0] px-4 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#666]">Price</div>
+          {/* Price card — inset */}
+          <div className="mt-5 rounded-xl bg-[var(--inset-surface)] px-4 py-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--inset-muted)]">Price</div>
             <div className="mt-1 font-display text-4xl font-extrabold text-[#0a8f89]">{formatCurrency(previewPrice)}</div>
           </div>
 
@@ -179,20 +179,20 @@ export function DrinkBuilderOverlay({
             </div>
           ) : null}
 
-          {/* Selection summary — light chips */}
+          {/* Selection summary — inset chips */}
           <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2 rounded-lg bg-[#f0f0f0] px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--inset-surface)] px-3 py-2.5">
               {draftLine.iced ? <Snowflake size={14} className="text-sky-500" /> : <Flame size={14} className="text-orange-500" />}
-              <span className="text-sm font-semibold text-[#1a1a1a]">{draftLine.iced ? "Iced" : "Hot"}</span>
+              <span className="text-sm font-semibold text-[var(--inset-text)]">{draftLine.iced ? "Iced" : "Hot"}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-[#f0f0f0] px-3 py-2.5">
-              <Ruler size={14} className="text-[#888]" />
-              <span className="text-sm font-semibold text-[#1a1a1a]">{selectedSize?.name ?? "Standard"}</span>
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--inset-surface)] px-3 py-2.5">
+              <Ruler size={14} className="text-[var(--inset-muted)]" />
+              <span className="text-sm font-semibold text-[var(--inset-text)]">{selectedSize?.name ?? "Standard"}</span>
             </div>
             {selectedFlavors.length > 0 && (
-              <div className="flex items-center gap-2 rounded-lg bg-[#f0f0f0] px-3 py-2.5">
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--inset-surface)] px-3 py-2.5">
                 <Droplets size={14} className="text-[#0a8f89]" />
-                <span className="truncate text-sm font-semibold text-[#1a1a1a]">{selectedFlavors.map((m) => m.name).join(", ")}</span>
+                <span className="truncate text-sm font-semibold text-[var(--inset-text)]">{selectedFlavors.map((m) => m.name).join(", ")}</span>
               </div>
             )}
           </div>
@@ -200,46 +200,46 @@ export function DrinkBuilderOverlay({
 
         {/* Right — controls */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {/* Header — light */}
-          <div className="shrink-0 bg-[#f0f0f0] px-5 py-4">
+          {/* Header — inset */}
+          <div className="shrink-0 bg-[var(--inset-surface)] px-5 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-[#888]">Build order</div>
-                <div className="mt-1 font-display text-xl font-bold text-[#1a1a1a]">{product.name}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--inset-muted)]">Build order</div>
+                <div className="mt-1 font-display text-xl font-bold text-[var(--inset-text)]">{product.name}</div>
               </div>
               <div className="text-right">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-[#888]">Total</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--inset-muted)]">Total</div>
                 <div className="mt-0.5 font-display text-2xl font-extrabold text-[#0a8f89]">{formatCurrency(previewPrice)}</div>
               </div>
             </div>
           </div>
 
           {/* Scrollable options */}
-          <div className="flex-1 overflow-y-auto bg-[#2a2a2a] p-4 md:p-5">
+          <div className="flex-1 overflow-y-auto bg-[var(--bg-grid)] p-4 md:p-5">
             <div className="space-y-5">
               <div>
-                <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/70">
+                <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-dimmer)]">
                   <Flame size={13} /> Temperature
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     className={`flex items-center gap-2 rounded-xl px-4 py-3 text-left transition ${
-                      !draftLine.iced ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.06] text-white/80 hover:bg-white/[0.09]"
+                      !draftLine.iced ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)]" : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
                     }`}
                     onClick={() => onSetIced(false)}
                   >
-                    <Flame size={16} className={!draftLine.iced ? "text-orange-500" : "text-white/60"} />
+                    <Flame size={16} className={!draftLine.iced ? "text-orange-500" : "text-[var(--text-dimmer)]"} />
                     <span className="font-semibold">Hot</span>
                   </button>
                   <button
                     type="button"
                     className={`flex items-center gap-2 rounded-xl px-4 py-3 text-left transition ${
-                      draftLine.iced ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.06] text-white/80 hover:bg-white/[0.09]"
+                      draftLine.iced ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)]" : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
                     }`}
                     onClick={() => onSetIced(true)}
                   >
-                    <Snowflake size={16} className={draftLine.iced ? "text-sky-500" : "text-white/60"} />
+                    <Snowflake size={16} className={draftLine.iced ? "text-sky-500" : "text-[var(--text-dimmer)]"} />
                     <span className="font-semibold">Iced</span>
                   </button>
                 </div>
@@ -247,7 +247,7 @@ export function DrinkBuilderOverlay({
 
               {allowedSizes.length > 0 && (
                 <div>
-                  <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/70">
+                  <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-dimmer)]">
                     <Ruler size={13} /> Size
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -259,12 +259,12 @@ export function DrinkBuilderOverlay({
                           key={size.id}
                           type="button"
                           className={`rounded-xl px-4 py-3 text-left transition ${
-                            active ? "bg-[#f0f0f0] text-[#1a1a1a]" : "bg-white/[0.06] text-white/80 hover:bg-white/[0.09]"
+                            active ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)]" : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
                           }`}
                           onClick={() => onSelectSize(size.id)}
                         >
                           <span className="block text-sm font-semibold">{size.name}</span>
-                          <span className={`mt-0.5 block text-xs ${active ? "text-[#0a8f89]" : "text-white/65"}`}>
+                          <span className={`mt-0.5 block text-xs ${active ? "text-[var(--selector-active-sub)]" : "text-[var(--selector-inactive-sub)]"}`}>
                             {priceDelta === 0 ? "Base price" : `${priceDelta > 0 ? "+" : ""}${formatCurrency(priceDelta)}`}
                           </span>
                         </button>
@@ -276,7 +276,7 @@ export function DrinkBuilderOverlay({
 
               {allowedFlavors.length > 0 && (
                 <div>
-                  <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/70">
+                  <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-dimmer)]">
                     <Droplets size={13} /> Flavors
                   </div>
                   <FlavorPicker
@@ -289,12 +289,12 @@ export function DrinkBuilderOverlay({
             </div>
           </div>
 
-          {/* Footer — light */}
-          <div className="shrink-0 bg-[#f0f0f0] px-4 py-3 md:px-5">
+          {/* Footer — inset */}
+          <div className="shrink-0 bg-[var(--inset-surface)] px-4 py-3 md:px-5">
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                className="flex items-center gap-1.5 rounded-xl bg-black/[0.07] px-5 py-2.5 text-sm font-medium text-[#444] hover:bg-black/[0.12]"
+                className="flex items-center gap-1.5 rounded-xl bg-black/[0.07] px-5 py-2.5 text-sm font-medium text-[var(--inset-muted)] hover:bg-black/[0.12]"
                 onClick={onClose}
               >
                 <X size={15} /> Cancel

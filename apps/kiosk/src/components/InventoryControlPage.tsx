@@ -114,12 +114,12 @@ function SubPageHeader({ title, onBack }: { title: string; onBack: () => void })
     <div className="mb-6 flex items-center gap-4">
       <button
         type="button"
-        className="flex items-center gap-1.5 rounded-xl bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/[0.14]"
+        className="flex items-center gap-1.5 rounded-xl bg-[var(--overlay-hover)] px-4 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
         onClick={onBack}
       >
         <ArrowLeft size={15} /> Back
       </button>
-      <div className="font-display text-2xl font-extrabold text-white">{title}</div>
+      <div className="font-display text-2xl font-extrabold text-[var(--text-primary)]">{title}</div>
     </div>
   );
 }
@@ -485,7 +485,7 @@ export function InventoryControlPage({
             />
             <button
               type="button"
-              className="flex items-center gap-1.5 rounded-xl bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/[0.14]"
+              className="flex items-center gap-1.5 rounded-xl bg-[var(--overlay-hover)] px-4 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
               onClick={onClose}
             >
               <ArrowLeft size={15} /> Back to Register
@@ -500,17 +500,17 @@ export function InventoryControlPage({
               <button
                 key={key}
                 type="button"
-                className="flex flex-col items-start gap-4 rounded-2xl bg-[#323232] p-5 text-left transition hover:bg-[#383838] active:scale-[0.98]"
+                className="flex flex-col items-start gap-4 rounded-2xl bg-[var(--bg-elevated)] p-5 text-left transition hover:bg-[var(--bg-card-hover)] active:scale-[0.98]"
                 onClick={() => setSubPage(key)}
               >
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1be4db]/10">
                   <Icon size={22} className="text-[#1be4db]" />
                 </div>
                 <div>
-                  <div className="font-display text-lg font-extrabold text-white">{label}</div>
-                  <div className="mt-1 text-xs text-white/55">{description}</div>
+                  <div className="font-display text-lg font-extrabold text-[var(--text-primary)]">{label}</div>
+                  <div className="mt-1 text-xs text-[var(--text-dimmer)]">{description}</div>
                 </div>
-                <div className="mt-auto rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-semibold text-white/70">
+                <div className="mt-auto rounded-full bg-[var(--overlay-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
                   {stat}
                 </div>
               </button>
@@ -521,13 +521,13 @@ export function InventoryControlPage({
         {/* ── PRODUCTS ── */}
         {subPage === "products" && (
           <section className="overflow-hidden rounded-xl">
-            <div className="bg-[#323232] px-5 py-4 text-white">
+            <div className="bg-[var(--bg-elevated)] px-5 py-4 text-[var(--text-primary)]">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Catalog</div>
                   <div className="mt-1 font-display text-2xl font-extrabold tracking-tight">Products</div>
                 </div>
-                <div className="rounded-full bg-white/[0.05] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/80">
+                <div className="rounded-full bg-[var(--overlay-soft)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   {visibleProducts.length} visible
                 </div>
               </div>
@@ -544,7 +544,7 @@ export function InventoryControlPage({
             </div>
             <div className="overflow-auto">
               <table className="w-full text-[13px]">
-                <thead className="sticky top-0 z-10 bg-[#383838] text-[10px] uppercase tracking-wider text-white/75">
+                <thead className="sticky top-0 z-10 bg-[var(--bg-grid-inner)] text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                   <tr>
                     <th className="w-12 px-2 py-3" />
                     <th className="px-5 py-3 text-left">Product</th>
@@ -559,13 +559,13 @@ export function InventoryControlPage({
                   {visibleProducts.map((product, index) => {
                     const metric = productMetrics.get(product.id);
                     return (
-                      <tr key={product.id} className="cursor-pointer transition hover:bg-white/[0.03]" onClick={() => openEditModal(product.id)}>
+                      <tr key={product.id} className="cursor-pointer transition hover:bg-[var(--overlay-soft)]" onClick={() => openEditModal(product.id)}>
                         <td className="w-12 px-2 py-2" onClick={(e) => e.stopPropagation()}>
                           <div className="flex flex-col items-center gap-0.5">
                             <button
                               type="button"
                               disabled={index === 0}
-                              className="rounded p-1 text-white/40 transition hover:bg-white/[0.08] hover:text-white disabled:cursor-default disabled:opacity-20"
+                              className="rounded p-1 text-[var(--text-dimmer)] transition hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)] disabled:cursor-default disabled:opacity-20"
                               onClick={() => void handleReorderProduct(product.id, "up")}
                             >
                               <ChevronUp size={14} />
@@ -573,7 +573,7 @@ export function InventoryControlPage({
                             <button
                               type="button"
                               disabled={index === visibleProducts.length - 1}
-                              className="rounded p-1 text-white/40 transition hover:bg-white/[0.08] hover:text-white disabled:cursor-default disabled:opacity-20"
+                              className="rounded p-1 text-[var(--text-dimmer)] transition hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)] disabled:cursor-default disabled:opacity-20"
                               onClick={() => void handleReorderProduct(product.id, "down")}
                             >
                               <ChevronDown size={14} />
@@ -581,15 +581,15 @@ export function InventoryControlPage({
                           </div>
                         </td>
                         <td className="px-5 py-4">
-                          <div className="font-semibold text-white">{product.name}</div>
-                          <div className="mt-1 text-[10px] uppercase tracking-wider text-white/42">{product.id}</div>
+                          <div className="font-semibold text-[var(--text-primary)]">{product.name}</div>
+                          <div className="mt-1 text-[10px] uppercase tracking-wider text-[var(--text-dimmest)]">{product.id}</div>
                         </td>
-                        <td className="px-5 py-4 text-white/80">
+                        <td className="px-5 py-4 text-[var(--text-muted)]">
                           {categories.find((c) => c.id === product.categoryId)?.name ?? product.categoryId}
                         </td>
-                        <td className="px-5 py-4 text-right font-mono text-white">{formatCurrency(product.priceCents)}</td>
-                        <td className="px-5 py-4 text-right font-semibold text-white">{metric?.quantity ?? 0}</td>
-                        <td className="px-5 py-4 text-white/85">{metric?.lastActiveDate ?? "No sales yet"}</td>
+                        <td className="px-5 py-4 text-right font-mono text-[var(--text-primary)]">{formatCurrency(product.priceCents)}</td>
+                        <td className="px-5 py-4 text-right font-semibold text-[var(--text-primary)]">{metric?.quantity ?? 0}</td>
+                        <td className="px-5 py-4 text-[var(--text-muted)]">{metric?.lastActiveDate ?? "No sales yet"}</td>
                         <td className="px-5 py-4 text-center">
                           <span className={`brand-chip text-[10px] ${product.enabled ? "brand-chip-accent" : "brand-chip-soft opacity-55"}`}>
                             {product.enabled ? "Live" : "Hidden"}
@@ -608,9 +608,9 @@ export function InventoryControlPage({
         {subPage === "categories" && (
           <div className="grid gap-4 xl:grid-cols-2">
             <div className="overflow-hidden rounded-xl">
-              <div className="bg-[#323232] px-5 py-4">
+              <div className="bg-[var(--bg-elevated)] px-5 py-4">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Library</div>
-                <div className="mt-1 font-display text-2xl font-extrabold text-white">Categories</div>
+                <div className="mt-1 font-display text-2xl font-extrabold text-[var(--text-primary)]">Categories</div>
               </div>
               <div className="grid gap-3 p-4">
                 {categories.map((category) => {
@@ -618,7 +618,7 @@ export function InventoryControlPage({
                   const productCount = bootstrap.products.filter((p) => p.categoryId === category.id).length;
                   if (!draft) return null;
                   return (
-                    <div key={category.id} className="rounded-lg bg-white/[0.02] p-3">
+                    <div key={category.id} className="rounded-lg bg-[var(--overlay-soft)] p-3">
                       <div className="grid gap-3">
                         <input
                           className="brand-input"
@@ -642,7 +642,7 @@ export function InventoryControlPage({
                             Enabled
                           </label>
                         </div>
-                        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-white/75">
+                        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                           <span>{productCount} items</span>
                           <span>{category.id}</span>
                         </div>
@@ -691,16 +691,16 @@ export function InventoryControlPage({
         {/* ── SIZES ── */}
         {subPage === "sizes" && (
           <div className="overflow-hidden rounded-xl">
-            <div className="bg-[#323232] px-5 py-4">
+            <div className="bg-[var(--bg-elevated)] px-5 py-4">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Library</div>
-              <div className="mt-1 font-display text-2xl font-extrabold text-white">Sizes</div>
+              <div className="mt-1 font-display text-2xl font-extrabold text-[var(--text-primary)]">Sizes</div>
             </div>
             <div className="grid gap-3 p-4 xl:grid-cols-2">
               {bootstrap.sizes.map((size) => {
                 const draft = sizeDrafts[size.id];
                 if (!draft) return null;
                 return (
-                  <div key={size.id} className="rounded-lg bg-white/[0.02] p-3">
+                  <div key={size.id} className="rounded-lg bg-[var(--overlay-soft)] p-3">
                     <div className="grid gap-2">
                       <input
                         className="brand-input"
@@ -763,7 +763,7 @@ export function InventoryControlPage({
                   </div>
                 );
               })}
-              <div className="rounded-lg bg-white/[0.02] p-3">
+              <div className="rounded-lg bg-[var(--overlay-soft)] p-3">
                 <div className="grid gap-2">
                   <input className="brand-input" placeholder="New size name" value={newSize.name} onChange={(e) => setNewSize((s) => ({ ...s, name: e.target.value }))} />
                   <input
@@ -807,17 +807,17 @@ export function InventoryControlPage({
 
               {/* LEFT — flavor categories */}
               <div className="flex min-h-0 flex-col overflow-hidden rounded-xl">
-                <div className="bg-[#323232] px-5 py-4">
+                <div className="bg-[var(--bg-elevated)] px-5 py-4">
                   <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Groups</div>
-                  <div className="mt-1 font-display text-xl font-extrabold text-white">Flavor Categories</div>
+                  <div className="mt-1 font-display text-xl font-extrabold text-[var(--text-primary)]">Flavor Categories</div>
                 </div>
                 <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
                   <button type="button"
-                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold transition ${selectedFlavorCategoryId === "all" ? "bg-[#1be4db]/10 text-[#1be4db]" : "text-white/70 hover:bg-white/[0.03] hover:text-white"}`}
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold transition ${selectedFlavorCategoryId === "all" ? "bg-[#1be4db]/10 text-[#1be4db]" : "text-[var(--text-muted)] hover:bg-[var(--overlay-soft)] hover:text-[var(--text-primary)]"}`}
                     onClick={() => setSelectedFlavorCategoryId("all")}
                   >
                     <span>All Flavors</span>
-                    <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px]">{bootstrap.modifiers.length}</span>
+                    <span className="rounded-full bg-[var(--overlay-hover)] px-2 py-0.5 text-[11px]">{bootstrap.modifiers.length}</span>
                   </button>
                   {flavorCategories.map((fc) => {
                     const selected = selectedFlavorCategoryId === fc.id;
@@ -825,7 +825,7 @@ export function InventoryControlPage({
                     return (
                       <div
                         key={fc.id}
-                        className={`relative overflow-hidden flex flex-col gap-2 px-4 py-3 transition ${selected ? "bg-[#1be4db]/10" : "hover:bg-white/[0.03]"}`}
+                        className={`relative overflow-hidden flex flex-col gap-2 px-4 py-3 transition ${selected ? "bg-[#1be4db]/10" : "hover:bg-[var(--overlay-soft)]"}`}
                         onPointerDown={startDeleteHold(deleteTarget, () =>
                           handleLibraryAction(() => onFlavorCategoryDelete(fc.id), "Unable to delete category."),
                         )}
@@ -838,11 +838,11 @@ export function InventoryControlPage({
                         <button
                           type="button"
                           onPointerDown={(event) => event.stopPropagation()}
-                          className={`flex items-center justify-between text-left text-sm font-semibold transition ${selected ? "text-[#1be4db]" : "text-white/70 hover:text-white"}`}
+                          className={`flex items-center justify-between text-left text-sm font-semibold transition ${selected ? "text-[#1be4db]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
                           onClick={() => setSelectedFlavorCategoryId(fc.id)}
                         >
                           <span>{fc.name}</span>
-                          <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px]">
+                          <span className="rounded-full bg-[var(--overlay-hover)] px-2 py-0.5 text-[11px]">
                             {bootstrap.modifiers.filter(m => m.flavorCategoryId === fc.id).length}
                           </span>
                         </button>
@@ -851,7 +851,7 @@ export function InventoryControlPage({
                             <button
                               type="button"
                               onPointerDown={(event) => event.stopPropagation()}
-                              className="rounded-xl bg-white/[0.06] px-3 py-2 text-[11px] font-semibold text-white/85 transition hover:bg-white/[0.09] hover:text-white active:bg-[#1be4db]/15 active:text-white"
+                              className="rounded-xl bg-[var(--overlay-soft)] px-3 py-2 text-[11px] font-semibold text-[var(--text-muted)] transition hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)] active:bg-[#1be4db]/15 active:text-[var(--text-primary)]"
                               onClick={() => setEditingFlavorCategory({ id: fc.id, name: fc.name })}
                             >
                               Edit
@@ -871,15 +871,15 @@ export function InventoryControlPage({
                   })}
                   {bootstrap.modifiers.some(m => !m.flavorCategoryId) && (
                     <button type="button"
-                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold transition ${selectedFlavorCategoryId === "uncategorized" ? "bg-[#1be4db]/10 text-[#1be4db]" : "text-white/70 hover:bg-white/[0.03] hover:text-white"}`}
+                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold transition ${selectedFlavorCategoryId === "uncategorized" ? "bg-[#1be4db]/10 text-[#1be4db]" : "text-[var(--text-muted)] hover:bg-[var(--overlay-soft)] hover:text-[var(--text-primary)]"}`}
                       onClick={() => setSelectedFlavorCategoryId("uncategorized")}
                     >
                       <span className="italic opacity-70">Uncategorized</span>
-                      <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px]">{bootstrap.modifiers.filter(m => !m.flavorCategoryId).length}</span>
+                      <span className="rounded-full bg-[var(--overlay-hover)] px-2 py-0.5 text-[11px]">{bootstrap.modifiers.filter(m => !m.flavorCategoryId).length}</span>
                     </button>
                   )}
                 </div>
-                <div className="shrink-0 border-t border-white/5 p-3">
+                <div className="shrink-0 border-t border-[var(--divider)] p-3">
                   {editingFlavorCategory ? (
                     <div className="grid gap-2">
                       <input className="brand-input" value={editingFlavorCategory.name} onChange={(e) => setEditingFlavorCategory((s) => s ? { ...s, name: e.target.value } : null)} />
@@ -915,7 +915,7 @@ export function InventoryControlPage({
                     </div>
                   ) : (
                     <button type="button"
-                      className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/[0.05] py-2 text-xs font-semibold text-white/60 hover:bg-white/[0.09] hover:text-white/80"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--overlay-soft)] py-2 text-xs font-semibold text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)]/80"
                       onClick={() => setShowAddGroupInput(true)}
                     >
                       <Plus size={13} /> New Group
@@ -926,14 +926,14 @@ export function InventoryControlPage({
 
               {/* RIGHT — flavors list + add/edit form */}
               <div className="flex min-h-0 flex-col overflow-hidden rounded-xl">
-                <div className="flex items-center justify-between bg-[#323232] px-5 py-4">
+                <div className="flex items-center justify-between bg-[var(--bg-elevated)] px-5 py-4">
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Flavors</div>
-                    <div className="mt-1 font-display text-xl font-extrabold text-white">
+                    <div className="mt-1 font-display text-xl font-extrabold text-[var(--text-primary)]">
                       {selectedFlavorCategoryId === "all" ? "All Flavors" : selectedFlavorCategoryId === "uncategorized" ? "Uncategorized" : (flavorCategories.find(fc => fc.id === selectedFlavorCategoryId)?.name ?? "Flavors")}
                     </div>
                   </div>
-                  <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-semibold text-white/60">{visibleModifiers.length} items</span>
+                  <span className="rounded-full bg-[var(--overlay-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--text-dimmer)]">{visibleModifiers.length} items</span>
                 </div>
                 <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
                   {visibleModifiers.map((modifier) => {
@@ -952,13 +952,13 @@ export function InventoryControlPage({
                       onContextMenu={(event) => event.preventDefault()}
                     >
                       <div className="relative z-10 min-w-0 flex-1">
-                        <div className={`font-semibold ${modifier.enabled ? "text-white" : "text-white/35"}`}>{modifier.name}</div>
-                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-white/45">
+                        <div className={`font-semibold ${modifier.enabled ? "text-[var(--text-primary)]" : "text-[var(--text-dimmest)]"}`}>{modifier.name}</div>
+                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[var(--text-dimmest)]">
                           <span>{modifier.discountFlavor ? "Discount" : "Add-on"}</span>
                           {modifier.flavorCategoryId && (
-                            <span className="rounded-full bg-white/[0.06] px-2 py-0.5">{flavorCategories.find(fc => fc.id === modifier.flavorCategoryId)?.name}</span>
+                            <span className="rounded-full bg-[var(--overlay-soft)] px-2 py-0.5">{flavorCategories.find(fc => fc.id === modifier.flavorCategoryId)?.name}</span>
                           )}
-                          {!modifier.enabled && <span className="text-white/30">· Hidden</span>}
+                          {!modifier.enabled && <span className="text-[var(--text-dimmest)]">· Hidden</span>}
                         </div>
                       </div>
                       <div className="relative z-10 flex items-center justify-between gap-3 md:shrink-0 md:flex-col md:items-end">
@@ -969,7 +969,7 @@ export function InventoryControlPage({
                           <button
                             type="button"
                             onPointerDown={(event) => event.stopPropagation()}
-                            className="rounded-xl bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/[0.09] hover:text-white active:bg-[#1be4db]/15 active:text-white"
+                            className="rounded-xl bg-[var(--overlay-soft)] px-3 py-2 text-xs font-semibold text-[var(--text-muted)] transition hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)] active:bg-[#1be4db]/15 active:text-[var(--text-primary)]"
                             onClick={() => void handleLibraryAction(() => onFlavorSave(modifier.id, { ...modifier, enabled: !modifier.enabled }), "Unable to update.")}
                           >
                             {modifier.enabled ? "Hide" : "Show"}
@@ -977,7 +977,7 @@ export function InventoryControlPage({
                           <button
                             type="button"
                             onPointerDown={(event) => event.stopPropagation()}
-                            className="rounded-xl bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/[0.09] hover:text-white active:bg-[#1be4db]/15 active:text-white"
+                            className="rounded-xl bg-[var(--overlay-soft)] px-3 py-2 text-xs font-semibold text-[var(--text-muted)] transition hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)] active:bg-[#1be4db]/15 active:text-[var(--text-primary)]"
                             onClick={() => setEditingFlavor({ id: modifier.id, name: modifier.name, price: (modifier.priceCents / 100).toFixed(2), discount: modifier.discountFlavor, flavorCategoryId: modifier.flavorCategoryId ?? "" })}
                           >
                             Edit
@@ -996,15 +996,15 @@ export function InventoryControlPage({
                     );
                   })}
                   {visibleModifiers.length === 0 && (
-                    <div className="px-5 py-8 text-center text-sm text-white/35">No flavors in this group yet.</div>
+                    <div className="px-5 py-8 text-center text-sm text-[var(--text-dimmest)]">No flavors in this group yet.</div>
                   )}
                 </div>
-                <div className="border-t border-white/5 px-5 py-3 text-[11px] font-medium text-white/45">
+                <div className="border-t border-[var(--divider)] px-5 py-3 text-[11px] font-medium text-[var(--text-dimmest)]">
                   Hold a flavor for 1 second to delete it.
                 </div>
-                <div className="shrink-0 border-t border-white/5 p-2">
+                <div className="shrink-0 border-t border-[var(--divider)] p-2">
                   <button type="button"
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/[0.05] py-2.5 text-xs font-semibold text-white/60 hover:bg-white/[0.09] hover:text-white/80"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--overlay-soft)] py-2.5 text-xs font-semibold text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)]/80"
                     onClick={() => {
                       setNewFlavor({ name: "", price: "0.00", discount: false, flavorCategoryId: (selectedFlavorCategoryId === "all" || selectedFlavorCategoryId === "uncategorized") ? "" : selectedFlavorCategoryId });
                       setShowAddFlavorModal(true);
@@ -1021,9 +1021,9 @@ export function InventoryControlPage({
         {/* ── STORE CONTROLS ── */}
         {subPage === "store" && (
           <div className="max-w-md overflow-hidden rounded-xl">
-            <div className="bg-[#323232] px-5 py-4">
+            <div className="bg-[var(--bg-elevated)] px-5 py-4">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Settings</div>
-              <div className="mt-1 font-display text-2xl font-extrabold text-white">Store Controls</div>
+              <div className="mt-1 font-display text-2xl font-extrabold text-[var(--text-primary)]">Store Controls</div>
             </div>
             <div className="grid gap-3 p-4">
               <label className="grid gap-1.5">
@@ -1037,7 +1037,7 @@ export function InventoryControlPage({
               >
                 Save Tax Rate
               </button>
-              <div className="rounded-lg bg-white/[0.03] px-3 py-2.5 text-xs font-medium leading-5 text-white/85">
+              <div className="rounded-lg bg-[var(--overlay-soft)] px-3 py-2.5 text-xs font-medium leading-5 text-[var(--text-muted)]">
                 Enabled sizes and enabled flavors are available to every product globally.
               </div>
             </div>
@@ -1054,10 +1054,10 @@ export function InventoryControlPage({
           const flavorCategories = bootstrap.flavorCategories ?? [];
           return (
             <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
-              <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-[#262626] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
-                <div className="bg-[#323232] px-5 py-4">
+              <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-[var(--bg-base)] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+                <div className="bg-[var(--bg-elevated)] px-5 py-4">
                   <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">New Flavor</div>
-                  <div className="mt-1 font-display text-xl font-extrabold text-white">Add Flavor</div>
+                  <div className="mt-1 font-display text-xl font-extrabold text-[var(--text-primary)]">Add Flavor</div>
                 </div>
                 <div className="grid gap-3 p-5">
                   <label className="grid gap-1.5">
@@ -1077,7 +1077,7 @@ export function InventoryControlPage({
                       <button
                         type="button"
                         className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
-                          !newFlavor.flavorCategoryId ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
+                          !newFlavor.flavorCategoryId ? "bg-[#1be4db] text-[#262626]" : "bg-[var(--overlay-soft)] text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
                         }`}
                         onClick={() => setNewFlavor((s) => ({ ...s, flavorCategoryId: "" }))}
                       >
@@ -1092,7 +1092,7 @@ export function InventoryControlPage({
                               key={fc.id}
                               type="button"
                               className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
-                                selected ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
+                                selected ? "bg-[#1be4db] text-[#262626]" : "bg-[var(--overlay-soft)] text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
                               }`}
                               onClick={() => setNewFlavor((s) => ({ ...s, flavorCategoryId: fc.id }))}
                             >
@@ -1129,10 +1129,10 @@ export function InventoryControlPage({
           const flavorCategories = bootstrap.flavorCategories ?? [];
           return (
             <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
-              <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-[#262626] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
-                <div className="bg-[#323232] px-5 py-4">
+              <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-[var(--bg-base)] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+                <div className="bg-[var(--bg-elevated)] px-5 py-4">
                   <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">Edit Flavor</div>
-                  <div className="mt-1 font-display text-xl font-extrabold text-white">{editingFlavor.name}</div>
+                  <div className="mt-1 font-display text-xl font-extrabold text-[var(--text-primary)]">{editingFlavor.name}</div>
                 </div>
                 <div className="grid gap-3 p-5">
                   <label className="grid gap-1.5">
@@ -1152,7 +1152,7 @@ export function InventoryControlPage({
                       <button
                         type="button"
                         className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
-                          !editingFlavor.flavorCategoryId ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
+                          !editingFlavor.flavorCategoryId ? "bg-[#1be4db] text-[#262626]" : "bg-[var(--overlay-soft)] text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
                         }`}
                         onClick={() => setEditingFlavor((s) => (s ? { ...s, flavorCategoryId: "" } : null))}
                       >
@@ -1167,7 +1167,7 @@ export function InventoryControlPage({
                               key={fc.id}
                               type="button"
                               className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
-                                selected ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
+                                selected ? "bg-[#1be4db] text-[#262626]" : "bg-[var(--overlay-soft)] text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
                               }`}
                               onClick={() => setEditingFlavor((s) => (s ? { ...s, flavorCategoryId: fc.id } : null))}
                             >
@@ -1202,8 +1202,8 @@ export function InventoryControlPage({
 
         {productModal ? (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
-            <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[#262626] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
-              <div className="bg-[#323232] px-5 py-4 text-white">
+            <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[var(--bg-base)] shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+              <div className="bg-[var(--bg-elevated)] px-5 py-4 text-[var(--text-primary)]">
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">
                   {productModal.mode === "create" ? "New Product" : "Product Inspector"}
                 </div>
@@ -1277,7 +1277,7 @@ export function InventoryControlPage({
                     />
                   </label>
                 </div>
-                <div className="rounded-lg bg-white/[0.03] px-3 py-2.5 text-xs font-medium leading-5 text-white/85">
+                <div className="rounded-lg bg-[var(--overlay-soft)] px-3 py-2.5 text-xs font-medium leading-5 text-[var(--text-muted)]">
                   Size and flavor assignment is global — any enabled size or flavor applies everywhere.
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5 pt-3">

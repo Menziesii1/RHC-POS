@@ -16,25 +16,25 @@ export function CashPaymentOverlay({ totalCents, onClose, onConfirm }: CashPayme
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm md:p-6">
-      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-[#262626] md:grid-cols-[0.9fr_1.1fr]">
-        <div className="bg-[#303030] p-7 text-white md:p-10">
+      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-[var(--bg-base)] md:grid-cols-[0.9fr_1.1fr]">
+        <div className="bg-[var(--bg-surface)] p-7 md:p-10">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">
             <Banknote size={14} /> Cash Payment
           </div>
-          <div className="mt-4 font-display text-5xl font-extrabold text-white md:text-6xl">{formatCurrency(totalCents)}</div>
-          <p className="mt-3 text-sm text-white/57">Choose exact tender or enter a custom amount.</p>
+          <div className="mt-4 font-display text-5xl font-extrabold text-[var(--text-primary)] md:text-6xl">{formatCurrency(totalCents)}</div>
+          <p className="mt-3 text-sm text-[var(--text-dimmer)]">Choose exact tender or enter a custom amount.</p>
           <div className="mt-7 grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-white/[0.04] p-4">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-white/52">Due</div>
-              <div className="mt-1 font-display text-3xl font-extrabold text-white">{formatCurrency(totalCents)}</div>
+            <div className="rounded-xl bg-[var(--overlay-soft)] p-4">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)]">Due</div>
+              <div className="mt-1 font-display text-3xl font-extrabold text-[var(--text-primary)]">{formatCurrency(totalCents)}</div>
             </div>
-            <div className="rounded-xl bg-white/[0.04] p-4">
-              <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-white/52"><Coins size={10} /> Change</div>
-              <div className="mt-1 font-display text-3xl font-extrabold text-emerald-400">{formatCurrency(customChangeCents)}</div>
+            <div className="rounded-xl bg-[var(--overlay-soft)] p-4">
+              <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)]"><Coins size={10} /> Change</div>
+              <div className="mt-1 font-display text-3xl font-extrabold text-emerald-500">{formatCurrency(customChangeCents)}</div>
             </div>
           </div>
         </div>
-        <div className="bg-[#323232] p-7 md:p-8">
+        <div className="bg-[var(--bg-elevated)] p-7 md:p-8">
           <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Tender options</div>
           <div className="mt-5 grid grid-cols-2 gap-2">
             {quickAmounts.map((amount) => (
@@ -42,7 +42,7 @@ export function CashPaymentOverlay({ totalCents, onClose, onConfirm }: CashPayme
                 key={amount}
                 type="button"
                 className={`rounded-xl px-4 py-3 text-center transition ${
-                  amount === totalCents ? "bg-[#1be4db] text-[#262626]" : "bg-white/[0.04] text-white hover:bg-white/[0.07]"
+                  amount === totalCents ? "bg-[#1be4db] text-[#1a1a1a]" : "bg-[var(--overlay-soft)] text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
                 }`}
                 onClick={() => onConfirm(amount)}
               >
@@ -55,19 +55,19 @@ export function CashPaymentOverlay({ totalCents, onClose, onConfirm }: CashPayme
             <input
               type="text"
               inputMode="decimal"
-              className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-lg font-semibold text-white outline-none placeholder:text-white/37 focus:ring-2 focus:ring-[#1be4db]/20"
+              className="w-full rounded-xl bg-[var(--overlay-soft)] px-4 py-3 text-lg font-semibold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-dimmest)] focus:ring-2 focus:ring-[#1be4db]/20"
               placeholder="Custom amount"
               value={customDollars}
               onChange={(event) => setCustomDollars(event.target.value)}
             />
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-white/[0.04] p-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/47">Tendered</div>
-                <div className="mt-0.5 font-display text-2xl font-extrabold text-white">{formatCurrency(customTenderCents)}</div>
+              <div className="rounded-xl bg-[var(--overlay-soft)] p-3">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)]">Tendered</div>
+                <div className="mt-0.5 font-display text-2xl font-extrabold text-[var(--text-primary)]">{formatCurrency(customTenderCents)}</div>
               </div>
               <button
                 type="button"
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-[#1be4db] px-4 py-3 text-sm font-bold text-[#262626] disabled:opacity-30"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-[#1be4db] px-4 py-3 text-sm font-bold text-[#1a1a1a] disabled:opacity-30"
                 disabled={customTenderCents < totalCents}
                 onClick={() => onConfirm(customTenderCents)}
               >
@@ -75,7 +75,7 @@ export function CashPaymentOverlay({ totalCents, onClose, onConfirm }: CashPayme
               </button>
             </div>
           </div>
-          <button type="button" className="mt-5 flex items-center gap-1.5 text-sm text-white/52 hover:text-white/55" onClick={onClose}>
+          <button type="button" className="mt-5 flex items-center gap-1.5 text-sm text-[var(--text-dimmer)] hover:text-[var(--text-muted)]" onClick={onClose}>
             <ArrowLeft size={14} /> Back to cart
           </button>
         </div>

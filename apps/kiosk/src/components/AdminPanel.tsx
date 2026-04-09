@@ -54,9 +54,9 @@ function normalizeIntegerInput(value: string) {
 function DragHandle() {
   return (
     <div className="flex cursor-grab flex-col gap-[4px] px-1 py-0.5 active:cursor-grabbing">
-      <div className="h-px w-4 bg-[#263362]/30" />
-      <div className="h-px w-4 bg-[#263362]/30" />
-      <div className="h-px w-4 bg-[#263362]/30" />
+      <div className="h-px w-4 bg-[var(--text-dimmer)]" />
+      <div className="h-px w-4 bg-[var(--text-dimmer)]" />
+      <div className="h-px w-4 bg-[var(--text-dimmer)]" />
     </div>
   );
 }
@@ -284,10 +284,10 @@ export function AdminPanel({
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="brand-kicker">Inventory control</div>
-          <div className="mt-2 font-display text-4xl font-extrabold text-[#263362]">Admin</div>
-          <div className="text-sm text-[#263362]/70">PIN unlocked for this session only.</div>
+          <div className="mt-2 font-display text-4xl font-extrabold text-[var(--text-primary)]">Admin</div>
+          <div className="text-sm text-[var(--text-muted)]">PIN unlocked for this session only.</div>
         </div>
-        <button type="button" className="touch-button bg-[#f7fbff] text-[#263362]" onClick={onClose}>
+        <button type="button" className="touch-button bg-[var(--overlay-soft)] text-[var(--text-primary)]" onClick={onClose}>
           Back
         </button>
       </div>
@@ -306,12 +306,12 @@ export function AdminPanel({
             />
             <button
               type="button"
-              className="touch-button bg-[#263362] text-white"
+              className="touch-button bg-[#5191e5] text-white"
               onClick={() => void onTaxSave(Math.round(Number(taxRate || "0") * 100))}
             >
               Save Tax Rate
             </button>
-            <span className="text-sm text-[#263362]/60">
+            <span className="text-sm text-[var(--text-muted)]">
               Admin PIN loaded: {adminPin.length > 0 ? "yes" : "no"}
             </span>
           </div>
@@ -325,8 +325,8 @@ export function AdminPanel({
               return (
                 <div key={category.id} className="brand-rail flex items-center justify-between px-4 py-3">
                   <div>
-                    <div className="font-semibold text-[#263362]">{category.name}</div>
-                    <div className="text-xs text-[#263362]/40">{category.id}</div>
+                    <div className="font-semibold text-[var(--text-primary)]">{category.name}</div>
+                    <div className="text-xs text-[var(--text-dimmer)]">{category.id}</div>
                   </div>
                   <div className="brand-chip brand-chip-accent">{count} items</div>
                 </div>
@@ -362,7 +362,7 @@ export function AdminPanel({
             />
             <button
               type="button"
-              className="touch-button bg-[#263362] text-white"
+              className="touch-button bg-[#5191e5] text-white"
               onClick={() =>
                 void onCreateCategory({
                   ...newCategory,
@@ -410,7 +410,7 @@ export function AdminPanel({
             />
             <button
               type="button"
-              className="touch-button bg-[#5190E6] text-white"
+              className="touch-button bg-[#5191e5] text-white"
               onClick={() =>
                 void onCreateSize(newSize).then(() => {
                   setNewSize({ name: "", priceDeltaCents: 0, enabled: true, sortOrder: bootstrap.sizes.length + 2 });
@@ -422,9 +422,9 @@ export function AdminPanel({
             </button>
           </div>
           {bootstrap.sizes.length > 0 && (
-            <div className="mt-4 overflow-hidden border border-[#dde4f0]">
+            <div className="mt-4 overflow-hidden border border-[var(--divider)]">
               <table className="w-full text-sm">
-                <thead className="bg-[#f7fbff] text-xs uppercase tracking-wider text-[#263362]/50">
+                <thead className="bg-[var(--bg-surface)] text-xs uppercase tracking-wider text-[var(--text-dimmer)]">
                   <tr>
                     <th className="px-3 py-2 text-left">Size</th>
                     <th className="px-3 py-2 text-right">Price Adjustment</th>
@@ -432,34 +432,34 @@ export function AdminPanel({
                     <th className="px-3 py-2" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#dde4f0]">
+                <tbody className="divide-y divide-[var(--divider)]">
                   {bootstrap.sizes.slice().sort((a, b) => a.sortOrder - b.sortOrder).map((size) => {
                     const isExpanded = expandedSize === size.id;
                     const draft = getSizeDraft(size.id);
                     return (
                       <Fragment key={size.id}>
                         <tr
-                          className={`cursor-pointer transition-colors ${isExpanded ? "bg-[#f0f5ff]" : "hover:bg-[#f7fbff]"}`}
+                          className={`cursor-pointer transition-colors ${isExpanded ? "bg-[var(--overlay-active)]" : "hover:bg-[var(--overlay-hover)]"}`}
                           onClick={() => setExpandedSize(isExpanded ? null : size.id)}
                         >
-                          <td className="px-3 py-2 font-semibold text-[#263362]">{size.name}</td>
-                          <td className="px-3 py-2 text-right font-mono text-[#263362]">
+                          <td className="px-3 py-2 font-semibold text-[var(--text-primary)]">{size.name}</td>
+                          <td className="px-3 py-2 text-right font-mono text-[var(--text-primary)]">
                             {size.priceDeltaCents === 0
-                              ? <span className="text-[#263362]/30">+$0.00</span>
-                              : <span className="text-[#5190E6]">+{formatCurrency(size.priceDeltaCents)}</span>}
+                              ? <span className="text-[var(--text-dimmest)]">+$0.00</span>
+                              : <span className="text-[#5191e5]">+{formatCurrency(size.priceDeltaCents)}</span>}
                           </td>
                           <td className="px-3 py-2 text-center">
                             <span className={`brand-chip text-xs ${size.enabled ? "brand-chip-accent" : "brand-chip-soft opacity-50"}`}>
                               {size.enabled ? "Active" : "Disabled"}
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-center text-xs text-[#263362]/30">
+                          <td className="px-3 py-2 text-center text-xs text-[var(--text-dimmest)]">
                             {isExpanded ? "▲" : "▼"}
                           </td>
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={4} className="bg-[#f7fbff] px-4 py-4">
+                            <td colSpan={4} className="bg-[var(--bg-surface)] px-4 py-4">
                               <div className="grid gap-3">
                                 <div className="grid gap-3 md:grid-cols-[1.5fr_0.8fr_0.6fr]">
                                   <label className="grid gap-1">
@@ -525,7 +525,7 @@ export function AdminPanel({
                                   </label>
                                   <button
                                     type="button"
-                                    className="touch-button bg-[#5190E6] text-white"
+                                    className="touch-button bg-[#5191e5] text-white"
                                     onClick={() =>
                                       void onSizeSave(size.id, {
                                         ...draft,
@@ -542,7 +542,7 @@ export function AdminPanel({
                                   </button>
                                   <button
                                     type="button"
-                                    className="touch-button bg-[#f7fbff] text-[#263362]"
+                                    className="touch-button bg-[var(--overlay-soft)] text-[var(--text-primary)]"
                                     onClick={() => {
                                       discardSizeDraft(size.id);
                                       setSizePriceInputs((cur) => { const n = { ...cur }; delete n[size.id]; return n; });
@@ -600,7 +600,7 @@ export function AdminPanel({
             </label>
             <button
               type="button"
-              className="touch-button bg-[#263362] text-white"
+              className="touch-button bg-[#5191e5] text-white"
               onClick={() =>
                 void onCreateFlavor({
                   ...newFlavor,
@@ -712,7 +712,7 @@ export function AdminPanel({
 
             <button
               type="button"
-              className="touch-button bg-[#5190E6] text-white"
+              className="touch-button bg-[#5191e5] text-white"
               onClick={() =>
                 void onCreateProduct({
                   ...newProduct,
@@ -745,9 +745,9 @@ export function AdminPanel({
 
       {/* ── Product Inventory Table ── */}
       <div className="brand-section-title mb-4">Product Inventory</div>
-      <div className="mb-8 overflow-x-auto rounded-none border border-[#dde4f0]">
+      <div className="mb-8 overflow-x-auto rounded-none border border-[var(--divider)]">
         <table className="w-full text-sm">
-          <thead className="bg-[#f7fbff] text-xs uppercase tracking-wider text-[#263362]/50">
+          <thead className="bg-[var(--bg-surface)] text-xs uppercase tracking-wider text-[var(--text-dimmer)]">
             <tr>
               <th className="w-8 px-3 py-3" />
               <th className="px-4 py-3 text-left">#</th>
@@ -758,7 +758,7 @@ export function AdminPanel({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#dde4f0]">
+          <tbody className="divide-y divide-[var(--divider)]">
             {orderedProducts.map((product) => {
               const isExpanded = expandedProduct === product.id;
               const isDragging = draggedId === product.id;
@@ -775,21 +775,21 @@ export function AdminPanel({
                     onDrop={() => void handleDrop()}
                     onDragEnd={handleDragEnd}
                     className={`transition-colors ${isDragging ? "opacity-40" : ""} ${
-                      isExpanded ? "bg-[#f0f5ff]" : "hover:bg-[#f7fbff]"
+                      isExpanded ? "bg-[var(--overlay-active)]" : "hover:bg-[var(--overlay-hover)]"
                     }`}
                   >
                     <td className="px-3 py-3">
                       <DragHandle />
                     </td>
-                    <td className="px-4 py-3 text-[#263362]/40">{product.sortOrder}</td>
+                    <td className="px-4 py-3 text-[var(--text-dimmer)]">{product.sortOrder}</td>
                     <td
-                      className="cursor-pointer px-4 py-3 font-semibold text-[#263362]"
+                      className="cursor-pointer px-4 py-3 font-semibold text-[var(--text-primary)]"
                       onClick={() => setExpandedProduct(isExpanded ? null : product.id)}
                     >
                       {product.name}
                     </td>
-                    <td className="px-4 py-3 text-[#263362]/70">{categoryName}</td>
-                    <td className="px-4 py-3 text-right font-mono text-[#263362]">
+                    <td className="px-4 py-3 text-[var(--text-muted)]">{categoryName}</td>
+                    <td className="px-4 py-3 text-right font-mono text-[var(--text-primary)]">
                       {formatCurrency(product.priceCents)}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -802,7 +802,7 @@ export function AdminPanel({
                       </span>
                     </td>
                     <td
-                      className="cursor-pointer px-4 py-3 text-center text-xs text-[#263362]/30"
+                      className="cursor-pointer px-4 py-3 text-center text-xs text-[var(--text-dimmest)]"
                       onClick={() => setExpandedProduct(isExpanded ? null : product.id)}
                     >
                       {isExpanded ? "▲" : "▼"}
@@ -811,7 +811,7 @@ export function AdminPanel({
 
                   {isExpanded && (
                     <tr>
-                      <td colSpan={7} className="bg-[#f7fbff] px-5 py-5">
+                      <td colSpan={7} className="bg-[var(--bg-surface)] px-5 py-5">
                         <div className="grid gap-5">
                           {/* Core fields */}
                           <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_1fr_0.7fr]">
@@ -954,7 +954,7 @@ export function AdminPanel({
                             </label>
                             <button
                               type="button"
-                              className="touch-button bg-[#5190E6] text-white"
+                              className="touch-button bg-[#5191e5] text-white"
                               onClick={() =>
                                 void onProductSave(product.id, {
                                   ...draft,
@@ -982,7 +982,7 @@ export function AdminPanel({
                             </button>
                             <button
                               type="button"
-                              className="touch-button bg-[#f7fbff] text-[#263362]"
+                              className="touch-button bg-[var(--overlay-soft)] text-[var(--text-primary)]"
                               onClick={() => {
                                 discardDraft(product.id);
                                 setProductPriceInputs((cur) => {
@@ -1021,9 +1021,9 @@ export function AdminPanel({
 
       {/* ── Flavor Inventory Table ── */}
       <div className="brand-section-title mb-4">Flavor Inventory</div>
-      <div className="overflow-x-auto border border-[#dde4f0]">
+      <div className="overflow-x-auto border border-[var(--divider)]">
         <table className="w-full text-sm">
-          <thead className="bg-[#f7fbff] text-xs uppercase tracking-wider text-[#263362]/50">
+          <thead className="bg-[var(--bg-surface)] text-xs uppercase tracking-wider text-[var(--text-dimmer)]">
             <tr>
               <th className="px-4 py-3 text-left">#</th>
               <th className="px-4 py-3 text-left">Name</th>
@@ -1033,7 +1033,7 @@ export function AdminPanel({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#dde4f0]">
+          <tbody className="divide-y divide-[var(--divider)]">
             {visibleModifiers.map((modifier) => {
               const isExpanded = expandedFlavor === modifier.id;
               const draft = getFlavorDraft(modifier.id);
@@ -1042,22 +1042,22 @@ export function AdminPanel({
                 <Fragment key={modifier.id}>
                   <tr
                     className={`cursor-pointer transition-colors ${
-                      isExpanded ? "bg-[#f0f5ff]" : "hover:bg-[#f7fbff]"
+                      isExpanded ? "bg-[var(--overlay-active)]" : "hover:bg-[var(--overlay-hover)]"
                     }`}
                     onClick={() => setExpandedFlavor(isExpanded ? null : modifier.id)}
                   >
-                    <td className="px-4 py-3 text-[#263362]/40">{modifier.sortOrder}</td>
-                    <td className="px-4 py-3 font-semibold text-[#263362]">{modifier.name}</td>
-                    <td className="px-4 py-3 text-right font-mono text-[#263362]">
+                    <td className="px-4 py-3 text-[var(--text-dimmer)]">{modifier.sortOrder}</td>
+                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">{modifier.name}</td>
+                    <td className="px-4 py-3 text-right font-mono text-[var(--text-primary)]">
                       {modifier.priceCents === 0
-                        ? <span className="text-[#263362]/40">free</span>
+                        ? <span className="text-[var(--text-dimmer)]">free</span>
                         : formatCurrency(modifier.priceCents)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {modifier.discountFlavor ? (
                         <span className="brand-chip brand-chip-soft text-xs">Discount</span>
                       ) : (
-                        <span className="text-[#263362]/20">—</span>
+                        <span className="text-[var(--text-dimmest)]">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -1069,14 +1069,14 @@ export function AdminPanel({
                         {modifier.enabled ? "Active" : "Disabled"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center text-xs text-[#263362]/30">
+                    <td className="px-4 py-3 text-center text-xs text-[var(--text-dimmest)]">
                       {isExpanded ? "▲" : "▼"}
                     </td>
                   </tr>
 
                   {isExpanded && (
                     <tr>
-                      <td colSpan={6} className="bg-[#f7fbff] px-5 py-5">
+                      <td colSpan={6} className="bg-[var(--bg-surface)] px-5 py-5">
                         <div className="grid gap-4">
                           <div className="grid gap-3 md:grid-cols-[1.5fr_0.8fr_0.6fr]">
                             <label className="grid gap-1">
@@ -1153,7 +1153,7 @@ export function AdminPanel({
                             </label>
                             <button
                               type="button"
-                              className="touch-button bg-[#5190E6] text-white"
+                              className="touch-button bg-[#5191e5] text-white"
                               onClick={() =>
                                 void onFlavorSave(modifier.id, {
                                   ...draft,
@@ -1181,7 +1181,7 @@ export function AdminPanel({
                             </button>
                             <button
                               type="button"
-                              className="touch-button bg-[#f7fbff] text-[#263362]"
+                              className="touch-button bg-[var(--overlay-soft)] text-[var(--text-primary)]"
                               onClick={() => {
                                 discardFlavorDraft(modifier.id);
                                 setFlavorPriceInputs((cur) => {
