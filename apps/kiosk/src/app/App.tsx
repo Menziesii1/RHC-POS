@@ -638,21 +638,6 @@ export function App() {
 
         {store.view === "register" ? (
           <div className="relative flex min-h-0 flex-1 p-3 lg:p-4">
-            {/* Floating "Order" button — only visible on mobile when cart has items and drawer is closed */}
-            {cartView.lines.length > 0 && !mobileCartOpen && (
-              <button
-                type="button"
-                aria-label="Open order panel"
-                onClick={() => setMobileCartOpen(true)}
-                className="absolute bottom-[115px] -right-10 z-50 flex items-center gap-3 rounded-l-2xl bg-[#1be4db] px-6 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.15)] transition active:scale-[0.97] lg:hidden"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0d1a1a]/20 text-[10px] font-bold text-[#0d1a1a]">
-                  {cartView.lines.length}
-                </span>
-                <ShoppingBag size={18} className="text-[#0d1a1a]" />
-                <span className="text-base font-bold text-[#0d1a1a]">Order</span>
-              </button>
-            )}
             <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl bg-[var(--bg-surface)]">
               <ProductGrid
                 bootstrap={store.bootstrap}
@@ -814,6 +799,22 @@ export function App() {
       {store.overlay === "success" && store.successOrder ? (
         <SuccessScreen orderNumber={store.successOrder.orderNumber} totalCents={store.successOrder.totalCents} />
       ) : null}
+
+      {/* Floating Order button — fixed to viewport, above all clipping containers */}
+      {store.view === "register" && cartView.lines.length > 0 && !mobileCartOpen && (
+        <button
+          type="button"
+          aria-label="Open order panel"
+          onClick={() => setMobileCartOpen(true)}
+          className="fixed bottom-[115px] right-0 z-[60] flex items-center gap-3 rounded-l-2xl bg-[#1be4db] px-6 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.15)] transition active:scale-[0.97] lg:hidden"
+        >
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0d1a1a]/20 text-[10px] font-bold text-[#0d1a1a]">
+            {cartView.lines.length}
+          </span>
+          <ShoppingBag size={18} className="text-[#0d1a1a]" />
+          <span className="text-base font-bold text-[#0d1a1a]">Order</span>
+        </button>
+      )}
     </main>
   );
 }
