@@ -1,7 +1,7 @@
 import { type AnalyticsRangeResponse, type DraftOrder, type RegisterStatus, type SummaryResponse } from "@rhc-pos/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { ChevronRight, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { ActionBar } from "../components/ActionBar";
 import { AdminPinDialog } from "../components/AdminPinDialog";
 import { AnalyticsPage } from "../components/AnalyticsPage";
@@ -638,27 +638,21 @@ export function App() {
 
         {store.view === "register" ? (
           <div className="relative flex min-h-0 flex-1 p-3 lg:p-4">
-            {/* Mobile cart toggle — lives here so no overflow:hidden ancestor clips it */}
-            <button
-              type="button"
-              aria-label={mobileCartOpen ? "Collapse order panel" : "Open order panel"}
-              onClick={() => setMobileCartOpen((v) => !v)}
-              className="absolute right-3 top-0 z-50 flex items-center gap-2 rounded-b-xl border border-white/10 border-t-0 bg-[var(--bg-elevated)] px-3 py-2.5 shadow-lg transition active:scale-[0.97] lg:hidden"
-            >
-              {mobileCartOpen ? (
-                <ChevronRight size={16} className="text-[#1be4db]" />
-              ) : (
-                <>
-                  <ShoppingBag size={15} className="text-[#1be4db]" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-dimmer)]">Order</span>
-                  {cartView.lines.length > 0 && (
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#1be4db] text-[9px] font-bold text-[#262626]">
-                      {cartView.lines.length}
-                    </span>
-                  )}
-                </>
-              )}
-            </button>
+            {/* Floating "Order" button — only visible on mobile when cart has items and drawer is closed */}
+            {cartView.lines.length > 0 && !mobileCartOpen && (
+              <button
+                type="button"
+                aria-label="Open order panel"
+                onClick={() => setMobileCartOpen(true)}
+                className="absolute bottom-4 right-3 z-50 flex items-center gap-2.5 rounded-2xl bg-[#1be4db] px-5 py-3.5 shadow-[0_8px_24px_rgba(27,228,219,0.35)] transition active:scale-[0.97] lg:hidden"
+              >
+                <ShoppingBag size={16} className="text-[#0d1a1a]" />
+                <span className="text-sm font-bold text-[#0d1a1a]">Order</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0d1a1a]/20 text-[10px] font-bold text-[#0d1a1a]">
+                  {cartView.lines.length}
+                </span>
+              </button>
+            )}
             <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl bg-[var(--bg-surface)]">
               <ProductGrid
                 bootstrap={store.bootstrap}
@@ -673,7 +667,7 @@ export function App() {
                 totalCents={cartView.totalCents}
                 paymentError={store.paymentError}
                 mobileOpen={mobileCartOpen}
-
+                onCloseMobile={() => setMobileCartOpen(false)}
                 onSelectLine={store.selectLine}
                 onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
                 onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}

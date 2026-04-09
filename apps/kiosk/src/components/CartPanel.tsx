@@ -1,5 +1,5 @@
 import { formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
-import { Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
+import { ChevronRight, Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
 
 import coloredLogoUrl from "../../assets/River Hills Logo without text Colored.svg?url";
@@ -26,6 +26,7 @@ interface CartPanelProps {
   totalCents: number;
   paymentError?: string | null;
   mobileOpen: boolean;
+  onCloseMobile: () => void;
   onSelectLine: (lineId: string) => void;
   onAdjustLineQuantity: (lineId: string, delta: number) => void;
   onRemoveLine: (lineId: string) => void;
@@ -40,6 +41,7 @@ export function CartPanel({
   totalCents,
   paymentError,
   mobileOpen,
+  onCloseMobile,
   onSelectLine,
   onAdjustLineQuantity,
   onRemoveLine,
@@ -53,6 +55,19 @@ export function CartPanel({
 
   return (
     <div className={`fixed right-0 top-14 z-40 h-[calc(100dvh-3.5rem)] w-[min(88vw,360px)] lg:static lg:h-full lg:w-[340px] lg:shrink-0 ${mobileOpen ? "" : "pointer-events-none"}`}>
+
+      {/* Left-side collapse tab — only visible when drawer is open */}
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Collapse order panel"
+          onClick={onCloseMobile}
+          className="pointer-events-auto absolute left-0 top-1/2 z-50 -translate-x-full -translate-y-1/2 flex items-center justify-center rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-2 py-5 shadow-lg transition active:scale-[0.97] lg:hidden"
+        >
+          <ChevronRight size={18} className="text-[#1be4db]" />
+        </button>
+      )}
+
       <section
         className={`pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)] shadow-[0_24px_64px_rgba(0,0,0,0.42)] transition-transform duration-300 ease-out lg:translate-x-0 lg:shadow-none ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
