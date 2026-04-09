@@ -24,13 +24,12 @@ import { useAppStore } from "../store/app-store";
 
 async function ensureOrder(
   currentOrder: DraftOrder | null,
-  cashierId: string,
   cartItems: Array<{ productId: string; quantity: number; sizeOptionId?: string | null; modifierIds: string[] }>,
 ) {
   if (currentOrder && currentOrder.status !== "paid") {
     return currentOrder;
   }
-  return api.createOrder({ cashierId, items: cartItems });
+  return api.createOrder({ items: cartItems });
 }
 
 function SplashCard({
@@ -174,7 +173,6 @@ export function App() {
     if (persisted) {
       store.restorePersisted({
         cartLines: persisted.cartLines,
-        cashierId: persisted.cashierId || store.bootstrap.cashiers[0]?.id || "",
         selectedCategoryId: persisted.selectedCategoryId || "all",
         pendingTransaction: persisted.pendingTransaction,
         pendingOrder: persisted.pendingOrder,
@@ -190,7 +188,6 @@ export function App() {
 
     savePersistedState({
       savedAt: new Date().toISOString(),
-      cashierId: store.cashierId,
       selectedCategoryId: store.selectedCategoryId,
       cartLines: store.cartLines,
       pendingTransaction: store.pendingTransaction,
@@ -198,7 +195,6 @@ export function App() {
     });
   }, [
     store.bootstrap,
-    store.cashierId,
     store.selectedCategoryId,
     store.cartLines,
     store.pendingTransaction,
@@ -330,7 +326,6 @@ export function App() {
     try {
       const order = await ensureOrder(
         store.pendingOrder,
-        store.cashierId,
         store.cartLines.map((line) => ({
           productId: line.productId,
           quantity: line.quantity,
@@ -363,7 +358,6 @@ export function App() {
       store.setPaymentError(null);
       const order = await ensureOrder(
         store.pendingOrder,
-        store.cashierId,
         store.cartLines.map((line) => ({
           productId: line.productId,
           quantity: line.quantity,
@@ -411,7 +405,6 @@ export function App() {
     try {
       const order = await ensureOrder(
         store.pendingOrder,
-        store.cashierId,
         store.cartLines.map((line) => ({
           productId: line.productId,
           quantity: line.quantity,

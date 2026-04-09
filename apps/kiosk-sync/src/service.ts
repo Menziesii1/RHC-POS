@@ -63,11 +63,6 @@ export class KioskSyncService implements LocalSyncService {
   async createDraftOrder(input: unknown): Promise<DraftOrder> {
     const cart = cartInputSchema.parse(input);
     const bootstrap = await this.getBootstrap();
-    const cashier = bootstrap.cashiers.find((entry) => entry.id === cart.cashierId);
-    if (!cashier) {
-      throw new HttpError(400, "Cashier is not available.");
-    }
-
     const products = new Map(bootstrap.products.map((entry) => [entry.id, entry] as const));
     const sizes = new Map(bootstrap.sizes.map((entry) => [entry.id, entry] as const));
     const modifiers = new Map(bootstrap.modifiers.map((entry) => [entry.id, entry] as const));
@@ -135,8 +130,8 @@ export class KioskSyncService implements LocalSyncService {
       id: randomUUID(),
       orderNumber: buildLocalOrderNumber(),
       status: "draft",
-      cashierId: cashier.id,
-      cashierName: cashier.name,
+      cashierId: "staff",
+      cashierName: "Staff",
       lines,
       subtotalCents,
       taxCents,

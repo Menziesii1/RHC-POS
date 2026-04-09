@@ -20,7 +20,6 @@ export interface PendingTransactionSnapshot {
 
 export interface PersistedUiState {
   savedAt: string;
-  cashierId: string;
   selectedCategoryId: string;
   cartLines: CartLineState[];
   pendingTransaction: PendingTransactionSnapshot | null;

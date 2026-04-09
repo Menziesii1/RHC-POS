@@ -47,7 +47,7 @@ export class PrismaPosRepository implements PosRepository {
   ) {}
 
   async getBootstrapBase(): Promise<Omit<BootstrapResponse, "status">> {
-    const [location, register, categories, sizes, modifiers, products, cashiers, recoverySetting, flavorCategories] = await Promise.all([
+    const [location, register, categories, sizes, modifiers, products, recoverySetting, flavorCategories] = await Promise.all([
       this.prisma.location.findUnique({ where: { id: this.config.LOCATION_ID } }),
       this.prisma.register.findUnique({ where: { id: this.config.REGISTER_ID } }),
       this.prisma.category.findMany({
@@ -63,10 +63,6 @@ export class PrismaPosRepository implements PosRepository {
         orderBy: { sortOrder: "asc" },
       }),
       this.getProductRecords(),
-      this.prisma.staffProfile.findMany({
-        where: { active: true },
-        orderBy: { name: "asc" },
-      }),
       this.prisma.appSetting.findUnique({ where: { key: "recovery_ttl_seconds" } }),
       this.prisma.modifierCategory.findMany({
         where: { locationId: this.config.LOCATION_ID },
@@ -111,11 +107,6 @@ export class PrismaPosRepository implements PosRepository {
         flavorCategoryId: modifier.flavorCategoryId ?? undefined,
       })),
       products: products.map((product) => this.mapProduct(product)),
-      cashiers: cashiers.map((cashier) => ({
-        id: cashier.id,
-        name: cashier.name,
-        active: cashier.active,
-      })),
       flavorCategories: flavorCategories.map((fc) => ({
         id: fc.id,
         name: fc.name,
@@ -126,11 +117,6 @@ export class PrismaPosRepository implements PosRepository {
 
   async createDraftOrder(input: CartInput): Promise<DraftOrder> {
     const bootstrap = await this.getBootstrapBase();
-    const cashier = bootstrap.cashiers.find((entry) => entry.id === input.cashierId);
-    if (!cashier) {
-      throw new HttpError(400, "Cashier is not available.");
-    }
-
     const products = new Map(bootstrap.products.map((entry) => [entry.id, entry] as const));
     const sizes = new Map(bootstrap.sizes.map((entry) => [entry.id, entry] as const));
     const modifiers = new Map(bootstrap.modifiers.map((entry) => [entry.id, entry] as const));
@@ -200,8 +186,8 @@ export class PrismaPosRepository implements PosRepository {
         status: "draft",
         locationId: bootstrap.settings.locationId,
         registerId: bootstrap.settings.registerId,
-        cashierId: cashier.id,
-        cashierName: cashier.name,
+        cashierId: "staff",
+        cashierName: "Staff",
         subtotalCents,
         taxCents,
         totalCents: subtotalCents + taxCents,

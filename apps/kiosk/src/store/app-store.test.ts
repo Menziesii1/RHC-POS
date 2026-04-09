@@ -39,7 +39,6 @@ const bootstrapFixture = {
   ],
   modifiers: [{ id: "vanilla", name: "Vanilla", priceCents: 0, discountFlavor: false, enabled: true, sortOrder: 1 }],
   sizes: [{ id: "regular", name: "Regular", priceDeltaCents: 0, enabled: true, sortOrder: 1 }],
-  cashiers: [{ id: "cashier-1", name: "Sarah", active: true }],
   flavorCategories: [],
 } as BootstrapResponse;
 
@@ -49,7 +48,6 @@ function resetStore() {
     cartLines: [],
     selectedLineId: null,
     selectedCategoryId: "all",
-    cashierId: "",
     internetOnline: true,
     backendOnline: true,
     overlay: "none",

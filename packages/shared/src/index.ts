@@ -55,12 +55,6 @@ export const productSchema = z.object({
   defaultSizeOptionId: idSchema.nullable().default(null),
 });
 
-export const staffProfileSchema = z.object({
-  id: idSchema,
-  name: z.string().min(1),
-  active: z.boolean(),
-});
-
 export const cartItemInputSchema = z.object({
   productId: idSchema,
   quantity: z.number().int().positive(),
@@ -70,7 +64,6 @@ export const cartItemInputSchema = z.object({
 });
 
 export const cartInputSchema = z.object({
-  cashierId: idSchema,
   items: z.array(cartItemInputSchema).min(1),
 });
 
@@ -244,7 +237,6 @@ export const bootstrapResponseSchema = z.object({
   products: z.array(productSchema),
   modifiers: z.array(modifierSchema),
   sizes: z.array(sizeOptionSchema),
-  cashiers: z.array(staffProfileSchema),
   flavorCategories: z.array(flavorCategorySchema).default([]),
 });
 
@@ -309,7 +301,6 @@ export type SizeOption = z.infer<typeof sizeOptionSchema>;
 export type ProductSizePrice = z.infer<typeof productSizePriceSchema>;
 export type Modifier = z.infer<typeof modifierSchema>;
 export type Product = z.infer<typeof productSchema>;
-export type StaffProfile = z.infer<typeof staffProfileSchema>;
 export type CartInput = z.infer<typeof cartInputSchema>;
 export type DraftOrder = z.infer<typeof draftOrderSchema>;
 export type RegisterStatus = z.infer<typeof registerStatusSchema>;

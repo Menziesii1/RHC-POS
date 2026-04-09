@@ -374,10 +374,6 @@ function TransactionDetail({
               )}
             </div>
 
-            {/* Cashier */}
-            <div className="text-[11px] text-[var(--text-dimmest)]">
-              Served by <span className="font-semibold text-[var(--text-dimmer)]">{order.cashierName}</span>
-            </div>
           </div>
         )}
       </div>
@@ -496,7 +492,6 @@ export function TransactionsPage({ adminPin, onClose, onNavigateInventory, onNav
                     <tr>
                       <th className="px-4 py-3 text-left">Order</th>
                       <th className="px-4 py-3 text-left">Date</th>
-                      <th className="px-4 py-3 text-left">Cashier</th>
                       <th className="px-4 py-3 text-center">Tender</th>
                       <th className="px-4 py-3 text-right">Total</th>
                       <th className="px-4 py-3 text-center">Status</th>
@@ -505,13 +500,13 @@ export function TransactionsPage({ adminPin, onClose, onNavigateInventory, onNav
                   <tbody className="divide-y divide-[var(--divider)]">
                     {!data && loading ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-[var(--text-dimmer)]">
+                        <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-dimmer)]">
                           <RefreshCw size={16} className="mx-auto animate-spin" />
                         </td>
                       </tr>
                     ) : rows.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-[var(--text-dimmer)]">No transactions found.</td>
+                        <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-dimmer)]">No transactions found.</td>
                       </tr>
                     ) : rows.map((row) => (
                       <tr
@@ -528,7 +523,6 @@ export function TransactionsPage({ adminPin, onClose, onNavigateInventory, onNav
                           {new Date(row.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}{" "}
                           <span className="text-[var(--text-dimmest)]">{new Date(row.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
                         </td>
-                        <td className="px-4 py-3 text-[var(--text-muted)]">{row.cashierName}</td>
                         <td className="px-4 py-3 text-center">
                           <span className="flex items-center justify-center gap-1 capitalize text-[var(--text-dimmer)]">
                             {tenderIcon(row.tenderType)} {row.tenderType ?? "—"}

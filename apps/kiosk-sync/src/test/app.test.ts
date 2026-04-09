@@ -51,7 +51,7 @@ const bootstrapFixture = {
   ],
   modifiers: [],
   sizes: [],
-  cashiers: [{ id: "sarah", name: "Sarah", active: true }],
+  flavorCategories: [],
 };
 
 describe("kiosk sync app", () => {
@@ -127,7 +127,6 @@ describe("kiosk sync app", () => {
       method: "POST",
       url: "/v1/orders",
       payload: {
-        cashierId: "sarah",
         items: [{ productId: "chai", quantity: 1, modifierIds: [] }],
       },
     });

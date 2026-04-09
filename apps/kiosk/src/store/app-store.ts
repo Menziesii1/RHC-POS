@@ -8,7 +8,6 @@ interface AppState {
   cartLines: CartLineState[];
   selectedLineId: string | null;
   selectedCategoryId: string;
-  cashierId: string;
   internetOnline: boolean;
   backendOnline: boolean;
   overlay: OverlayState;
@@ -23,7 +22,6 @@ interface AppState {
   theme: "dark" | "light";
   toggleTheme: () => void;
   setBootstrap: (bootstrap: BootstrapResponse) => void;
-  setCashierId: (cashierId: string) => void;
   setSelectedCategoryId: (selectedCategoryId: string) => void;
   addProduct: (productId: string) => void;
   beginDraftLine: (productId: string, sizeOptionId?: string | null, iced?: boolean) => void;
@@ -50,7 +48,6 @@ interface AppState {
   dismissSuccess: () => void;
   restorePersisted: (state: {
     cartLines: CartLineState[];
-    cashierId: string;
     selectedCategoryId: string;
     pendingTransaction: PendingTransactionSnapshot | null;
     pendingOrder: DraftOrder | null;
@@ -142,7 +139,6 @@ export const useAppStore = create<AppState>((set) => ({
   cartLines: [],
   selectedLineId: null,
   selectedCategoryId: "all",
-  cashierId: "",
   internetOnline: navigator.onLine,
   backendOnline: true,
   overlay: "none",
@@ -165,9 +161,7 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       ...reconcileCatalogState(state, bootstrap),
       bootstrap,
-      cashierId: state.cashierId || bootstrap.cashiers[0]?.id || "",
     })),
-  setCashierId: (cashierId) => set({ cashierId }),
   setSelectedCategoryId: (selectedCategoryId) => set({ selectedCategoryId }),
   addProduct: (productId) =>
     set((state) => ({
@@ -334,7 +328,7 @@ export const useAppStore = create<AppState>((set) => ({
       overlay: "none",
       successOrder: null,
     }),
-  restorePersisted: ({ cartLines, cashierId, selectedCategoryId, pendingTransaction, pendingOrder }) =>
+  restorePersisted: ({ cartLines, selectedCategoryId, pendingTransaction, pendingOrder }) =>
     set((state) => {
       const restoredCartLines = cartLines.map((line) => ({
         ...line,
@@ -343,7 +337,6 @@ export const useAppStore = create<AppState>((set) => ({
       const nextState = {
         ...state,
         cartLines: restoredCartLines,
-        cashierId,
         selectedCategoryId,
         pendingTransaction,
         pendingOrder,
@@ -352,7 +345,6 @@ export const useAppStore = create<AppState>((set) => ({
       return state.bootstrap
         ? {
             ...reconcileCatalogState(nextState, state.bootstrap),
-            cashierId,
             selectedCategoryId,
           }
         : nextState;

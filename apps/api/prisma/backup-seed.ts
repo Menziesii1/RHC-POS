@@ -21,11 +21,6 @@ const registers = [
   },
 ] as const;
 
-const staffProfiles = [
-  { id: "jamie", name: "Jamie", active: true },
-  { id: "sarah", name: "Sarah", active: true },
-] as const;
-
 const categories = [
   { id: "drink", locationId: "main-location", name: "Drink", sortOrder: 1, enabled: true },
   { id: "food", locationId: "main-location", name: "Food", sortOrder: 2, enabled: true },
@@ -272,7 +267,6 @@ const appSettings = [{ key: "recovery_ttl_seconds", value: "300" }] as const;
 async function main() {
   await prisma.location.createMany({ data: locations, skipDuplicates: true });
   await prisma.register.createMany({ data: registers, skipDuplicates: true });
-  await prisma.staffProfile.createMany({ data: staffProfiles, skipDuplicates: true });
   await prisma.category.createMany({ data: categories, skipDuplicates: true });
   await prisma.sizeOption.createMany({ data: sizeOptions, skipDuplicates: true });
   await prisma.modifier.createMany({ data: modifiers, skipDuplicates: true });

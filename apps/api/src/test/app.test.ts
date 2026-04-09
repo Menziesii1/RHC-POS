@@ -21,7 +21,6 @@ describe("RHC POS API", () => {
       method: "POST",
       url: "/v1/orders",
       payload: {
-        cashierId: "sarah",
         items: [{ productId: "mocha", quantity: 1, modifierIds: ["extra-shot"] }],
       },
     });
@@ -61,7 +60,6 @@ describe("RHC POS API", () => {
       method: "POST",
       url: "/v1/orders",
       payload: {
-        cashierId: "sarah",
         items: [{ productId: "chai", quantity: 1, sizeOptionId: "kids", modifierIds: [] }],
       },
     });

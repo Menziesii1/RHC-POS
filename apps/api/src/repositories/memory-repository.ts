@@ -248,10 +248,6 @@ export class MemoryPosRepository implements PosRepository {
         defaultSizeOptionId: null,
       },
     ],
-    cashiers: [
-      { id: "sarah", name: "Sarah", active: true },
-      { id: "jamie", name: "Jamie", active: true },
-    ],
   };
 
   private orders = new Map<string, DraftOrder>();
@@ -265,11 +261,6 @@ export class MemoryPosRepository implements PosRepository {
   }
 
   async createDraftOrder(input: CartInput): Promise<DraftOrder> {
-    const cashier = this.bootstrap.cashiers.find((entry) => entry.id === input.cashierId && entry.active);
-    if (!cashier) {
-      throw new HttpError(400, "Cashier is not available.");
-    }
-
     const products = toMap(this.bootstrap.products);
     const sizes = toMap(this.bootstrap.sizes);
     const modifiers = toMap(this.bootstrap.modifiers);
@@ -337,8 +328,8 @@ export class MemoryPosRepository implements PosRepository {
       id: crypto.randomUUID(),
       orderNumber: createOrderNumber(new Date(), ++this.sequence),
       status: "draft",
-      cashierId: cashier.id,
-      cashierName: cashier.name,
+      cashierId: "staff",
+      cashierName: "Staff",
       lines,
       subtotalCents,
       taxCents,

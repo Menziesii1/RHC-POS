@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Clock, User, RefreshCw, ShoppingBag, Flame, Snowflake } from "lucide-react";
+import { X, Clock, RefreshCw, ShoppingBag, Flame, Snowflake } from "lucide-react";
 import type { DraftOrder } from "@rhc-pos/shared";
 import { api } from "../services/api";
 
@@ -26,10 +26,6 @@ function OrderCard({ order }: { order: DraftOrder }) {
           <span className="text-xs text-[var(--text-muted)] font-medium">{formatMoney(order.totalCents)}</span>
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--text-dimmer)]">
-          <span className="flex items-center gap-1">
-            <User size={11} />
-            {order.cashierName}
-          </span>
           <span className="flex items-center gap-1">
             <Clock size={11} />
             {formatTime(paidAt)}

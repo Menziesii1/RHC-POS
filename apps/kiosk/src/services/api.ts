@@ -21,7 +21,6 @@ export interface TransactionRow {
   status: "draft" | "awaiting_payment" | "paid" | "canceled";
   totalCents: number;
   tenderType: "cash" | "card" | "split" | undefined;
-  cashierName: string;
   stripePaymentIntentId: string | undefined;
   refunded: boolean;
   createdAt: string;
