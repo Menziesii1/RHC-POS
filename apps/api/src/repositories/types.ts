@@ -88,4 +88,5 @@ export interface PosRepository {
   getLastWebhookAt(): Promise<string | null>;
   listTransactions(page: number, pageSize: number): Promise<TransactionListResponse>;
   markOrderRefunded(orderId: string): Promise<void>;
+  getRecentOrders(): Promise<DraftOrder[]>;
 }

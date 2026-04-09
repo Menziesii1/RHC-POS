@@ -38,6 +38,7 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
   app.get("/health", async () => ({ ok: true, timestamp: new Date().toISOString() }));
 
   app.get("/v1/bootstrap", async () => posService.getBootstrap());
+  app.get("/v1/orders/recent", async () => posService.getRecentOrders());
   app.get("/v1/orders/:id", async (request) => posService.getOrder((request.params as { id: string }).id));
   app.post("/v1/orders", async (request) => posService.createDraftOrder(request.body));
   app.post("/v1/orders/:id/pay-cash", async (request) => {

@@ -1,8 +1,10 @@
-import { Wifi, WifiOff, Server, ServerOff, Smartphone, CreditCard, Clock, Sun, Moon } from "lucide-react";
+import { useState } from "react";
+import { Wifi, WifiOff, Server, ServerOff, Smartphone, CreditCard, Clock, Sun, Moon, History } from "lucide-react";
 import type { BootstrapResponse, RegisterStatus } from "@rhc-pos/shared";
 
 import { BrandBadge } from "./BrandBadge";
 import { useAppStore } from "../store/app-store";
+import { OrderHistoryModal } from "./OrderHistoryModal";
 
 const POSITIVE_VALUES = ["online", "ready", "connected"];
 
@@ -14,6 +16,7 @@ interface TopStatusBarProps {
 
 export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps) {
   const { theme, toggleTheme } = useAppStore();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const statusItems: Array<{
     icon: typeof Wifi;
@@ -28,6 +31,7 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
   ];
 
   return (
+    <>
     <header className="relative z-20 flex h-14 shrink-0 items-center gap-3 bg-[var(--bg-surface)] px-4 text-[var(--text-primary)]">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl p-1">
         <BrandBadge />
@@ -48,6 +52,21 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
         <Clock size={13} className="text-[var(--text-dimmest)]" />
         <span className="text-sm font-medium text-[var(--text-muted)]">{timeLabel}</span>
       </div>
+
+      {/* Order History button */}
+      <button
+        type="button"
+        aria-label="Order history"
+        onClick={() => setHistoryOpen((v) => !v)}
+        className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition ${
+          historyOpen
+            ? "bg-[var(--overlay-hover)] text-[var(--text-primary)]"
+            : "text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)]"
+        }`}
+      >
+        <History size={14} />
+        <span className="hidden sm:inline">Order History</span>
+      </button>
 
       {/* Theme toggle */}
       <button
@@ -73,5 +92,8 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
         })}
       </div>
     </header>
+
+    {historyOpen && <OrderHistoryModal onClose={() => setHistoryOpen(false)} />}
+    </>
   );
 }

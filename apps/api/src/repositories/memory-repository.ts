@@ -912,6 +912,15 @@ export class MemoryPosRepository implements PosRepository {
 
   async markOrderRefunded(_orderId: string): Promise<void> {}
 
+  async getRecentOrders(): Promise<DraftOrder[]> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    return [...this.orders.values()]
+      .filter((o) => o.status === "paid" && new Date(o.createdAt) >= startOfDay)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, 20);
+  }
+
   private requireOrder(orderId: string): DraftOrder {
     const order = this.orders.get(orderId);
     if (!order) {

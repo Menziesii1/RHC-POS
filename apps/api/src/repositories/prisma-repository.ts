@@ -1017,6 +1017,18 @@ export class PrismaPosRepository implements PosRepository {
     });
   }
 
+  async getRecentOrders(): Promise<DraftOrder[]> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const orders = await this.prisma.order.findMany({
+      where: { status: "paid", paidAt: { gte: startOfDay } },
+      include: { items: true, payment: true },
+      orderBy: { paidAt: "desc" },
+      take: 20,
+    });
+    return orders.map((o) => this.mapOrder(o));
+  }
+
   private async getProductRecords() {
     return this.prisma.product.findMany({
       where: { locationId: this.config.LOCATION_ID },

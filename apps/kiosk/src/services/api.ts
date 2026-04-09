@@ -182,6 +182,7 @@ export const api = {
       headers: { "x-admin-pin": pin },
       body: JSON.stringify(payload),
     }),
+  getRecentOrders: () => request<DraftOrder[]>("/orders/recent"),
   listTransactions: (pin: string, page = 1, pageSize = 25) =>
     request<TransactionListResponse>(`/admin/transactions?page=${page}&pageSize=${pageSize}`, {
       headers: { "x-admin-pin": pin },

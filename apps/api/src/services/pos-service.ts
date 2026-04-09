@@ -182,6 +182,10 @@ export class PosService {
     return this.repository.listTransactions(page, pageSize);
   }
 
+  async getRecentOrders(): Promise<DraftOrder[]> {
+    return this.repository.getRecentOrders();
+  }
+
   async sendReceipt(orderId: string, email: string): Promise<{ ok: true }> {
     const order = await this.getOrder(orderId);
     const piId = order.payment.stripePaymentIntentId;

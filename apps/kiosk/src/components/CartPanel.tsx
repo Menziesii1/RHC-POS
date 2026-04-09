@@ -1,5 +1,5 @@
 import { formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
-import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
+import { ChevronRight, Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
 
 import coloredLogoUrl from "../../assets/River Hills Logo without text Colored.svg?url";
@@ -52,30 +52,35 @@ export function CartPanel({
   const selectedLine = lines.find((line) => line.id === selectedLineId) ?? null;
   const allowedModifiers = selectedLine ? bootstrap.modifiers.filter((m) => m.enabled) : [];
   const logoUrl = theme === "light" ? blackLogoUrl : coloredLogoUrl;
-  const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   return (
     <>
+      {/* Mobile toggle tab — fixed below the header on the right edge, always interactive */}
       <button
         type="button"
-        aria-label={mobileOpen ? "Close order panel" : "Open order panel"}
+        aria-label={mobileOpen ? "Collapse order panel" : "Open order panel"}
         onClick={onToggleMobile}
-        className="fixed right-0 top-[4.25rem] z-50 flex items-center gap-2 rounded-l-2xl border border-white/10 bg-[var(--bg-surface)] px-3 py-3 text-left shadow-[0_18px_40px_rgba(0,0,0,0.35)] transition active:scale-[0.98] lg:hidden"
+        className="fixed top-[3.75rem] right-0 z-50 flex items-center gap-2 rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-3 py-2.5 shadow-lg transition active:scale-[0.97] pointer-events-auto lg:hidden"
       >
-        <div className="flex flex-col items-start gap-0.5">
-          <div className="flex items-center gap-1.5">
-            <ShoppingBag size={14} className="text-[#1be4db]" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-primary)]">Order</span>
-          </div>
-          <span className="text-[10px] font-medium text-[var(--text-dimmer)]">{itemCount} items</span>
-        </div>
-        <div className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.05] text-[var(--text-primary)]">
-          {mobileOpen ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-        </div>
+        {mobileOpen ? (
+          <ChevronRight size={16} className="text-[#1be4db]" />
+        ) : (
+          <>
+            <ShoppingBag size={15} className="text-[#1be4db]" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-dimmer)]">Order</span>
+            {lines.length > 0 && (
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#1be4db] text-[9px] font-bold text-[#262626]">
+                {lines.length}
+              </span>
+            )}
+          </>
+        )}
       </button>
 
+      {/* Drawer — pointer-events-none when collapsed so product grid stays interactive */}
+      <div className={`fixed right-0 top-14 z-40 h-[calc(100dvh-3.5rem)] w-[min(88vw,360px)] lg:static lg:h-full lg:w-[340px] lg:shrink-0 lg:pointer-events-auto ${mobileOpen ? "" : "pointer-events-none"}`}>
       <section
-        className={`fixed right-0 top-14 z-40 flex h-[calc(100dvh-3.5rem)] w-[min(88vw,360px)] flex-col overflow-hidden bg-[var(--bg-surface)] shadow-[0_24px_64px_rgba(0,0,0,0.42)] transition-transform duration-300 ease-out lg:static lg:h-full lg:w-[340px] lg:shrink-0 lg:translate-x-0 lg:shadow-none ${
+        className={`flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)] shadow-[0_24px_64px_rgba(0,0,0,0.42)] transition-transform duration-300 ease-out lg:translate-x-0 lg:shadow-none pointer-events-auto ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -224,6 +229,7 @@ export function CartPanel({
 
       {footer}
       </section>
+      </div>
     </>
   );
 }
