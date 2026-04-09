@@ -61,7 +61,7 @@ export function CartPanel({
         type="button"
         aria-label="Collapse order panel"
         onClick={onCloseMobile}
-        className={`pointer-events-auto absolute left-0 top-1/2 z-50 -translate-x-full -translate-y-1/2 flex items-center justify-center rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-2 py-5 shadow-lg transition-opacity duration-75 active:scale-[0.97] lg:hidden ${
+        className={`pointer-events-auto absolute left-0 top-1/2 z-50 -translate-x-full -translate-y-1/2 flex items-center justify-center rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-2 py-5 shadow-lg transition-opacity duration-[25ms] active:scale-[0.97] lg:hidden ${
           mobileOpen ? "delay-300 opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
