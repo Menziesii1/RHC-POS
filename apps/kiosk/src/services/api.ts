@@ -139,6 +139,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ pin }),
     }),
+  verifyLockPin: (pin: string) =>
+    request<{ ok: true }>("/verify-lock-pin", {
+      method: "POST",
+      body: JSON.stringify({ pin }),
+    }),
   listProducts: () => request<Product[]>("/admin/products"),
   createProduct: (pin: string, payload: UpsertProductInput) =>
     request<Product>("/admin/products", {

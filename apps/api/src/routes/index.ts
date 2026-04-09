@@ -59,6 +59,7 @@ export function registerRoutes(app: FastifyInstance, posService: PosService) {
     return posService.getAnalyticsRange(new Date(), days);
   });
   app.post("/v1/admin/verify-pin", async (request) => posService.verifyAdminPin(request.body));
+  app.post("/v1/verify-lock-pin", async (request) => posService.verifyLockScreenPin(request.body));
   app.get("/v1/admin/categories", async () => posService.listCategories());
   app.post("/v1/admin/categories", async (request) => {
     await posService.verifyAdminPin({ pin: getAdminPin(request.headers as Record<string, unknown>) });

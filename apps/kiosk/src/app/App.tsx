@@ -2,6 +2,7 @@ import { type AnalyticsRangeResponse, type DraftOrder, type RegisterStatus, type
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ShoppingBag } from "lucide-react";
+import { AppLockScreen } from "../components/AppLockScreen";
 import { ActionBar } from "../components/ActionBar";
 import { AdminPinDialog } from "../components/AdminPinDialog";
 import { AnalyticsPage } from "../components/AnalyticsPage";
@@ -81,6 +82,8 @@ export function App() {
   const [analyticsRangeDays, setAnalyticsRangeDays] = useState(28);
   const [splitCardCents, setSplitCardCents] = useState<number | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+  const [appLocked, setAppLocked] = useState(true);
+  const [lockAdminPromptOpen, setLockAdminPromptOpen] = useState(false);
   const hydratedRef = useRef(false);
 
   const cartView = useMemo(
@@ -480,12 +483,20 @@ export function App() {
   const handleAdminSubmit = async (pin: string) => {
     try {
       await api.verifyAdminPin(pin);
-      setAdminError(null);
-      store.unlockAdmin(pin);
-      await refreshAnalytics(analyticsRangeDays);
     } catch (error) {
       setAdminError(error instanceof Error ? error.message : "Admin PIN is invalid.");
+      return;
     }
+
+    setAdminError(null);
+    store.unlockAdmin(pin);
+    setAppLocked(false);
+    setMobileCartOpen(false);
+    setLockAdminPromptOpen(false);
+
+    void refreshAnalytics(analyticsRangeDays).catch(() => {
+      // Admin access should still open even if analytics cannot refresh immediately.
+    });
   };
 
   const handleSummaryOpen = async () => {
@@ -562,6 +573,11 @@ export function App() {
     await refreshBootstrap();
   };
 
+  const handleLockPinSave = async (lockScreenPin: string) => {
+    await api.patchSettings(store.adminPin, { lockScreenPin });
+    await refreshBootstrap();
+  };
+
   const handleCreateCategory = async (input: Parameters<typeof api.createCategory>[1]) => {
     await api.createCategory(store.adminPin, input);
     await refreshBootstrap();
@@ -596,6 +612,39 @@ export function App() {
     await api.createProduct(store.adminPin, input);
     await refreshBootstrap();
   };
+
+  const handleUnlockApp = async (pin: string) => {
+    await api.verifyLockPin(pin);
+  };
+
+  if (appLocked) {
+    return (
+      <>
+        <AppLockScreen
+          onUnlock={handleUnlockApp}
+          onUnlocked={() => {
+            setAppLocked(false);
+            setMobileCartOpen(false);
+            store.setView("register");
+          }}
+          onOpenAdmin={() => {
+            setAdminError(null);
+            setLockAdminPromptOpen(true);
+          }}
+        />
+        {lockAdminPromptOpen ? (
+          <AdminPinDialog
+            onClose={() => {
+              setAdminError(null);
+              setLockAdminPromptOpen(false);
+            }}
+            onSubmit={handleAdminSubmit}
+            error={adminError}
+          />
+        ) : null}
+      </>
+    );
+  }
 
   if (loading && !store.bootstrap) {
     return (
@@ -695,6 +744,7 @@ export function App() {
                 onFlavorCategorySave={handleFlavorCategorySave}
                 onFlavorCategoryDelete={handleFlavorCategoryDelete}
                 onTaxSave={handleTaxSave}
+                onLockPinSave={handleLockPinSave}
               />
             </div>
           </div>

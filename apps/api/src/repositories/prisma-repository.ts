@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 import {
   type AnalyticsRangeResponse,
   calculateFlavorAdjustment,
@@ -47,7 +48,17 @@ export class PrismaPosRepository implements PosRepository {
   ) {}
 
   async getBootstrapBase(): Promise<Omit<BootstrapResponse, "status">> {
-    const [location, register, categories, sizes, modifiers, products, recoverySetting, flavorCategories] = await Promise.all([
+    const [
+      location,
+      register,
+      categories,
+      sizes,
+      modifiers,
+      products,
+      recoverySetting,
+      lockSetting,
+      flavorCategories,
+    ] = await Promise.all([
       this.prisma.location.findUnique({ where: { id: this.config.LOCATION_ID } }),
       this.prisma.register.findUnique({ where: { id: this.config.REGISTER_ID } }),
       this.prisma.category.findMany({
@@ -64,6 +75,7 @@ export class PrismaPosRepository implements PosRepository {
       }),
       this.getProductRecords(),
       this.prisma.appSetting.findUnique({ where: { key: "recovery_ttl_seconds" } }),
+      this.prisma.appSetting.findUnique({ where: { key: "lock_screen_pin_hash" } }),
       this.prisma.modifierCategory.findMany({
         where: { locationId: this.config.LOCATION_ID },
         orderBy: { sortOrder: "asc" },
@@ -83,6 +95,7 @@ export class PrismaPosRepository implements PosRepository {
         taxRateBasisPoints: location.taxRateBasisPoints,
         recoveryTtlSeconds: Number(recoverySetting?.value ?? this.config.RECOVERY_TTL_SECONDS),
         adminPinConfigured: Boolean(this.config.ADMIN_PIN_HASH || this.config.ADMIN_PIN),
+        lockScreenPinConfigured: Boolean(lockSetting?.value),
       },
       categories: categories.map((category) => normalizeCategory({
         id: category.id,
@@ -887,6 +900,19 @@ export class PrismaPosRepository implements PosRepository {
       }),
     ]);
 
+    if (input.lockScreenPin !== undefined) {
+      if (input.lockScreenPin === null) {
+        await this.prisma.appSetting.deleteMany({ where: { key: "lock_screen_pin_hash" } });
+      } else {
+        const lockScreenPinHash = await bcrypt.hash(input.lockScreenPin, 10);
+        await this.prisma.appSetting.upsert({
+          where: { key: "lock_screen_pin_hash" },
+          update: { value: lockScreenPinHash },
+          create: { key: "lock_screen_pin_hash", value: lockScreenPinHash },
+        });
+      }
+    }
+
     await this.appendAuditEvent({
       action: "settings.updated",
       entityType: "settings",
@@ -898,6 +924,14 @@ export class PrismaPosRepository implements PosRepository {
     const recoverySetting = await this.prisma.appSetting.findUnique({
       where: { key: "recovery_ttl_seconds" },
     });
+    const lockScreenSetting =
+      input.lockScreenPin !== undefined
+        ? null
+        : await this.prisma.appSetting.findUnique({
+            where: { key: "lock_screen_pin_hash" },
+          });
+    const lockScreenPinConfigured =
+      input.lockScreenPin !== undefined ? input.lockScreenPin !== null : Boolean(lockScreenSetting?.value);
 
     return {
       locationId: location.id,
@@ -907,7 +941,18 @@ export class PrismaPosRepository implements PosRepository {
       taxRateBasisPoints: location.taxRateBasisPoints,
       recoveryTtlSeconds: Number(recoverySetting?.value ?? this.config.RECOVERY_TTL_SECONDS),
       adminPinConfigured: Boolean(this.config.ADMIN_PIN_HASH || this.config.ADMIN_PIN),
+      lockScreenPinConfigured,
     };
+  }
+
+  async verifyLockScreenPin(pin: string): Promise<boolean> {
+    const setting = await this.prisma.appSetting.findUnique({
+      where: { key: "lock_screen_pin_hash" },
+    });
+    if (!setting?.value) {
+      return false;
+    }
+    return bcrypt.compare(pin, setting.value);
   }
 
   async appendAuditEvent(input: AuditEventInput): Promise<void> {

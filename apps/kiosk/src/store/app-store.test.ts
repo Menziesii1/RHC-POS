@@ -12,6 +12,7 @@ const bootstrapFixture = {
     taxRateBasisPoints: 0,
     recoveryTtlSeconds: 300,
     adminPinConfigured: true,
+    lockScreenPinConfigured: false,
   },
   status: {
     internet: "online",

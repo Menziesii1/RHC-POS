@@ -175,7 +175,20 @@ export class PosService {
   }
 
   async patchSettings(input: unknown, actorLabel: string) {
-    return this.repository.patchSettings(patchSettingsSchema.parse(input), actorLabel);
+    const parsed = patchSettingsSchema.parse(input);
+    if (parsed.lockScreenPin != null && (await this.adminAuthService.verifyPin(parsed.lockScreenPin))) {
+      throw new HttpError(400, "Lock screen PIN must be different from the admin PIN.");
+    }
+    return this.repository.patchSettings(parsed, actorLabel);
+  }
+
+  async verifyLockScreenPin(pinPayload: unknown): Promise<{ ok: true }> {
+    const { pin } = adminPinSchema.parse(pinPayload);
+    const valid = await this.repository.verifyLockScreenPin(pin);
+    if (!valid) {
+      throw new HttpError(401, "Lock screen PIN is invalid.");
+    }
+    return { ok: true };
   }
 
   async listTransactions(page: number, pageSize: number): Promise<TransactionListResponse> {

@@ -18,6 +18,7 @@ import {
   type UpsertProductInput,
   type UpsertSizeOptionInput,
 } from "@rhc-pos/shared";
+import bcrypt from "bcryptjs";
 
 import { HttpError } from "../lib/http-error.js";
 import { createOrderNumber } from "../lib/order-number.js";
@@ -38,6 +39,8 @@ function toMap<T extends { id: string }>(items: T[]) {
 }
 
 export class MemoryPosRepository implements PosRepository {
+  private lockScreenPinHash = bcrypt.hashSync("1357", 10);
+
   private bootstrap: Omit<BootstrapResponse, "status"> = {
     settings: {
       locationId: "main-location",
@@ -47,6 +50,7 @@ export class MemoryPosRepository implements PosRepository {
       taxRateBasisPoints: 0,
       recoveryTtlSeconds: 300,
       adminPinConfigured: true,
+      lockScreenPinConfigured: true,
     },
     categories: [
       { id: "drink", name: "Drink", sortOrder: 1, enabled: true },
@@ -836,6 +840,16 @@ export class MemoryPosRepository implements PosRepository {
     input: PatchSettingsInput,
     actorLabel: string,
   ): Promise<Omit<BootstrapResponse, "status">["settings"]> {
+    if (input.lockScreenPin !== undefined) {
+      if (input.lockScreenPin === null) {
+        this.lockScreenPinHash = "";
+        this.bootstrap.settings.lockScreenPinConfigured = false;
+      } else {
+        this.lockScreenPinHash = bcrypt.hashSync(input.lockScreenPin, 10);
+        this.bootstrap.settings.lockScreenPinConfigured = true;
+      }
+    }
+
     this.bootstrap.settings = {
       ...this.bootstrap.settings,
       taxRateBasisPoints: input.taxRateBasisPoints ?? this.bootstrap.settings.taxRateBasisPoints,
@@ -852,6 +866,13 @@ export class MemoryPosRepository implements PosRepository {
     });
 
     return structuredClone(this.bootstrap.settings);
+  }
+
+  async verifyLockScreenPin(pin: string): Promise<boolean> {
+    if (!this.lockScreenPinHash) {
+      return false;
+    }
+    return bcrypt.compare(pin, this.lockScreenPinHash);
   }
 
   async appendAuditEvent(input: AuditEventInput): Promise<void> {

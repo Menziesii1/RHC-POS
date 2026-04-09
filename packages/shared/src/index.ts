@@ -160,6 +160,7 @@ export const appSettingsSchema = z.object({
   taxRateBasisPoints: z.number().int().min(0).max(10000),
   recoveryTtlSeconds: z.number().int().positive(),
   adminPinConfigured: z.boolean(),
+  lockScreenPinConfigured: z.boolean(),
 });
 
 export const salesBreakdownItemSchema = z.object({
@@ -294,6 +295,7 @@ export const patchSettingsSchema = z.object({
   taxRateBasisPoints: z.number().int().min(0).max(10000).optional(),
   locationName: z.string().min(1).optional(),
   registerName: z.string().min(1).optional(),
+  lockScreenPin: z.string().min(4).max(12).nullable().optional(),
 });
 
 export type Category = z.infer<typeof categorySchema>;

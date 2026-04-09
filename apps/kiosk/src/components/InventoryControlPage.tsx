@@ -36,6 +36,7 @@ interface InventoryControlPageProps {
   onCreateFlavorCategory: (input: UpsertFlavorCategoryInput) => Promise<void>;
   onFlavorCategorySave: (categoryId: string, input: Partial<UpsertFlavorCategoryInput>) => Promise<void>;
   onFlavorCategoryDelete: (categoryId: string) => Promise<void>;
+  onLockPinSave: (lockScreenPin: string) => Promise<void>;
 }
 
 type AdminSubPage = "products" | "store" | "categories" | "sizes" | "flavors" | null;
@@ -147,12 +148,14 @@ export function InventoryControlPage({
   onCreateFlavorCategory,
   onFlavorCategorySave,
   onFlavorCategoryDelete,
+  onLockPinSave,
 }: InventoryControlPageProps) {
   const confirm = useConfirm();
   const [subPage, setSubPage] = useState<AdminSubPage>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [taxRate, setTaxRate] = useState((bootstrap.settings.taxRateBasisPoints / 100).toFixed(2));
+  const [lockScreenPin, setLockScreenPin] = useState("");
   const [productModal, setProductModal] = useState<{ mode: "create" | "edit"; productId: string | null } | null>(null);
   const [productDraft, setProductDraft] = useState<UpsertProductInput>(() => defaultProductDraft(bootstrap));
   const [productPriceStr, setProductPriceStr] = useState("0.00");
@@ -1042,8 +1045,34 @@ export function InventoryControlPage({
               >
                 Save Tax Rate
               </button>
+              <label className="grid gap-1.5 pt-2">
+                <span className="brand-kicker">Lock Screen PIN</span>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  className="brand-input"
+                  value={lockScreenPin}
+                  onChange={(e) => setLockScreenPin(e.target.value)}
+                  placeholder="Set a separate PIN"
+                />
+              </label>
+              <button
+                type="button"
+                className="touch-button"
+                onClick={() =>
+                  void handleLibraryAction(async () => {
+                    if (!lockScreenPin.trim()) {
+                      throw new Error("Enter a lock screen PIN before saving.");
+                    }
+                    await onLockPinSave(lockScreenPin.trim());
+                    setLockScreenPin("");
+                  }, "Unable to update lock screen PIN.")
+                }
+              >
+                Save Lock PIN
+              </button>
               <div className="rounded-lg bg-[var(--overlay-soft)] px-3 py-2.5 text-xs font-medium leading-5 text-[var(--text-muted)]">
-                Enabled sizes and enabled flavors are available to every product globally.
+                The lock PIN is separate from the admin PIN and is used for the kiosk lock screen.
               </div>
             </div>
           </div>
