@@ -62,14 +62,14 @@ export function CartPanel({
         aria-label="Collapse order panel"
         onClick={onCloseMobile}
         className={`pointer-events-auto absolute left-0 top-1/2 z-50 -translate-x-full -translate-y-1/2 flex items-center justify-center rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-2 py-5 shadow-lg transition-opacity duration-75 active:scale-[0.97] lg:hidden ${
-          mobileOpen ? "delay-[225ms] opacity-100" : "opacity-0 pointer-events-none"
+          mobileOpen ? "delay-150 opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
         <ChevronRight size={18} className="text-[#1be4db]" />
       </button>
 
       <section
-        className={`pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)] shadow-[0_24px_64px_rgba(0,0,0,0.42)] transition-transform duration-300 ease-out lg:translate-x-0 lg:shadow-none ${
+        className={`pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)] shadow-[0_24px_64px_rgba(0,0,0,0.42)] transition-transform duration-200 ease-out lg:translate-x-0 lg:shadow-none ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
