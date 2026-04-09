@@ -20,6 +20,8 @@ interface AppState {
   adminUnlocked: boolean;
   adminPin: string;
   draftLine: DrinkLineDraft | null;
+  theme: "dark" | "light";
+  toggleTheme: () => void;
   setBootstrap: (bootstrap: BootstrapResponse) => void;
   setCashierId: (cashierId: string) => void;
   setSelectedCategoryId: (selectedCategoryId: string) => void;
@@ -152,6 +154,13 @@ export const useAppStore = create<AppState>((set) => ({
   adminUnlocked: false,
   adminPin: "",
   draftLine: null,
+  theme: (localStorage.getItem("rhc-theme") as "dark" | "light") ?? "dark",
+  toggleTheme: () =>
+    set((state) => {
+      const next = state.theme === "dark" ? "light" : "dark";
+      localStorage.setItem("rhc-theme", next);
+      return { theme: next };
+    }),
   setBootstrap: (bootstrap) =>
     set((state) => ({
       ...reconcileCatalogState(state, bootstrap),

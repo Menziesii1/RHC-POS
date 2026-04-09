@@ -4,14 +4,67 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Theme tokens ─────────────────────────────────────────── */
+
 :root {
+  /* Brand accents */
   --brand-teal: #1be4db;
   --brand-blue: #5191e5;
-  color: #e4e6ec;
-  background: #262626;
+
+  /* Dark theme (default) */
+  --bg-base:         #262626;
+  --bg-surface:      #303030;
+  --bg-elevated:     #323232;
+  --bg-grid:         #2a2a2a;
+  --bg-grid-inner:   #383838;
+  --bg-card:         #3a3a3a;
+  --bg-card-hover:   #444444;
+
+  --text-primary:    #e4e6ec;
+  --text-muted:      rgba(228, 230, 236, 0.70);
+  --text-dimmer:     rgba(228, 230, 236, 0.52);
+  --text-dimmest:    rgba(228, 230, 236, 0.37);
+
+  --overlay-soft:    rgba(255, 255, 255, 0.04);
+  --overlay-hover:   rgba(255, 255, 255, 0.07);
+  --overlay-active:  rgba(27, 228, 219, 0.08);
+  --divider:         rgba(255, 255, 255, 0.04);
+  --rail:            rgba(255, 255, 255, 0.03);
+  --rail-active:     rgba(27, 228, 219, 0.08);
+  --stat-label:      rgba(255, 255, 255, 0.35);
+
+  color: var(--text-primary);
+  background: var(--bg-base);
   font-family: "Manrope", "Segoe UI", sans-serif;
   color-scheme: dark;
 }
+
+[data-theme="light"] {
+  --bg-base:         #ede8e2;
+  --bg-surface:      #f0ece8;
+  --bg-elevated:     #faf7f4;
+  --bg-grid:         #e5dfd8;
+  --bg-grid-inner:   #f5f1ec;
+  --bg-card:         #ffffff;
+  --bg-card-hover:   #f7f4f1;
+
+  --text-primary:    #1a120b;
+  --text-muted:      rgba(26, 18, 11, 0.65);
+  --text-dimmer:     rgba(26, 18, 11, 0.47);
+  --text-dimmest:    rgba(26, 18, 11, 0.32);
+
+  --overlay-soft:    rgba(0, 0, 0, 0.05);
+  --overlay-hover:   rgba(0, 0, 0, 0.08);
+  --overlay-active:  rgba(27, 228, 219, 0.12);
+  --divider:         rgba(0, 0, 0, 0.07);
+  --rail:            rgba(0, 0, 0, 0.03);
+  --rail-active:     rgba(27, 228, 219, 0.10);
+  --stat-label:      rgba(26, 18, 11, 0.45);
+
+  color-scheme: light;
+}
+
+/* ─── Reset ────────────────────────────────────────────────── */
 
 body {
   margin: 0;
@@ -26,11 +79,13 @@ body {
   isolation: isolate;
 }
 
+/* ─── Shell ────────────────────────────────────────────────── */
+
 .pos-app-shell {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: #262626;
+  background: var(--bg-base);
 }
 
 /* Remove ambient glow blobs */
@@ -44,14 +99,14 @@ body {
   flex-direction: column;
   overflow: hidden;
   border-radius: 14px;
-  background: #262626;
+  background: var(--bg-base);
 }
 
 .pos-view-panel {
   height: 100%;
   overflow: auto;
   border-radius: 10px;
-  background: #262626;
+  background: var(--bg-base);
 }
 
 .pos-center-card {
@@ -59,9 +114,9 @@ body {
   z-index: 1;
   width: min(92vw, 520px);
   border-radius: 14px;
-  background: #323232;
+  background: var(--bg-elevated);
   padding: 2rem;
-  color: white;
+  color: var(--text-primary);
 }
 
 .pos-spinner {
@@ -71,28 +126,32 @@ body {
     conic-gradient(from 180deg, rgba(27, 228, 219, 0) 0deg, rgba(27, 228, 219, 1) 300deg, rgba(255, 255, 255, 0.85) 360deg);
 }
 
+/* ─── Component tokens ─────────────────────────────────────── */
+
 .touch-card {
   border-radius: 14px;
-  background: #323232;
+  background: var(--bg-elevated);
 }
 
 .touch-button {
-  @apply px-4 py-3 text-left text-sm font-semibold text-white/70 transition duration-150;
+  @apply px-4 py-3 text-left text-sm font-semibold transition duration-150;
+  color: var(--text-muted);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--overlay-soft);
 }
 
 .touch-button:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--overlay-hover);
 }
 
 .touch-button:active {
-  background: rgba(27, 228, 219, 0.08);
+  background: var(--overlay-active);
 }
 
 .status-pill {
-  @apply px-2.5 py-1 text-[11px] font-semibold text-white/70;
-  background: rgba(255, 255, 255, 0.05);
+  @apply px-2.5 py-1 text-[11px] font-semibold;
+  color: var(--text-muted);
+  background: var(--overlay-soft);
   border-radius: 999px;
 }
 
@@ -106,7 +165,7 @@ body {
 
 .brand-section {
   border-radius: 10px;
-  background: #323232;
+  background: var(--bg-elevated);
 }
 
 .brand-section-title {
@@ -119,15 +178,17 @@ body {
 }
 
 .brand-input {
-  @apply px-3.5 py-3 text-sm text-white outline-none transition focus:ring-2 focus:ring-[#1be4db]/20;
+  @apply px-3.5 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#1be4db]/20;
+  color: var(--text-primary);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--overlay-soft);
 }
 
 .brand-select {
-  @apply px-3.5 py-3 text-sm text-white outline-none transition focus:ring-2 focus:ring-[#1be4db]/20;
+  @apply px-3.5 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#1be4db]/20;
+  color: var(--text-primary);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--overlay-soft);
 }
 
 .brand-select option {
@@ -145,8 +206,8 @@ body {
 }
 
 .brand-chip-soft {
-  @apply text-white/70;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  background: var(--overlay-soft);
 }
 
 .brand-chip-accent {
@@ -157,30 +218,31 @@ body {
 .brand-stat {
   @apply px-4 py-3.5;
   border-radius: 10px;
-  background: #323232;
+  background: var(--bg-elevated);
 }
 
 .brand-stat-label {
   @apply text-[0.66rem] font-bold uppercase tracking-[0.22em];
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--stat-label);
 }
 
 .brand-stat-value {
-  @apply mt-1.5 text-[1.75rem] font-extrabold text-white;
+  @apply mt-1.5 text-[1.75rem] font-extrabold;
+  color: var(--text-primary);
 }
 
 .brand-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--divider);
 }
 
 .brand-rail {
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--rail);
 }
 
 .brand-rail-active {
-  background: rgba(27, 228, 219, 0.08);
+  background: var(--rail-active);
   border-radius: 10px;
 }
 
@@ -199,6 +261,8 @@ body {
 .rounded-3xl {
   border-radius: 1.125rem !important;
 }
+
+/* ─── Admin success flash ───────────────────────────────────── */
 
 @keyframes admin-success-veil {
   0% { opacity: 0; }

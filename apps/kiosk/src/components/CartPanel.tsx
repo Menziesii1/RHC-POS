@@ -46,13 +46,13 @@ export function CartPanel({
   const allowedModifiers = selectedLine ? bootstrap.modifiers.filter((m) => m.enabled) : [];
 
   return (
-    <section className="flex w-[340px] shrink-0 flex-col overflow-hidden bg-[#303030]">
+    <section className="flex w-[340px] shrink-0 flex-col overflow-hidden bg-[var(--bg-surface)]">
       {/* Header */}
       <div className="shrink-0 px-4 pb-2 pt-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShoppingBag size={18} className="text-[#1be4db]" />
-            <h2 className="font-display text-base font-bold text-white">Order</h2>
+            <h2 className="font-display text-base font-bold text-[var(--text-primary)]">Order</h2>
           </div>
           {lines.length > 0 && (
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1be4db] text-[10px] font-bold text-[#262626]">
@@ -71,7 +71,7 @@ export function CartPanel({
           draggable={false}
         />
         {lines.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-white/37">
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-[var(--text-dimmest)]">
             <ShoppingBag size={32} strokeWidth={1.5} />
             <span className="text-sm">Tap items to start</span>
           </div>
@@ -85,7 +85,7 @@ export function CartPanel({
                 <button
                   type="button"
                   className={`w-full rounded-xl px-3 py-2.5 text-left transition ${
-                    isSelected ? "bg-[#323232]" : "hover:bg-[#323232]/50"
+                    isSelected ? "bg-[var(--bg-elevated)]" : "hover:bg-[var(--overlay-soft)]"
                   }`}
                   onClick={() => onSelectLine(line.id)}
                 >
@@ -97,12 +97,12 @@ export function CartPanel({
                             {line.quantity}x
                           </span>
                         )}
-                        <span className="truncate text-sm font-medium text-white">
+                        <span className="truncate text-sm font-medium text-[var(--text-primary)]">
                           {line.product.name}
                         </span>
                       </div>
                       {(line.sizeOption || line.modifiers.length > 0 || line.iced !== undefined) && (
-                        <div className="mt-0.5 truncate text-[11px] text-white/52">
+                        <div className="mt-0.5 truncate text-[11px] text-[var(--text-dimmer)]">
                           {[
                             line.iced ? "Iced" : "Hot",
                             line.sizeOption?.name,
@@ -111,28 +111,28 @@ export function CartPanel({
                         </div>
                       )}
                     </div>
-                    <span className="shrink-0 text-sm font-semibold text-white">
+                    <span className="shrink-0 text-sm font-semibold text-[var(--text-primary)]">
                       {formatCurrency(line.lineTotalCents)}
                     </span>
                   </div>
                 </button>
 
                 {isSelected && (
-                  <div className="mx-3 mb-1 mt-1 rounded-xl bg-[#323232] px-3 py-2.5">
+                  <div className="mx-3 mb-1 mt-1 rounded-xl bg-[var(--bg-elevated)] px-3 py-2.5">
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-white/60 hover:bg-white/10"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--overlay-soft)] text-[var(--text-muted)] hover:bg-[var(--overlay-hover)]"
                         onClick={() => onAdjustLineQuantity(line.id, -1)}
                       >
                         <Minus size={14} />
                       </button>
-                      <span className="w-6 text-center text-xs font-bold text-white/60">
+                      <span className="w-6 text-center text-xs font-bold text-[var(--text-muted)]">
                         {line.quantity}
                       </span>
                       <button
                         type="button"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-white/60 hover:bg-white/10"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--overlay-soft)] text-[var(--text-muted)] hover:bg-[var(--overlay-hover)]"
                         onClick={() => onAdjustLineQuantity(line.id, 1)}
                       >
                         <Plus size={14} />
@@ -150,7 +150,7 @@ export function CartPanel({
                     {allowedModifiers.length > 0 && (
                       <button
                         type="button"
-                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/[0.06] py-2 text-[11px] font-semibold text-white/70 transition hover:bg-white/[0.10] hover:text-white"
+                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--overlay-soft)] py-2 text-[11px] font-semibold text-[var(--text-muted)] transition hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)]"
                         onClick={() => onEditLine(line.id)}
                       >
                         <Pencil size={11} />
@@ -167,7 +167,7 @@ export function CartPanel({
 
       {paymentError && (
         <div className="px-4 py-2">
-          <div className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-medium text-red-300">
+          <div className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400">
             {paymentError}
           </div>
         </div>
@@ -177,8 +177,8 @@ export function CartPanel({
       <div className="shrink-0 px-4 py-3">
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-white/47">Total</div>
-            <div className="font-display text-2xl font-bold text-white">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-dimmer)]">Total</div>
+            <div className="font-display text-2xl font-bold text-[var(--text-primary)]">
               {formatCurrency(totalCents)}
             </div>
           </div>

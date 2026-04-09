@@ -141,17 +141,27 @@ export class StripeTerminalService implements TerminalService {
         // Reader-display sync is optional.
       }
 
-      const reader = await (this.stripe.terminal.readers as any).processPaymentIntent(readerId, {
-        payment_intent: paymentIntent.id,
-      });
+      try {
+        const reader = await (this.stripe.terminal.readers as any).processPaymentIntent(readerId, {
+          payment_intent: paymentIntent.id,
+        });
 
-      return {
-        mode: "stripe",
-        status: "pending",
-        stripePaymentIntentId: paymentIntent.id,
-        stripeReaderActionId: reader.action?.type ?? "process_payment_intent",
-        stripeReaderId: readerId,
-      };
+        return {
+          mode: "stripe",
+          status: "pending",
+          stripePaymentIntentId: paymentIntent.id,
+          stripeReaderActionId: reader.action?.type ?? "process_payment_intent",
+          stripeReaderId: readerId,
+        };
+      } catch (err) {
+        // Cancel the orphaned PI so it doesn't accumulate in the Stripe dashboard
+        await this.stripe.paymentIntents.cancel(paymentIntent.id).catch(() => undefined);
+        return {
+          mode: "stripe",
+          status: "failed",
+          failureMessage: err instanceof Error ? err.message : "Reader could not process the payment.",
+        };
+      }
     }
 
     return {

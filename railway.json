@@ -1,22 +1,23 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "infra/docker/api.railway.Dockerfile",
+    "builder": "RAILPACK",
+    "buildCommand": "if [ \"$DEPLOY_TARGET\" = kiosk ]; then npm run build:kiosk; else npm run build:api; fi",
     "watchPatterns": [
       "package.json",
       "package-lock.json",
       ".dockerignore",
       "railway.json",
       "apps/api/**",
+      "apps/kiosk/**",
       "packages/shared/**",
-      "infra/docker/api.railway.Dockerfile"
+      "infra/**"
     ]
   },
   "deploy": {
-    "preDeployCommand": "npm run prisma:deploy --workspace @rhc-pos/api",
-    "startCommand": "npm run start --workspace @rhc-pos/api",
-    "healthcheckPath": "/health",
+    "preDeployCommand": "if [ \"$DEPLOY_TARGET\" = kiosk ]; then exit 0; else npm run prisma:deploy --workspace @rhc-pos/api; fi",
+    "startCommand": "if [ \"$DEPLOY_TARGET\" = kiosk ]; then npm run preview --workspace @rhc-pos/kiosk -- --host 0.0.0.0 --port \"$PORT\"; else npm run start --workspace @rhc-pos/api; fi",
+    "healthcheckPath": "/",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10

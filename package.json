@@ -11,6 +11,8 @@
   },
   "scripts": {
     "build": "npm run build --workspace @rhc-pos/shared && npm run build --workspace @rhc-pos/api && npm run build --workspace @rhc-pos/kiosk",
+    "build:api": "npm run build --workspace @rhc-pos/shared && npm run prisma:generate --workspace @rhc-pos/api && npm run build --workspace @rhc-pos/api",
+    "build:kiosk": "npm run build --workspace @rhc-pos/shared && npm run build --workspace @rhc-pos/kiosk",
     "test": "npm run test --workspace @rhc-pos/shared && npm run test --workspace @rhc-pos/api && npm run test --workspace @rhc-pos/kiosk",
     "dev:kiosk": "npm run dev --workspace @rhc-pos/kiosk",
     "dev:api": "npm run dev --workspace @rhc-pos/api",

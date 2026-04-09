@@ -22,7 +22,7 @@ export function ActionBar({
   adminEnabled = true,
 }: ActionBarProps) {
   return (
-    <div className="shrink-0 bg-[#303030] px-3 pb-3 pt-2">
+    <div className="shrink-0 bg-[var(--bg-surface)] px-3 pb-3 pt-2">
       <div className={`grid gap-2 ${cardEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button
           type="button"
@@ -49,7 +49,7 @@ export function ActionBar({
       {cardEnabled ? (
         <button
           type="button"
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400/15 py-3.5 text-sm font-semibold text-amber-300 transition hover:bg-amber-400/20 active:scale-[0.97] disabled:opacity-30"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400/15 py-3.5 text-sm font-semibold text-amber-500 transition hover:bg-amber-400/20 active:scale-[0.97] disabled:opacity-30"
           disabled={disabled}
           onClick={onSplit}
         >
@@ -61,7 +61,7 @@ export function ActionBar({
       <div className={`mt-2 grid gap-2 ${adminEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button
           type="button"
-          className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 py-2.5 text-[11px] font-medium text-white/52 transition hover:text-white/65 disabled:opacity-30"
+          className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--overlay-soft)] py-2.5 text-[11px] font-medium text-[var(--text-dimmer)] transition hover:text-[var(--text-muted)] disabled:opacity-30"
           disabled={disabled}
           onClick={onClear}
         >
@@ -71,7 +71,7 @@ export function ActionBar({
         {adminEnabled ? (
           <button
             type="button"
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 py-2.5 text-[11px] font-medium text-white/52 transition hover:text-white/65"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--overlay-soft)] py-2.5 text-[11px] font-medium text-[var(--text-dimmer)] transition hover:text-[var(--text-muted)]"
             onClick={onAdmin}
           >
             <Settings size={13} />

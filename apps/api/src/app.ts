@@ -87,6 +87,7 @@ export async function createApp(options: CreateAppOptions) {
     reply.status(500).send({ message: "Unexpected server error." });
   });
 
+  app.get("/", async () => ({ ok: true, service: "api" }));
   registerRoutes(app, posService);
   return app;
 }

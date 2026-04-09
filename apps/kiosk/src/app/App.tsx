@@ -49,18 +49,18 @@ function SplashCard({
 
       <section className="pos-center-card">
         <div className="text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">River Hills Coffee</div>
-        <div className="mt-4 font-display text-4xl font-extrabold tracking-tight text-white">RHC POS</div>
-        <div className="mt-4 text-lg font-semibold text-white/70">{title}</div>
-        <p className="mt-3 max-w-[32rem] text-sm leading-7 text-white/57">{body}</p>
+        <div className="mt-4 font-display text-4xl font-extrabold tracking-tight text-[var(--text-primary)]">RHC POS</div>
+        <div className="mt-4 text-lg font-semibold text-[var(--text-muted)]">{title}</div>
+        <p className="mt-3 max-w-[32rem] text-sm leading-7 text-[var(--text-dimmer)]">{body}</p>
         {detail ? (
-          <div className="mt-6 rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-white/65">
+          <div className="mt-6 rounded-xl bg-[var(--overlay-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
             {detail}
           </div>
         ) : null}
         {loading ? (
           <div className="mt-8 flex items-center gap-4">
             <div className="pos-spinner h-12 w-12 animate-spin" />
-            <div className="text-sm font-medium uppercase tracking-widest text-white/52">Booting register</div>
+            <div className="text-sm font-medium uppercase tracking-widest text-[var(--text-dimmer)]">Booting register</div>
           </div>
         ) : null}
       </section>
@@ -103,6 +103,10 @@ export function App() {
       backend: store.backendOnline ? store.bootstrap.status.backend : "offline",
     };
   }, [store.backendOnline, store.bootstrap, store.internetOnline]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", store.theme);
+  }, [store.theme]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -618,7 +622,7 @@ export function App() {
 
         {store.view === "register" ? (
           <div className="flex min-h-0 flex-1 p-3 lg:p-4">
-            <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl bg-[#303030]">
+            <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl bg-[var(--bg-surface)]">
               <ProductGrid
                 bootstrap={store.bootstrap}
                 selectedCategoryId={store.selectedCategoryId}

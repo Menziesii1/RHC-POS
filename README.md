@@ -36,7 +36,7 @@ RHC POS is a kiosk-first, in-store point of sale system for a church coffee shop
 ## Production Notes
 
 - Card payments are strictly `card_present` via Stripe Terminal. No online checkout is supported.
-- The kiosk frontend is intended to be deployed locally on the register machine while the API and Postgres live in Railway.
+- The kiosk frontend can run locally on the register machine or be deployed as a separate Railway service, depending on the deployment target.
 - Stripe Terminal smart-reader support is wired around the server-driven flow. The API remains the source of truth for payment state.
-- Railway deployment for the API is checked in via [railway.json](E:/Code/RHC POS/railway.json) and [infra/docker/api.railway.Dockerfile](E:/Code/RHC POS/infra/docker/api.railway.Dockerfile).
+- Railway deployment for the API and kiosk is checked in via [railway.json](E:/Code/RHC POS/railway.json).
 - Production database changes are applied with Prisma migrations from [apps/api/prisma/migrations](E:/Code/RHC POS/apps/api/prisma/migrations). Catalog/bootstrap restore is manual via `npm run prisma:restore`.

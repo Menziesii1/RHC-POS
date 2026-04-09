@@ -40,15 +40,15 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#2a2a2a]">
+    <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--bg-grid)]">
       {/* Category tabs */}
-      <div className="shrink-0 flex overflow-x-auto bg-[#2a2a2a] px-4 pt-4 gap-1">
+      <div className="shrink-0 flex overflow-x-auto bg-[var(--bg-grid)] px-4 pt-4 gap-1">
         <button
           type="button"
           className={`shrink-0 rounded-t-xl px-5 py-3 text-[11px] font-bold uppercase tracking-widest transition ${
             selectedCategoryId === "all"
-              ? "bg-[#383838] text-[#1be4db]"
-              : "text-white/52 hover:text-white/65"
+              ? "bg-[var(--bg-grid-inner)] text-[#1be4db]"
+              : "text-[var(--text-dimmer)] hover:text-[var(--text-muted)]"
           }`}
           onClick={() => onSelectCategory("all")}
         >
@@ -60,8 +60,8 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
             type="button"
             className={`shrink-0 rounded-t-xl px-5 py-3 text-[11px] font-bold uppercase tracking-widest transition ${
               selectedCategoryId === category.id
-                ? "bg-[#383838] text-[#1be4db]"
-                : "text-white/52 hover:text-white/65"
+                ? "bg-[var(--bg-grid-inner)] text-[#1be4db]"
+                : "text-[var(--text-dimmer)] hover:text-[var(--text-muted)]"
             }`}
             onClick={() => onSelectCategory(category.id)}
           >
@@ -71,7 +71,7 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
       </div>
 
       {/* Product grid — logo watermark behind cards */}
-      <div className="relative flex-1 overflow-y-auto bg-[#383838] p-4">
+      <div className="relative flex-1 overflow-y-auto bg-[var(--bg-grid-inner)] p-4">
         {/* Watermark */}
         <img
           src={logoUrl}
@@ -81,7 +81,7 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
         />
 
         {visibleProducts.length === 0 ? (
-          <div className="relative flex h-full flex-col items-center justify-center gap-2 text-white/42">
+          <div className="relative flex h-full flex-col items-center justify-center gap-2 text-[var(--text-dimmest)]">
             <Coffee size={36} strokeWidth={1.5} />
             <span className="text-sm">No items here</span>
           </div>
@@ -96,11 +96,11 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
                 <button
                   key={product.id}
                   type="button"
-                  className="group flex flex-col overflow-hidden rounded-xl bg-[#3a3a3a] text-left transition active:scale-[0.97] hover:bg-[#444444]"
+                  className="group flex flex-col overflow-hidden rounded-xl bg-[var(--bg-card)] text-left transition active:scale-[0.97] hover:bg-[var(--bg-card-hover)]"
                   onClick={() => onSelectProduct(product.id)}
                 >
                   {/* Photo or icon area */}
-                  <div className="flex h-44 w-full items-center justify-center overflow-hidden bg-[#303030]">
+                  <div className="flex h-44 w-full items-center justify-center overflow-hidden bg-[var(--bg-surface)]">
                     {photo ? (
                       <img
                         src={photo.src}
@@ -116,8 +116,8 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
                     )}
                   </div>
                   {/* Text area */}
-                  <div className="px-3 py-3 text-center bg-[#f0f0f0]">
-                    <div className="text-sm font-semibold leading-tight text-[#1a1a1a]">{product.name}</div>
+                  <div className="px-3 py-3 text-center bg-[var(--bg-card)]">
+                    <div className="text-sm font-semibold leading-tight text-[var(--text-primary)]">{product.name}</div>
                     <div className="mt-1 text-base font-bold text-[#0a8f89]">{formatCurrency(product.priceCents)}</div>
                   </div>
                 </button>

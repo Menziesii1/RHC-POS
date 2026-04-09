@@ -1,7 +1,8 @@
-import { Wifi, WifiOff, Server, ServerOff, Smartphone, CreditCard, Clock } from "lucide-react";
+import { Wifi, WifiOff, Server, ServerOff, Smartphone, CreditCard, Clock, Sun, Moon } from "lucide-react";
 import type { BootstrapResponse, RegisterStatus } from "@rhc-pos/shared";
 
 import { BrandBadge } from "./BrandBadge";
+import { useAppStore } from "../store/app-store";
 
 const POSITIVE_VALUES = ["online", "ready", "connected"];
 
@@ -12,6 +13,8 @@ interface TopStatusBarProps {
 }
 
 export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps) {
+  const { theme, toggleTheme } = useAppStore();
+
   const statusItems: Array<{
     icon: typeof Wifi;
     offIcon?: typeof WifiOff;
@@ -25,16 +28,16 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
   ];
 
   return (
-    <header className="relative z-20 flex h-14 shrink-0 items-center gap-3 bg-[#303030] px-4 text-white">
+    <header className="relative z-20 flex h-14 shrink-0 items-center gap-3 bg-[var(--bg-surface)] px-4 text-[var(--text-primary)]">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl p-1">
         <BrandBadge />
       </div>
 
       <div className="min-w-0">
-        <div className="truncate text-sm font-bold text-white">
+        <div className="truncate text-sm font-bold text-[var(--text-primary)]">
           {bootstrap.settings.locationName}
         </div>
-        <div className="truncate text-[10px] font-medium uppercase tracking-wider text-white/52">
+        <div className="truncate text-[10px] font-medium uppercase tracking-wider text-[var(--text-dimmer)]">
           {bootstrap.settings.registerName}
         </div>
       </div>
@@ -42,9 +45,19 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
       <div className="flex-1" />
 
       <div className="hidden items-center gap-1.5 md:flex">
-        <Clock size={13} className="text-white/47" />
-        <span className="text-sm font-medium text-white/60">{timeLabel}</span>
+        <Clock size={13} className="text-[var(--text-dimmest)]" />
+        <span className="text-sm font-medium text-[var(--text-muted)]">{timeLabel}</span>
       </div>
+
+      {/* Theme toggle */}
+      <button
+        type="button"
+        aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+        onClick={toggleTheme}
+        className="flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-[var(--overlay-hover)] text-[var(--text-dimmer)] hover:text-[var(--text-primary)]"
+      >
+        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
 
       {/* Status dots */}
       <div className="flex items-center gap-2">
