@@ -135,6 +135,7 @@ export function App() {
   useEffect(() => {
     let cancelled = false;
     let timeoutId: number;
+    let retryDelay = 5_000;
 
     const scheduleNext = (delayMs: number) => {
       timeoutId = window.setTimeout(() => void fetchBootstrap(), delayMs);
@@ -148,7 +149,8 @@ export function App() {
         state.setBootstrap(bootstrap);
         state.setBackendOnline(true);
         setBootstrapError(null);
-        scheduleNext(15000);
+        retryDelay = 5_000;
+        scheduleNext(30_000);
       } catch (error) {
         if (cancelled) return;
         useAppStore.getState().setBackendOnline(false);
@@ -157,8 +159,8 @@ export function App() {
             ? error.message
             : `Unable to reach the API at ${API_BASE_URL}.`,
         );
-        // Back off to 5 s when the API is unreachable to avoid flooding
-        scheduleNext(5000);
+        scheduleNext(retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 60_000);
       } finally {
         if (!cancelled) setLoading(false);
       }
