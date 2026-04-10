@@ -9,6 +9,7 @@ const configSchema = z.object({
   REMOTE_API_BASE_URL: z.string().url(),
   SQLITE_PATH: z.string().default("./data/kiosk-sync.sqlite"),
   SYNC_INTERVAL_MS: z.coerce.number().int().positive().default(15000),
+  BOOTSTRAP_CACHE_TTL_MS: z.coerce.number().int().positive().default(60000),
 });
 
 export type SyncConfig = z.infer<typeof configSchema>;

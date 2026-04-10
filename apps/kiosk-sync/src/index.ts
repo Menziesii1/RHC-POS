@@ -11,7 +11,7 @@ const config = loadConfig();
 mkdirSync(dirname(config.SQLITE_PATH), { recursive: true });
 
 const store = await SqliteStore.create(config.SQLITE_PATH);
-const service = new KioskSyncService(store, createRemoteApiClient(config));
+const service = new KioskSyncService(store, createRemoteApiClient(config), config.BOOTSTRAP_CACHE_TTL_MS);
 
 const app = await createApp({
   config,

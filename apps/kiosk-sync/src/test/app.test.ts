@@ -13,6 +13,7 @@ const config: SyncConfig = {
   REMOTE_API_BASE_URL: "https://example.test/v1",
   SQLITE_PATH: ":memory:",
   SYNC_INTERVAL_MS: 15000,
+  BOOTSTRAP_CACHE_TTL_MS: 60000,
 };
 
 const bootstrapFixture = {
@@ -24,6 +25,7 @@ const bootstrapFixture = {
     taxRateBasisPoints: 0,
     recoveryTtlSeconds: 300,
     adminPinConfigured: true,
+    lockScreenPinConfigured: true,
   },
   status: {
     internet: "online" as const,

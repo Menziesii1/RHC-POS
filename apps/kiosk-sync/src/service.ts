@@ -39,20 +39,38 @@ export class KioskSyncService implements LocalSyncService {
   constructor(
     private readonly store: SqliteStore,
     private readonly remoteClient: RemoteApiClient,
-  ) {}
+    private readonly bootstrapCacheTtlMs = 60000,
+  ) {
+    const cached = this.store.getBootstrapCache();
+    this.lastBootstrapSyncAt = cached?.updatedAt ?? null;
+  }
+
+  private isBootstrapCacheFresh(updatedAt: string): boolean {
+    return Date.now() - new Date(updatedAt).getTime() < this.bootstrapCacheTtlMs;
+  }
+
+  private async fetchAndCacheBootstrap(): Promise<BootstrapResponse> {
+    const remote = await this.remoteClient.fetchBootstrap();
+    const normalized = normalizeBootstrapForLocal(remote, true);
+    this.lastBootstrapSyncAt = new Date().toISOString();
+    this.remoteOnline = true;
+    this.store.saveBootstrapCache(normalized, this.lastBootstrapSyncAt);
+    void this.syncPendingOrders();
+    return normalized;
+  }
 
   async getBootstrap(): Promise<BootstrapResponse> {
-    try {
-      const remote = await this.remoteClient.fetchBootstrap();
-      const normalized = normalizeBootstrapForLocal(remote, true);
-      this.lastBootstrapSyncAt = new Date().toISOString();
+    const cached = this.store.getBootstrapCache();
+    if (cached && this.isBootstrapCacheFresh(cached.updatedAt)) {
+      this.lastBootstrapSyncAt = cached.updatedAt;
       this.remoteOnline = true;
-      this.store.saveBootstrapCache(normalized, this.lastBootstrapSyncAt);
-      void this.syncPendingOrders();
-      return normalized;
+      return normalizeBootstrapForLocal(cached.payload, true);
+    }
+
+    try {
+      return await this.fetchAndCacheBootstrap();
     } catch {
       this.remoteOnline = false;
-      const cached = this.store.getBootstrapCache();
       if (!cached) {
         throw new HttpError(503, "The kiosk has no cached catalog yet and cannot reach Railway.");
       }
