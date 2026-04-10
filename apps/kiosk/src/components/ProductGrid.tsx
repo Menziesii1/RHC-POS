@@ -42,10 +42,10 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--bg-grid)]">
       {/* Category tabs */}
-      <div className="shrink-0 flex overflow-x-auto bg-[var(--bg-grid)] px-4 pt-4 gap-1">
+      <div className="shrink-0 flex overflow-x-auto bg-[var(--bg-grid)] px-4 pt-2 gap-1">
         <button
           type="button"
-          className={`shrink-0 rounded-t-xl px-5 py-3 text-[11px] font-bold uppercase tracking-widest transition ${
+          className={`shrink-0 rounded-t-xl px-5 py-2 text-[11px] font-bold uppercase tracking-widest transition ${
             selectedCategoryId === "all"
               ? "bg-[var(--bg-grid-inner)] text-[#1be4db]"
               : "text-[var(--text-dimmer)] hover:text-[var(--text-muted)]"
@@ -58,7 +58,7 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
           <button
             key={category.id}
             type="button"
-            className={`shrink-0 rounded-t-xl px-5 py-3 text-[11px] font-bold uppercase tracking-widest transition ${
+            className={`shrink-0 rounded-t-xl px-4 py-3 text-[11px] font-bold uppercase tracking-widest transition ${
               selectedCategoryId === category.id
                 ? "bg-[var(--bg-grid-inner)] text-[#1be4db]"
                 : "text-[var(--text-dimmer)] hover:text-[var(--text-muted)]"
@@ -96,29 +96,29 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
                 <button
                   key={product.id}
                   type="button"
-                  className="group flex flex-col overflow-hidden rounded-xl bg-[var(--bg-card)] text-left transition active:scale-[0.97] hover:bg-[var(--bg-card-hover)]"
+                  className="group flex flex-col overflow-hidden rounded-xl bg-[var(--bg-card)] text-left shadow-md transition active:scale-[0.97] hover:bg-[var(--bg-card-hover)]"
                   onClick={() => onSelectProduct(product.id)}
                 >
                   {/* Photo or icon area */}
-                  <div className="flex h-44 w-full items-center justify-center overflow-hidden bg-[var(--bg-surface)]">
+                  <div className="flex h-32 w-full items-center justify-center overflow-hidden bg-[var(--bg-surface)]">
                     {photo ? (
                       <img
                         src={photo.src}
                         alt={product.name}
-                        className="h-full w-full object-contain p-4 transition group-hover:scale-105 drop-shadow-lg"
+                        className="h-full w-full object-contain p-3 transition group-hover:scale-105 drop-shadow-lg"
                         style={photo.scale !== 1 ? { transform: `scale(${photo.scale})` } : undefined}
                         draggable={false}
                       />
                     ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1be4db]/10 transition group-hover:bg-[#1be4db]/15">
-                        <ItemIcon size={32} className="text-[#1be4db]" />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1be4db]/10 transition group-hover:bg-[#1be4db]/15">
+                        <ItemIcon size={24} className="text-[#1be4db]" />
                       </div>
                     )}
                   </div>
                   {/* Text area */}
-                  <div className="px-3 py-3 text-center bg-[var(--bg-card)]">
+                  <div className="px-2.5 py-2 text-center bg-[var(--bg-card)]">
                     <div className="text-sm font-semibold leading-tight text-[var(--text-primary)]">{product.name}</div>
-                    <div className="mt-1 text-base font-bold text-[#0a8f89]">{formatCurrency(product.priceCents)}</div>
+                    <div className="mt-0.5 text-sm font-bold text-[#0a8f89]">{formatCurrency(product.priceCents)}</div>
                   </div>
                 </button>
               );

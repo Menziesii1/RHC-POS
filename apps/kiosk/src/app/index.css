@@ -7,7 +7,7 @@
 /* ─── Theme tokens ─────────────────────────────────────────── */
 
 :root {
-  font-size: 17px;
+  font-size: 14px;
 
   /* Brand accents */
   --brand-teal: #1be4db;
@@ -65,10 +65,10 @@
   --bg-card:         #ffffff;
   --bg-card-hover:   #f7f4f1;
 
-  --text-primary:    #1a120b;
-  --text-muted:      rgba(26, 18, 11, 0.65);
-  --text-dimmer:     rgba(26, 18, 11, 0.47);
-  --text-dimmest:    rgba(26, 18, 11, 0.32);
+  --text-primary:    #0e0b07;
+  --text-muted:      rgba(14, 11, 7, 0.78);
+  --text-dimmer:     rgba(14, 11, 7, 0.58);
+  --text-dimmest:    rgba(14, 11, 7, 0.42);
 
   --overlay-soft:    rgba(0, 0, 0, 0.05);
   --overlay-hover:   rgba(0, 0, 0, 0.08);
@@ -83,15 +83,15 @@
   --selector-active-text: #0a6a65;
   --selector-active-sub:  #0a8f89;
   --selector-inactive-bg: rgba(0, 0, 0, 0.05);
-  --selector-inactive-text: rgba(26, 18, 11, 0.65);
-  --selector-inactive-sub:  rgba(26, 18, 11, 0.50);
+  --selector-inactive-text: rgba(14, 11, 7, 0.78);
+  --selector-inactive-sub:  rgba(14, 11, 7, 0.60);
   --selected-flavor-chip-bg: rgba(26, 18, 11, 0.16);
   --selected-flavor-chip-text: #1a120b;
 
   /* Inset surface */
   --inset-surface: #faf7f4;
-  --inset-text:    #1a120b;
-  --inset-muted:   rgba(26, 18, 11, 0.50);
+  --inset-text:    #0e0b07;
+  --inset-muted:   rgba(14, 11, 7, 0.62);
 
   color-scheme: light;
 }

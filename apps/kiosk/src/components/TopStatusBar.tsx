@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Wifi, WifiOff, Server, ServerOff, Smartphone, CreditCard, Clock, Sun, Moon, History } from "lucide-react";
+import { Wifi, WifiOff, Server, ServerOff, Smartphone, CreditCard, Clock, Sun, Moon, History, Lock } from "lucide-react";
 import type { BootstrapResponse, RegisterStatus } from "@rhc-pos/shared";
 
 import { BrandBadge } from "./BrandBadge";
@@ -12,9 +12,10 @@ interface TopStatusBarProps {
   bootstrap: BootstrapResponse;
   status: RegisterStatus;
   timeLabel: string;
+  onLock: () => void;
 }
 
-export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps) {
+export function TopStatusBar({ bootstrap, status, timeLabel, onLock }: TopStatusBarProps) {
   const { theme, toggleTheme } = useAppStore();
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -66,6 +67,15 @@ export function TopStatusBar({ bootstrap, status, timeLabel }: TopStatusBarProps
       >
         <History size={14} />
         <span className="hidden sm:inline">Order History</span>
+        </button>
+
+      <button
+        type="button"
+        aria-label="Lock kiosk"
+        onClick={onLock}
+        className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-[0_6px_14px_rgba(0,0,0,0.12)]"
+      >
+        <Lock size={18} strokeWidth={2.8} />
       </button>
 
       {/* Theme toggle */}

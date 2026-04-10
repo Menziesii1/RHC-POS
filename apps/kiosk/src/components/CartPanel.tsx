@@ -1,5 +1,7 @@
 import { formatCurrency, type BootstrapResponse } from "@rhc-pos/shared";
-import { ChevronRight, Minus, Plus, ShoppingBag, Trash2, Pencil } from "lucide-react";
+import { ChevronRight, ShoppingBag, Trash2, Pencil, Settings2, X } from "lucide-react";
+
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import coloredLogoUrl from "../../assets/River Hills Logo without text Colored.svg?url";
@@ -49,19 +51,19 @@ export function CartPanel({
   footer,
 }: CartPanelProps) {
   const { theme } = useAppStore();
-  const selectedLine = lines.find((line) => line.id === selectedLineId) ?? null;
-  const allowedModifiers = selectedLine ? bootstrap.modifiers.filter((m) => m.enabled) : [];
+  const [editingLineId, setEditingLineId] = useState<string | null>(null);
+  const editingLine = lines.find((l) => l.id === editingLineId) ?? null;
+  const allowedModifiers = editingLine ? bootstrap.modifiers.filter((m) => m.enabled) : [];
   const logoUrl = theme === "light" ? blackLogoUrl : coloredLogoUrl;
 
   return (
-    <div className={`fixed right-0 top-14 z-40 h-[calc(100dvh-3.5rem)] w-[min(88vw,360px)] lg:static lg:h-full lg:w-[340px] lg:shrink-0 ${mobileOpen ? "" : "pointer-events-none"}`}>
+    <div className={`fixed right-0 top-14 z-40 h-[calc(100dvh-3.5rem)] w-[min(88vw,220px)] min-[480px]:static min-[480px]:h-full min-[480px]:w-[220px] min-[480px]:shrink-0 ${mobileOpen ? "" : "pointer-events-none"}`}>
 
-      {/* Left-side collapse tab — fades in after drawer slide completes */}
       <button
         type="button"
         aria-label="Collapse order panel"
         onClick={onCloseMobile}
-        className={`pointer-events-auto absolute left-0 top-1/2 z-50 -translate-x-full -translate-y-1/2 flex items-center justify-center rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-2 py-5 shadow-lg transition-opacity duration-75 active:scale-[0.97] lg:hidden ${
+        className={`pointer-events-auto absolute left-0 top-1/2 z-50 -translate-x-full -translate-y-1/2 flex items-center justify-center rounded-l-xl border border-white/10 border-r-0 bg-[var(--bg-elevated)] px-2 py-5 shadow-lg transition-opacity duration-75 active:scale-[0.97] min-[480px]:hidden ${
           mobileOpen ? "delay-150 opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
@@ -69,12 +71,12 @@ export function CartPanel({
       </button>
 
       <section
-        className={`pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)] shadow-[0_24px_64px_rgba(0,0,0,0.42)] transition-transform duration-200 ease-out lg:translate-x-0 lg:shadow-none ${
+        className={`pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-[var(--bg-card)] shadow-[0_24px_64px_rgba(0,0,0,0.42)] transition-transform duration-200 ease-out min-[480px]:translate-x-0 min-[480px]:shadow-none ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Header */}
-        <div className="shrink-0 px-4 pb-2 pt-5">
+        <div className="shrink-0 border-b border-[var(--divider)] px-4 pb-2 pt-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingBag size={18} className="text-[#1be4db]" />
@@ -104,93 +106,85 @@ export function CartPanel({
           ) : null}
 
           <div className="space-y-1">
-            {lines.map((line) => {
-              const isSelected = selectedLineId === line.id;
-              return (
-                <div key={line.id}>
-                  <button
-                    type="button"
-                    className={`w-full rounded-xl px-3 py-2.5 text-left transition ${
-                      isSelected ? "bg-[var(--bg-elevated)]" : "hover:bg-[var(--overlay-soft)]"
-                    }`}
-                    onClick={() => onSelectLine(line.id)}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          {line.quantity > 1 && (
-                            <span className="shrink-0 text-xs font-bold text-[#1be4db]">
-                              {line.quantity}x
-                            </span>
-                          )}
-                          <span className="truncate text-sm font-medium text-[var(--text-primary)]">
-                            {line.product.name}
-                          </span>
-                        </div>
-                        {(line.sizeOption || line.modifiers.length > 0 || line.iced !== undefined) && (
-                          <div className="mt-0.5 truncate text-[11px] text-[var(--text-dimmer)]">
-                            {[
-                              line.iced ? "Iced" : "Hot",
-                              line.sizeOption?.name,
-                              ...line.modifiers.map((m) => m.name),
-                            ]
-                              .filter(Boolean)
-                              .join(" \u00b7 ")}
-                          </div>
-                        )}
-                      </div>
-                      <span className="shrink-0 text-sm font-semibold text-[var(--text-primary)]">
-                        {formatCurrency(line.lineTotalCents)}
-                      </span>
-                    </div>
-                  </button>
-
-                  {isSelected && (
-                    <div className="mx-3 mb-1 mt-1 rounded-xl bg-[var(--bg-elevated)] px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--overlay-soft)] text-[var(--text-muted)] hover:bg-[var(--overlay-hover)]"
-                          onClick={() => onAdjustLineQuantity(line.id, -1)}
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="w-6 text-center text-xs font-bold text-[var(--text-muted)]">
-                          {line.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--overlay-soft)] text-[var(--text-muted)] hover:bg-[var(--overlay-hover)]"
-                          onClick={() => onAdjustLineQuantity(line.id, 1)}
-                        >
-                          <Plus size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="ml-auto flex items-center gap-1 rounded-lg bg-red-500/10 px-2 py-1.5 text-[10px] font-semibold text-red-400 hover:bg-red-500/15"
-                          onClick={() => onRemoveLine(line.id)}
-                        >
-                          <Trash2 size={11} />
-                          Remove
-                        </button>
-                      </div>
-
-                      {allowedModifiers.length > 0 && (
-                        <button
-                          type="button"
-                          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--overlay-soft)] py-2 text-[11px] font-semibold text-[var(--text-muted)] transition hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)]"
-                          onClick={() => onEditLine(line.id)}
-                        >
-                          <Pencil size={11} />
-                          Edit Drink
-                        </button>
-                      )}
+            {lines.map((line) => (
+              <div key={line.id} className="flex items-start gap-1.5 px-2 py-2">
+                {/* Left: name + subtitle */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    {line.quantity > 1 && (
+                      <span className="shrink-0 text-xs font-bold text-[#1be4db]">{line.quantity}x</span>
+                    )}
+                    <span className="truncate text-sm font-medium text-[var(--text-primary)]">
+                      {line.product.name}
+                    </span>
+                  </div>
+                  {(line.sizeOption || line.modifiers.length > 0 || line.iced !== undefined) && (
+                    <div className="mt-0.5 truncate text-[11px] text-[var(--text-dimmer)]">
+                      {[line.iced ? "Iced" : "Hot", line.sizeOption?.name, ...line.modifiers.map((m) => m.name)]
+                        .filter(Boolean)
+                        .join(" \u00b7 ")}
                     </div>
                   )}
                 </div>
-              );
-            })}
+                {/* Right: price + edit icon */}
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">
+                    {formatCurrency(line.lineTotalCents)}
+                  </span>
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--overlay-soft)] text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-muted)]"
+                    onClick={() => setEditingLineId(line.id)}
+                  >
+                    <Settings2 size={11} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
+
+          {/* Line edit modal */}
+          {editingLine && (
+            <>
+              <div className="absolute inset-0 z-10 bg-black/30" onClick={() => setEditingLineId(null)} />
+              <div className="absolute inset-x-3 top-1/2 z-20 -translate-y-1/2 overflow-hidden rounded-2xl bg-[var(--bg-card)] shadow-2xl">
+                <div className="flex items-start justify-between gap-2 border-b border-[var(--divider)] px-4 py-3">
+                  <div>
+                    <div className="text-sm font-semibold text-[var(--text-primary)]">{editingLine.product.name}</div>
+                    <div className="text-xs text-[var(--text-dimmer)]">
+                      {[editingLine.iced ? "Iced" : "Hot", editingLine.sizeOption?.name, ...editingLine.modifiers.map((m) => m.name)]
+                        .filter(Boolean).join(" \u00b7 ")}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--overlay-soft)] text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)]"
+                    onClick={() => setEditingLineId(null)}
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+                <div className="p-3 space-y-2">
+                  {allowedModifiers.length > 0 && (
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--overlay-soft)] py-2 text-xs font-semibold text-[var(--text-muted)] hover:bg-[var(--overlay-hover)]"
+                      onClick={() => { setEditingLineId(null); onEditLine(editingLine.id); }}
+                    >
+                      <Pencil size={11} /> Edit Drink
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-red-500/10 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/15"
+                    onClick={() => { onRemoveLine(editingLine.id); setEditingLineId(null); }}
+                  >
+                    <Trash2 size={11} /> Remove
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {paymentError && (
@@ -202,16 +196,16 @@ export function CartPanel({
         )}
 
         {/* Total */}
-        <div className="shrink-0 px-4 py-3">
-          <div className="flex items-end justify-between">
+        <div className="shrink-0 border-t border-[var(--divider)] px-4 py-1.5">
+          <div className="flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-dimmer)]">Total</div>
-              <div className="font-display text-2xl font-bold text-[var(--text-primary)]">
+              <div className="text-[9px] font-semibold uppercase tracking-widest text-[var(--text-dimmer)]">Total</div>
+              <div className="font-display text-lg font-bold text-[var(--text-primary)]">
                 {formatCurrency(totalCents)}
               </div>
             </div>
             {lines.length > 0 && (
-              <div className="text-xs text-[#1be4db]">
+              <div className="text-[11px] text-[#1be4db]">
                 {lines.reduce((sum, l) => sum + l.quantity, 0)} items
               </div>
             )}
@@ -222,4 +216,5 @@ export function CartPanel({
       </section>
     </div>
   );
+
 }

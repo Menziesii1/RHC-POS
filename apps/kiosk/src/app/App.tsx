@@ -1,7 +1,7 @@
 import { type AnalyticsRangeResponse, type DraftOrder, type RegisterStatus, type SummaryResponse } from "@rhc-pos/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
-
 import { ShoppingBag } from "lucide-react";
+
 import { AppLockScreen } from "../components/AppLockScreen";
 import { ActionBar } from "../components/ActionBar";
 import { AdminPinDialog } from "../components/AdminPinDialog";
@@ -83,7 +83,10 @@ export function App() {
   const [splitCardCents, setSplitCardCents] = useState<number | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [appLocked, setAppLocked] = useState(true);
+  const [lockOverlayVisible, setLockOverlayVisible] = useState(true);
+  const [lockOverlayDropping, setLockOverlayDropping] = useState(false);
   const [lockAdminPromptOpen, setLockAdminPromptOpen] = useState(false);
+  const lockDropTimerRef = useRef<number | null>(null);
   const hydratedRef = useRef(false);
 
   const cartView = useMemo(
@@ -119,15 +122,15 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const handleOnline = () => store.setInternetOnline(true);
-    const handleOffline = () => store.setInternetOnline(false);
+    const handleOnline = () => useAppStore.getState().setInternetOnline(true);
+    const handleOffline = () => useAppStore.getState().setInternetOnline(false);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [store]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,13 +144,14 @@ export function App() {
       try {
         const bootstrap = await api.getBootstrap();
         if (cancelled) return;
-        store.setBootstrap(bootstrap);
-        store.setBackendOnline(true);
+        const state = useAppStore.getState();
+        state.setBootstrap(bootstrap);
+        state.setBackendOnline(true);
         setBootstrapError(null);
         scheduleNext(15000);
       } catch (error) {
         if (cancelled) return;
-        store.setBackendOnline(false);
+        useAppStore.getState().setBackendOnline(false);
         setBootstrapError(
           error instanceof Error
             ? error.message
@@ -165,7 +169,7 @@ export function App() {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [store]);
+  }, []);
 
   useEffect(() => {
     if (!store.bootstrap || hydratedRef.current) {
@@ -174,7 +178,7 @@ export function App() {
 
     const persisted = loadPersistedState(store.bootstrap.settings.recoveryTtlSeconds);
     if (persisted) {
-      store.restorePersisted({
+      useAppStore.getState().restorePersisted({
         cartLines: persisted.cartLines,
         selectedCategoryId: persisted.selectedCategoryId || "all",
         pendingTransaction: persisted.pendingTransaction,
@@ -182,7 +186,7 @@ export function App() {
       });
     }
     hydratedRef.current = true;
-  }, [store, store.bootstrap]);
+  }, [store.bootstrap]);
 
   useEffect(() => {
     if (!store.bootstrap || !hydratedRef.current) {
@@ -205,7 +209,8 @@ export function App() {
   ]);
 
   useEffect(() => {
-    if (!store.pendingTransaction?.orderId) {
+    const orderId = store.pendingTransaction?.orderId;
+    if (!orderId) {
       return;
     }
 
@@ -213,23 +218,24 @@ export function App() {
 
     const reconcile = async () => {
       try {
-        const order = await api.getOrder(store.pendingTransaction!.orderId);
+        const order = await api.getOrder(orderId);
         if (cancelled) {
           return;
         }
-        store.setPendingOrder(order);
+        const state = useAppStore.getState();
+        state.setPendingOrder(order);
         if (order.status === "paid") {
           setSplitCardCents(null);
-          store.markSuccess(order);
+          state.markSuccess(order);
           clearPersistedState();
         } else if (order.payment.status === "failed" || order.payment.status === "canceled") {
           setSplitCardCents(null);
-          store.setPaymentError(order.payment.failureMessage ?? "Card payment did not complete.");
-          store.setOverlay("card");
+          state.setPaymentError(order.payment.failureMessage ?? "Card payment did not complete.");
+          state.setOverlay("card");
         }
       } catch {
         if (!cancelled) {
-          store.setPaymentError("Unable to reconcile the pending payment right now.");
+          useAppStore.getState().setPaymentError("Unable to reconcile the pending payment right now.");
         }
       }
     };
@@ -240,7 +246,7 @@ export function App() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [store.pendingTransaction, store]);
+  }, [store.pendingTransaction?.orderId]);
 
   useEffect(() => {
     if (store.view !== "register") {
@@ -260,6 +266,14 @@ export function App() {
 
     return () => window.clearTimeout(timeout);
   }, [store.overlay]);
+
+  useEffect(() => {
+    return () => {
+      if (lockDropTimerRef.current !== null) {
+        window.clearTimeout(lockDropTimerRef.current);
+      }
+    };
+  }, []);
 
   const mutateCart = (callback: () => void) => {
     if (store.pendingOrder && store.pendingOrder.status !== "paid") {
@@ -491,6 +505,7 @@ export function App() {
     setAdminError(null);
     store.unlockAdmin(pin);
     setAppLocked(false);
+    setLockOverlayVisible(false);
     setMobileCartOpen(false);
     setLockAdminPromptOpen(false);
 
@@ -617,56 +632,74 @@ export function App() {
     await api.verifyLockPin(pin);
   };
 
-  if (appLocked) {
-    return (
-      <>
-        <AppLockScreen
-          onUnlock={handleUnlockApp}
-          onUnlocked={() => {
-            setAppLocked(false);
-            setMobileCartOpen(false);
-            store.setView("register");
-          }}
-          onOpenAdmin={() => {
-            setAdminError(null);
-            setLockAdminPromptOpen(true);
-          }}
-        />
-        {lockAdminPromptOpen ? (
-          <AdminPinDialog
-            onClose={() => {
-              setAdminError(null);
-              setLockAdminPromptOpen(false);
-            }}
-            onSubmit={handleAdminSubmit}
-            error={adminError}
-          />
-        ) : null}
-      </>
-    );
-  }
+  const handleLockApp = () => {
+    setLockAdminPromptOpen(false);
+    setAdminError(null);
+    setMobileCartOpen(false);
+    store.setOverlay("none");
+    store.setView("register");
+    setAppLocked(true);
+    setLockOverlayVisible(true);
+    setLockOverlayDropping(true);
+    if (lockDropTimerRef.current !== null) {
+      window.clearTimeout(lockDropTimerRef.current);
+    }
+    lockDropTimerRef.current = window.setTimeout(() => {
+      setLockOverlayDropping(false);
+    }, 20);
+  };
 
-  if (loading && !store.bootstrap) {
-    return (
-      <SplashCard
-        title="Loading register"
-        body="Syncing products, pricing, and register status so the kiosk starts from a clean operational state."
-        loading
+  const lockOverlay = lockOverlayVisible ? (
+    <div
+      className={`fixed inset-0 z-[50] transition-[transform,opacity,box-shadow] duration-[420ms] ease-[cubic-bezier(0.18,0.92,0.24,1)] ${
+        lockOverlayDropping
+          ? "-translate-y-full opacity-0 shadow-none"
+          : "translate-y-0 opacity-100 shadow-[0_24px_50px_rgba(0,0,0,0.22)]"
+      }`}
+    >
+      <AppLockScreen
+        onUnlock={handleUnlockApp}
+        onUnlockAccepted={() => {
+          setAppLocked(false);
+          setMobileCartOpen(false);
+          store.setView("register");
+        }}
+        onUnlocked={() => {
+          setLockOverlayDropping(false);
+          setLockOverlayVisible(false);
+        }}
+        onOpenAdmin={() => {
+          setAdminError(null);
+          setLockAdminPromptOpen(true);
+        }}
       />
-    );
-  }
+    </div>
+  ) : null;
 
-  if (!store.bootstrap) {
-    return (
-      <SplashCard
-        title="Register cannot reach the backend"
-        body={bootstrapError ?? "The kiosk is retrying the connection every 5 seconds while the local shell stays ready."}
-        detail={`API target: ${API_BASE_URL}`}
-      />
-    );
-  }
+  const lockAdminPrompt = lockAdminPromptOpen ? (
+    <AdminPinDialog
+      onClose={() => {
+        setAdminError(null);
+        setLockAdminPromptOpen(false);
+      }}
+      onSubmit={handleAdminSubmit}
+      error={adminError}
+    />
+  ) : null;
 
-  return (
+  const appBody = loading && !store.bootstrap ? (
+    <SplashCard
+      title="Loading register"
+      body="Syncing products, pricing, and register status so the kiosk starts from a clean operational state."
+      loading
+    />
+  ) : !store.bootstrap ? (
+    <SplashCard
+      title="Register cannot reach the backend"
+      body={bootstrapError ?? "The kiosk is retrying the connection every 5 seconds while the local shell stays ready."}
+      detail={`API target: ${API_BASE_URL}`}
+    />
+  ) : (
     <main className="pos-app-shell p-3 lg:p-5">
       <div className="pos-ambient pos-ambient-primary" />
       <div className="pos-ambient pos-ambient-warm" />
@@ -676,6 +709,7 @@ export function App() {
           bootstrap={store.bootstrap}
           status={registerStatus}
           timeLabel={now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+          onLock={handleLockApp}
         />
 
         {store.view === "register" ? (
@@ -843,13 +877,12 @@ export function App() {
         <SuccessScreen orderNumber={store.successOrder.orderNumber} totalCents={store.successOrder.totalCents} />
       ) : null}
 
-      {/* Floating Order button — fixed to viewport, above all clipping containers */}
       {store.view === "register" && cartView.lines.length > 0 && !mobileCartOpen && (
         <button
           type="button"
           aria-label="Open order panel"
           onClick={() => setMobileCartOpen(true)}
-          className="fixed bottom-[65px] right-0 z-[60] flex items-center gap-3 rounded-l-2xl bg-[#1be4db] px-6 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.15)] transition active:scale-[0.97] lg:hidden"
+          className="fixed bottom-[65px] right-0 z-[60] flex items-center gap-3 rounded-l-2xl bg-[#1be4db] px-6 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.15)] transition active:scale-[0.97] min-[480px]:hidden"
         >
           <ShoppingBag size={18} className="text-[#0d1a1a]" />
           <span className="text-base font-bold text-[#0d1a1a]">Order</span>
@@ -858,6 +891,21 @@ export function App() {
           </span>
         </button>
       )}
+
     </main>
+  );
+
+  return (
+    <div>
+      <div
+        className={`transition-opacity duration-[520ms] ease-in-out ${
+          appLocked ? "pointer-events-none select-none opacity-0" : "opacity-100"
+        }`}
+      >
+        {appBody}
+      </div>
+      {lockOverlay}
+      {lockAdminPrompt}
+    </div>
   );
 }

@@ -10,51 +10,51 @@ interface CardPaymentOverlayProps {
 
 export function CardPaymentOverlay({ totalCents, statusLabel, failureMessage, onCancel }: CardPaymentOverlayProps) {
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm md:p-6">
-      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-[var(--bg-base)] md:grid-cols-[1.15fr_0.85fr]">
-        <div className="bg-[var(--bg-surface)] p-7 md:p-10">
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="grid w-full max-w-2xl overflow-hidden rounded-2xl bg-[var(--bg-base)] md:grid-cols-[1.15fr_0.85fr]">
+        <div className="bg-[var(--bg-surface)] p-5">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-[#5191e5]">
-            <CreditCard size={14} /> Card Payment
+            <CreditCard size={13} /> Card Payment
           </div>
-          <div className="mt-4 font-display text-5xl font-extrabold text-[var(--text-primary)] md:text-6xl">{formatCurrency(totalCents)}</div>
-          <div className="mt-5 flex items-center gap-3">
-            <Loader2 size={20} className="animate-spin text-[#5191e5]" />
-            <p className="text-lg font-semibold text-[var(--text-muted)]">{statusLabel}</p>
+          <div className="mt-2 font-display text-4xl font-extrabold text-[var(--text-primary)]">{formatCurrency(totalCents)}</div>
+          <div className="mt-3 flex items-center gap-2.5">
+            <Loader2 size={17} className="animate-spin text-[#5191e5]" />
+            <p className="text-base font-semibold text-[var(--text-muted)]">{statusLabel}</p>
           </div>
-          <p className="mt-2 flex items-center gap-1.5 text-sm text-[var(--text-dimmer)]">
-            <Smartphone size={14} /> Tap, insert, or swipe on the reader
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-[var(--text-dimmer)]">
+            <Smartphone size={13} /> Tap, insert, or swipe on the reader
           </p>
           {failureMessage && (
-            <div className="mt-5 flex items-start gap-2 rounded-xl bg-red-500/10 p-3">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-400" />
-              <span className="text-sm text-red-400">{failureMessage}</span>
+            <div className="mt-4 flex items-start gap-2 rounded-xl bg-red-500/10 p-3">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-400" />
+              <span className="text-xs text-red-400">{failureMessage}</span>
             </div>
           )}
         </div>
-        <div className="bg-[var(--bg-elevated)] p-7 md:p-8">
-          <div className="rounded-xl bg-[var(--overlay-soft)] p-5">
+        <div className="bg-[var(--bg-elevated)] p-5">
+          <div className="rounded-xl bg-[var(--overlay-soft)] p-4">
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#5191e5]">Status</div>
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between pb-2.5">
-                <span className="flex items-center gap-1.5 text-sm text-[var(--text-dimmer)]"><Smartphone size={13} /> Reader</span>
-                <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-bold text-amber-500">Waiting</span>
+            <div className="mt-3 space-y-2.5">
+              <div className="flex items-center justify-between pb-2">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--text-dimmer)]"><Smartphone size={12} /> Reader</span>
+                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500">Waiting</span>
               </div>
-              <div className="flex items-center justify-between pb-2.5">
-                <span className="flex items-center gap-1.5 text-sm text-[var(--text-dimmer)]"><CreditCard size={13} /> Amount</span>
-                <span className="font-display text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(totalCents)}</span>
+              <div className="flex items-center justify-between pb-2">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--text-dimmer)]"><CreditCard size={12} /> Amount</span>
+                <span className="font-display text-base font-extrabold text-[var(--text-primary)]">{formatCurrency(totalCents)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--text-dimmer)]">Next</span>
-                <span className="text-sm font-semibold text-[#5191e5]">Reader interaction</span>
+                <span className="text-xs text-[var(--text-dimmer)]">Next</span>
+                <span className="text-xs font-semibold text-[#5191e5]">Reader interaction</span>
               </div>
             </div>
           </div>
           <button
             type="button"
-            className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl bg-red-500/15 px-5 py-3.5 text-sm font-semibold text-red-400 hover:bg-red-500/20"
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-500/20"
             onClick={onCancel}
           >
-            <X size={16} /> Cancel Payment
+            <X size={15} /> Cancel Payment
           </button>
         </div>
       </div>

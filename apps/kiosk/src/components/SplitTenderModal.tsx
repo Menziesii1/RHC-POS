@@ -119,32 +119,32 @@ export function SplitTenderModal({ totalCents, cardEnabled, onClose, onConfirm }
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm md:p-6">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--bg-base)]">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-[var(--bg-base)]">
         {/* Header */}
-        <div className="bg-[var(--bg-surface)] px-7 py-5">
+        <div className="bg-[var(--bg-surface)] px-5 py-3">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-amber-500">
-            <Split size={13} /> Split Tender
+            <Split size={12} /> Split Tender
           </div>
-          <div className="mt-1 font-display text-4xl font-extrabold text-[var(--text-primary)]">
+          <div className="mt-0.5 font-display text-3xl font-extrabold text-[var(--text-primary)]">
             {formatCurrency(totalCents)}
           </div>
-          <p className="mt-1 text-sm text-[var(--text-dimmer)]">Divide the total across two payment methods.</p>
+          <p className="mt-0.5 text-xs text-[var(--text-dimmer)]">Divide the total across two payment methods.</p>
         </div>
 
         {/* Tender rows */}
-        <div className="space-y-3 p-5">
+        <div className="space-y-2 p-4">
           {/* Row 1 */}
-          <div className="rounded-xl bg-[var(--overlay-soft)] p-4">
-            <div className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-dimmer)]">Tender 1</div>
-            <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-[var(--overlay-soft)] p-3">
+            <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-dimmer)]">Tender 1</div>
+            <div className="flex items-center gap-2">
               <TenderTypeToggle value={row1.type} cardEnabled={cardEnabled} onChange={(t) => setRow1((prev) => ({ ...prev, type: t }))} />
               <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-dimmer)]">$</span>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--text-dimmer)]">$</span>
                 <input
                   type="text"
                   inputMode="decimal"
                   readOnly={row1.type === "card" && row2.type === "cash"}
-                  className="w-full rounded-xl bg-[var(--overlay-hover)] py-3 pl-7 pr-3 text-lg font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-dimmest)] focus:ring-2 focus:ring-amber-400/30 read-only:cursor-default read-only:bg-[var(--overlay-soft)] read-only:text-[var(--text-muted)]"
+                  className="w-full rounded-xl bg-[var(--overlay-hover)] py-2 pl-6 pr-2.5 text-base font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-dimmest)] focus:ring-2 focus:ring-amber-400/30 read-only:cursor-default read-only:bg-[var(--overlay-soft)] read-only:text-[var(--text-muted)]"
                   placeholder="0.00"
                   value={row1.dollars}
                   onChange={(e) => setRow1((prev) => ({ ...prev, dollars: e.target.value }))}
@@ -152,9 +152,8 @@ export function SplitTenderModal({ totalCents, cardEnabled, onClose, onConfirm }
               </div>
               <button
                 type="button"
-                className="shrink-0 rounded-xl bg-[var(--overlay-soft)] px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-muted)]"
+                className="shrink-0 rounded-xl bg-[var(--overlay-soft)] px-2.5 py-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-muted)]"
                 onClick={fillRow1}
-                title="Fill remaining"
               >
                 Fill
               </button>
@@ -162,17 +161,17 @@ export function SplitTenderModal({ totalCents, cardEnabled, onClose, onConfirm }
           </div>
 
           {/* Row 2 */}
-          <div className="rounded-xl bg-[var(--overlay-soft)] p-4">
-            <div className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-dimmer)]">Tender 2</div>
-            <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-[var(--overlay-soft)] p-3">
+            <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-dimmer)]">Tender 2</div>
+            <div className="flex items-center gap-2">
               <TenderTypeToggle value={row2.type} cardEnabled={cardEnabled} onChange={(t) => setRow2((prev) => ({ ...prev, type: t }))} />
               <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-dimmer)]">$</span>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--text-dimmer)]">$</span>
                 <input
                   type="text"
                   inputMode="decimal"
                   readOnly={row2.type === "card" && row1.type === "cash"}
-                  className="w-full rounded-xl bg-[var(--overlay-hover)] py-3 pl-7 pr-3 text-lg font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-dimmest)] focus:ring-2 focus:ring-amber-400/30 read-only:cursor-default read-only:bg-[var(--overlay-soft)] read-only:text-[var(--text-muted)]"
+                  className="w-full rounded-xl bg-[var(--overlay-hover)] py-2 pl-6 pr-2.5 text-base font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-dimmest)] focus:ring-2 focus:ring-amber-400/30 read-only:cursor-default read-only:bg-[var(--overlay-soft)] read-only:text-[var(--text-muted)]"
                   placeholder="0.00"
                   value={row2.dollars}
                   onChange={(e) => setRow2((prev) => ({ ...prev, dollars: e.target.value }))}
@@ -180,9 +179,8 @@ export function SplitTenderModal({ totalCents, cardEnabled, onClose, onConfirm }
               </div>
               <button
                 type="button"
-                className="shrink-0 rounded-xl bg-[var(--overlay-soft)] px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-muted)]"
+                className="shrink-0 rounded-xl bg-[var(--overlay-soft)] px-2.5 py-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-muted)]"
                 onClick={fillRow2}
-                title="Fill remaining"
               >
                 Fill
               </button>
@@ -190,15 +188,11 @@ export function SplitTenderModal({ totalCents, cardEnabled, onClose, onConfirm }
           </div>
 
           {/* Balance summary */}
-          <div className="flex items-center justify-between rounded-xl bg-[var(--overlay-soft)] px-4 py-3">
-            <span className="text-sm text-[var(--text-dimmer)]">Balance remaining</span>
+          <div className="flex items-center justify-between rounded-xl bg-[var(--overlay-soft)] px-3 py-2">
+            <span className="text-xs text-[var(--text-dimmer)]">Balance remaining</span>
             <span
-              className={`font-display text-xl font-extrabold ${
-                remainingCents === 0
-                  ? "text-emerald-500"
-                  : isOver
-                  ? "text-amber-500"
-                  : "text-[var(--text-primary)]"
+              className={`font-display text-lg font-extrabold ${
+                remainingCents === 0 ? "text-emerald-500" : isOver ? "text-amber-500" : "text-[var(--text-primary)]"
               }`}
             >
               {isOver ? `+${formatCurrency(combinedCents - totalCents)} over` : formatCurrency(Math.max(0, remainingCents))}
@@ -207,34 +201,34 @@ export function SplitTenderModal({ totalCents, cardEnabled, onClose, onConfirm }
 
           {/* Warnings */}
           {bothCard && (
-            <div className="flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              <AlertTriangle size={14} className="shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl bg-red-500/10 px-3 py-2 text-xs text-red-400">
+              <AlertTriangle size={13} className="shrink-0" />
               Both tenders cannot be card — at least one must be cash.
             </div>
           )}
           {isPartial && !bothCard && (
-            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-4 py-3 text-sm text-amber-500">
-              <AlertTriangle size={14} className="shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
+              <AlertTriangle size={13} className="shrink-0" />
               Total is {formatCurrency(remainingCents)} short. Order will stay open until fully paid.
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex gap-2 pt-1">
+          <div className="flex items-center gap-2 pt-1">
             <button
               type="button"
-              className="flex items-center gap-1.5 text-sm text-[var(--text-dimmest)] hover:text-[var(--text-muted)]"
+              className="flex items-center gap-1.5 text-xs text-[var(--text-dimmest)] hover:text-[var(--text-muted)]"
               onClick={onClose}
             >
-              <ArrowLeft size={14} /> Back
+              <ArrowLeft size={13} /> Back
             </button>
             <button
               type="button"
-              className="ml-auto flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-3.5 text-sm font-bold text-[#1a1a1a] transition active:scale-[0.97] disabled:opacity-30"
+              className="ml-auto flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-bold text-[#1a1a1a] transition active:scale-[0.97] disabled:opacity-30"
               disabled={!canTender}
               onClick={handleTender}
             >
-              <Split size={16} />
+              <Split size={14} />
               Tender
             </button>
           </div>

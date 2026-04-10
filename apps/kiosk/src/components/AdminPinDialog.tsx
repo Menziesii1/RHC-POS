@@ -11,7 +11,7 @@ export function AdminPinDialog({ onClose, onSubmit, error }: AdminPinDialogProps
   const [pin, setPin] = useState("");
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl bg-[var(--bg-elevated)] p-8">
         <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-[#1be4db]">
           <Lock size={12} /> Admin gate
