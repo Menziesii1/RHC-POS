@@ -24,13 +24,10 @@ interface EnrichedLine extends CartLineState {
 interface CartPanelProps {
   bootstrap: BootstrapResponse;
   lines: EnrichedLine[];
-  selectedLineId: string | null;
   totalCents: number;
   paymentError?: string | null;
   mobileOpen: boolean;
   onCloseMobile: () => void;
-  onSelectLine: (lineId: string) => void;
-  onAdjustLineQuantity: (lineId: string, delta: number) => void;
   onRemoveLine: (lineId: string) => void;
   onEditLine: (lineId: string) => void;
   footer?: ReactNode;
@@ -39,13 +36,10 @@ interface CartPanelProps {
 export function CartPanel({
   bootstrap,
   lines,
-  selectedLineId,
   totalCents,
   paymentError,
   mobileOpen,
   onCloseMobile,
-  onSelectLine,
-  onAdjustLineQuantity,
   onRemoveLine,
   onEditLine,
   footer,

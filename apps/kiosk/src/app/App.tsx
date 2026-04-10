@@ -724,13 +724,10 @@ export function App() {
               <CartPanel
                 bootstrap={store.bootstrap}
                 lines={cartView.lines}
-                selectedLineId={store.selectedLineId}
                 totalCents={cartView.totalCents}
                 paymentError={store.paymentError}
                 mobileOpen={mobileCartOpen}
                 onCloseMobile={() => setMobileCartOpen(false)}
-                onSelectLine={store.selectLine}
-                onAdjustLineQuantity={(lineId, delta) => mutateCart(() => store.adjustLineQuantity(lineId, delta))}
                 onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
                 onEditLine={(lineId) => {
                   store.beginDraftLineFromCartLine(lineId);
