@@ -70,7 +70,13 @@ sudo tailscale up
 
 Repository: https://github.com/Menziesii1/RHC-POS
 
-This is where all kiosk, backend, and shared code lives. To pull the latest code onto the Wyse:
+This is where all kiosk, backend, and shared code lives. The Wyse repo is a proper git clone tracked to `origin/main` and uses a read-only deploy key for auth.
+
+- Deploy key (private): `/home/rhc/.ssh/github_deploy_ed25519`
+- Deploy key is registered in GitHub → Settings → Deploy keys as `rhc-kiosk-01`
+- SSH config at `/home/rhc/.ssh/config` routes `github.com` through that key automatically
+
+To pull the latest code onto the Wyse:
 
 ```bash
 cd /home/rhc/rhc-pos
