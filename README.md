@@ -40,3 +40,34 @@ RHC POS is a kiosk-first, in-store point of sale system for a church coffee shop
 - Stripe Terminal smart-reader support is wired around the server-driven flow. The API remains the source of truth for payment state.
 - Railway deployment for the API and kiosk is checked in via [railway.json](E:/Code/RHC POS/railway.json).
 - Production database changes are applied with Prisma migrations from [apps/api/prisma/migrations](E:/Code/RHC POS/apps/api/prisma/migrations). Catalog/bootstrap restore is manual via `npm run prisma:restore`.
+
+## Kiosk Deployment
+
+The register runs on a **Dell Wyse 5070** thin client (`rhc-kiosk-01`) running Ubuntu Server 24.04 LTS. On boot it starts nginx, the local sync service, Xorg/Openbox, and Chrome in kiosk mode pointing at `http://127.0.0.1/`. The frontend talks directly to the Railway API for live operation.
+
+**Services on the Wyse:**
+
+| Service | Role |
+|---|---|
+| `nginx` | Serves the built kiosk frontend |
+| `rhc-pos-kiosk.service` | Starts Xorg + Chrome in kiosk mode |
+| `rhc-pos-kiosk-sync.service` | Local Node sync/cache service on port 4100 |
+| `tailscaled` | Remote access over any network |
+
+**Remote access** — Tailscale keeps the device reachable from anywhere. SSH key is at `~/.ssh/codex_rhc_wyse_ed25519`.
+
+```bash
+ssh -i ~/.ssh/codex_rhc_wyse_ed25519 rhc@100.119.238.59
+```
+
+**Deploying a frontend change to the Wyse:**
+
+```bash
+# SSH in, then:
+cd /home/rhc/rhc-pos && git pull
+npm run build --workspace @rhc-pos/kiosk
+sudo rm -rf /var/www/rhc-pos/* && sudo cp -r apps/kiosk/dist/. /var/www/rhc-pos/
+sudo systemctl reload nginx && sudo systemctl restart rhc-pos-kiosk.service
+```
+
+For full device details, Wi-Fi state, service file paths, and remaining work see [setup.md](setup.md).
