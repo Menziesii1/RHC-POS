@@ -150,7 +150,7 @@ export const useAppStore = create<AppState>((set) => ({
   adminUnlocked: false,
   adminPin: "",
   draftLine: null,
-  theme: (localStorage.getItem("rhc-theme") as "dark" | "light") ?? "dark",
+  theme: (localStorage.getItem("rhc-theme") as "dark" | "light") ?? "light",
   toggleTheme: () =>
     set((state) => {
       const next = state.theme === "dark" ? "light" : "dark";

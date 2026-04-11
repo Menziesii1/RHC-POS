@@ -103,6 +103,20 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: inherit;
+  /* Prevent accidental text selection on touch */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable selection inside inputs/textareas */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Eliminate 300ms tap delay and prevent double-tap zoom on interactive elements */
+button, [role="button"], input, select, textarea, a, label {
+  touch-action: manipulation;
 }
 
 #root {
