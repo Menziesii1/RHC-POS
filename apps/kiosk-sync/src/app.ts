@@ -74,6 +74,7 @@ export async function createApp({ config, service }: CreateAppOptions) {
   }));
 
   app.get("/v1/bootstrap", async () => service.getBootstrap());
+  app.post("/v1/verify-lock-pin", async (request) => service.verifyLockPin(request.body));
   app.post("/v1/orders", async (request) => service.createDraftOrder(request.body));
   app.get("/v1/orders/:id", async (request) => {
     const order = await service.getOrder((request.params as { id: string }).id);

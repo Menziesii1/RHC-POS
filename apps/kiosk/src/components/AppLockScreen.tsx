@@ -60,6 +60,38 @@ export function AppLockScreen({ onUnlock, onUnlockAccepted, onUnlocked, onOpenAd
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (submitting || unlocking) return;
+
+      if (event.key >= "0" && event.key <= "9") {
+        event.preventDefault();
+        appendDigit(event.key);
+        return;
+      }
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        void submitPin();
+        return;
+      }
+
+      if (event.key === "Backspace" || event.key === "Delete") {
+        event.preventDefault();
+        deleteDigit();
+        return;
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        clearPin();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [pin, submitting, unlocking]);
+
   return (
     <main className="relative isolate flex flex-col sm:grid sm:grid-cols-2 min-h-svh overflow-hidden bg-gray-50 sm:bg-transparent">
       {/* Split background panels */}

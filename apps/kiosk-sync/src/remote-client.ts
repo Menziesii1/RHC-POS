@@ -1,6 +1,7 @@
 import type { BootstrapResponse, CartInput, DraftOrder } from "@rhc-pos/shared";
 
 import type { SyncConfig } from "./config.js";
+import { HttpError } from "./lib/http-error.js";
 import type { RemoteApiClient } from "./types.js";
 
 async function request<T>(baseUrl: string, path: string, init?: RequestInit): Promise<T> {
@@ -14,7 +15,7 @@ async function request<T>(baseUrl: string, path: string, init?: RequestInit): Pr
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-    throw new Error(payload?.message ?? `Remote request failed with ${response.status}`);
+    throw new HttpError(response.status, payload?.message ?? `Remote request failed with ${response.status}`);
   }
 
   return response.json() as Promise<T>;
@@ -23,6 +24,11 @@ async function request<T>(baseUrl: string, path: string, init?: RequestInit): Pr
 export function createRemoteApiClient(config: SyncConfig): RemoteApiClient {
   return {
     fetchBootstrap: () => request<BootstrapResponse>(config.REMOTE_API_BASE_URL, "/bootstrap"),
+    verifyLockPin: (payload: unknown) =>
+      request<{ ok: true }>(config.REMOTE_API_BASE_URL, "/verify-lock-pin", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     createOrder: (payload: CartInput) =>
       request<DraftOrder>(config.REMOTE_API_BASE_URL, "/orders", {
         method: "POST",

@@ -78,12 +78,15 @@ describe("kiosk sync app", () => {
           stripe: "offline",
         },
       },
-      new Date().toISOString(),
+      new Date(Date.now() - config.BOOTSTRAP_CACHE_TTL_MS - 1000).toISOString(),
     );
 
     const remoteClient: RemoteApiClient = {
       fetchBootstrap: async () => {
         throw new Error("offline");
+      },
+      verifyLockPin: async () => {
+        throw new Error("not used");
       },
       createOrder: async () => {
         throw new Error("not used");
@@ -111,6 +114,7 @@ describe("kiosk sync app", () => {
   it("creates and pays a local cash order", async () => {
     const remoteClient: RemoteApiClient = {
       fetchBootstrap: async () => bootstrapFixture,
+      verifyLockPin: async () => ({ ok: true }),
       createOrder: async () => {
         throw new Error("not used in local test");
       },
@@ -148,6 +152,15 @@ describe("kiosk sync app", () => {
     expect(paymentResponse.statusCode).toBe(200);
     expect(paymentResponse.json().payment.changeDueCents).toBe(200);
 
+    const bootstrapResponse = await app.inject({
+      method: "GET",
+      url: "/v1/bootstrap",
+    });
+
+    expect(bootstrapResponse.statusCode).toBe(200);
+    expect(bootstrapResponse.json().status.reader).toBe("ready");
+    expect(bootstrapResponse.json().status.stripe).toBe("connected");
+
     const summaryResponse = await app.inject({
       method: "GET",
       url: "/v1/summary/today",
@@ -155,6 +168,37 @@ describe("kiosk sync app", () => {
 
     expect(summaryResponse.statusCode).toBe(200);
     expect(summaryResponse.json().cashSalesCents).toBe(300);
+    await app.close();
+  });
+
+  it("forwards lock screen PIN verification to the remote API", async () => {
+    const remoteClient: RemoteApiClient = {
+      fetchBootstrap: async () => bootstrapFixture,
+      verifyLockPin: async (payload) => {
+        expect(payload).toEqual({ pin: "0325" });
+        return { ok: true };
+      },
+      createOrder: async () => {
+        throw new Error("not used");
+      },
+      payCash: async () => {
+        throw new Error("not used");
+      },
+    };
+
+    const app = await createApp({
+      config,
+      service: new KioskSyncService(store, remoteClient),
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/verify-lock-pin",
+      payload: { pin: "0325" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ok: true });
     await app.close();
   });
 });

@@ -20,11 +20,15 @@ function buildLocalOrderNumber(date = new Date()) {
 }
 
 function normalizeBootstrapForLocal(bootstrap: BootstrapResponse, remoteOnline: boolean): BootstrapResponse {
+  if (remoteOnline) {
+    return bootstrap;
+  }
+
   return {
     ...bootstrap,
     status: {
       ...bootstrap.status,
-      backend: remoteOnline ? "online" : "offline",
+      backend: "offline",
       reader: "offline",
       stripe: "offline",
     },
@@ -76,6 +80,10 @@ export class KioskSyncService implements LocalSyncService {
       }
       return normalizeBootstrapForLocal(cached.payload, false);
     }
+  }
+
+  async verifyLockPin(input: unknown): Promise<{ ok: true }> {
+    return this.remoteClient.verifyLockPin(input);
   }
 
   async createDraftOrder(input: unknown): Promise<DraftOrder> {

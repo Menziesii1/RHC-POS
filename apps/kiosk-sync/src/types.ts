@@ -2,6 +2,7 @@ import type { BootstrapResponse, CartInput, DraftOrder, SummaryResponse } from "
 
 export interface RemoteApiClient {
   fetchBootstrap(): Promise<BootstrapResponse>;
+  verifyLockPin(payload: unknown): Promise<{ ok: true }>;
   createOrder(payload: CartInput): Promise<DraftOrder>;
   payCash(orderId: string, tenderedCents: number): Promise<DraftOrder>;
 }
@@ -24,6 +25,7 @@ export interface SyncHealth {
 
 export interface LocalSyncService {
   getBootstrap(): Promise<BootstrapResponse>;
+  verifyLockPin(input: unknown): Promise<{ ok: true }>;
   createDraftOrder(input: unknown): Promise<DraftOrder>;
   getOrder(orderId: string): Promise<DraftOrder | null>;
   finalizeCashPayment(orderId: string, tenderedCents: number): Promise<DraftOrder>;
