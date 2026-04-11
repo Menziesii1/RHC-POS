@@ -234,6 +234,8 @@ export function App() {
           setSplitCardCents(null);
           state.setPaymentError(order.payment.failureMessage ?? "Card payment did not complete.");
           state.setOverlay("card");
+        } else if (order.payment.status === "pending" || order.payment.status === "requires_action") {
+          state.setPaymentError(null);
         }
       } catch {
         if (!cancelled) {
@@ -473,13 +475,15 @@ export function App() {
   const handleCancelCard = async () => {
     try {
       if (store.pendingOrder?.id) {
-        await api.cancelCard(store.pendingOrder.id);
+        const canceled = await api.cancelCard(store.pendingOrder.id);
+        store.setPendingOrder(canceled);
       }
-    } finally {
       setSplitCardCents(null);
       store.setOverlay("none");
       store.setPendingTransaction(null);
       store.setPaymentError(null);
+    } catch (error) {
+      store.setPaymentError(error instanceof Error ? error.message : "Unable to cancel the reader payment.");
     }
   };
 
@@ -689,6 +693,12 @@ export function App() {
     />
   ) : null;
 
+  const cardPaymentStatus = store.pendingOrder?.payment.status;
+  const cardPaymentActive = cardPaymentStatus === "pending" || cardPaymentStatus === "requires_action";
+  const cardFailureMessage = cardPaymentActive
+    ? null
+    : (store.pendingOrder?.payment.failureMessage ?? store.paymentError);
+
   const appBody = loading && !store.bootstrap ? (
     <SplashCard
       title="Loading register"
@@ -859,11 +869,11 @@ export function App() {
         <CardPaymentOverlay
           totalCents={splitCardCents ?? store.pendingOrder?.totalCents ?? cartView.totalCents}
           statusLabel={
-            store.pendingOrder?.payment.status === "pending"
+            cardPaymentActive
               ? "Customer may tap, insert, or swipe"
               : "Waiting for reader..."
           }
-          failureMessage={store.paymentError}
+          failureMessage={cardFailureMessage}
           onCancel={() => void handleCancelCard()}
         />
       ) : null}

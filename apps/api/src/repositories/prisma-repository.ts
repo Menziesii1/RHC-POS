@@ -310,9 +310,9 @@ export class PrismaPosRepository implements PosRepository {
     const cardPaymentData = {
       tenderType: "card" as const,
       status: statusMap[input.status].paymentStatus,
-      stripePaymentIntentId: input.stripePaymentIntentId,
-      stripeReaderActionId: input.stripeReaderActionId,
-      stripeReaderId: input.stripeReaderId,
+      stripePaymentIntentId: input.stripePaymentIntentId ?? order.payment?.stripePaymentIntentId ?? null,
+      stripeReaderActionId: input.stripeReaderActionId ?? order.payment?.stripeReaderActionId ?? null,
+      stripeReaderId: input.stripeReaderId ?? order.payment?.stripeReaderId ?? null,
       failureMessage: input.failureMessage ?? null,
       ...(input.splitCardCents != null ? { splitCardCents: input.splitCardCents } : {}),
       ...(input.splitCashCents != null ? { splitCashCents: input.splitCashCents } : {}),
