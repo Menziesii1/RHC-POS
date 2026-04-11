@@ -638,12 +638,15 @@ export function App() {
     await api.verifyLockPin(pin);
   };
 
+  const handleAdminClose = () => {
+    store.lockAdmin();
+  };
+
   const handleLockApp = () => {
     setLockAdminPromptOpen(false);
     setAdminError(null);
     setMobileCartOpen(false);
-    store.setOverlay("none");
-    store.setView("register");
+    store.lockAdmin();
     setAppLocked(true);
     setLockOverlayVisible(true);
     setLockOverlayDropping(true);
@@ -767,7 +770,7 @@ export function App() {
               <InventoryControlPage
                 bootstrap={store.bootstrap}
                 analytics={analytics}
-                onClose={() => store.setView("register")}
+                onClose={handleAdminClose}
                 onNavigateAnalytics={() => void handleSummaryOpen()}
                 onNavigateTransactions={handleTransactionsOpen}
                 onCategorySave={handleCategorySave}
@@ -798,7 +801,7 @@ export function App() {
               <AnalyticsPage
                 summary={summary}
                 analytics={analytics}
-                onClose={() => store.setView("register")}
+                onClose={handleAdminClose}
                 onNavigateInventory={() => {
                   if (ADMIN_ENABLED && store.adminUnlocked) {
                     store.setView("inventory");
@@ -820,7 +823,7 @@ export function App() {
             <div className="pos-view-panel flex min-h-0 flex-1 flex-col p-5 lg:p-6">
               <TransactionsPage
                 adminPin={store.adminPin}
-                onClose={() => store.setView("register")}
+                onClose={handleAdminClose}
                 onNavigateInventory={() => store.setView("inventory")}
                 onNavigateAnalytics={() => void handleSummaryOpen()}
               />
