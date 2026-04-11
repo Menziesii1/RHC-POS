@@ -28,11 +28,10 @@ function getCategoryIcon(name: string) {
 interface ProductGridProps {
   bootstrap: BootstrapResponse;
   selectedCategoryId: string;
-  onSelectCategory: (categoryId: string) => void;
   onSelectProduct: (productId: string) => void;
 }
 
-export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, onSelectProduct }: ProductGridProps) {
+export function ProductGrid({ bootstrap, selectedCategoryId, onSelectProduct }: ProductGridProps) {
   const allCategories = bootstrap.categories.filter((c) => c.enabled).sort((a, b) => a.sortOrder - b.sortOrder);
 
   const visibleProducts = bootstrap.products
@@ -41,34 +40,6 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectCategory, o
 
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--bg-grid)]">
-      {/* Category tabs */}
-      <div className="shrink-0 flex overflow-x-auto bg-[var(--bg-grid)] px-4 pt-2 gap-1">
-        <button
-          type="button"
-          className={`shrink-0 rounded-t-xl px-5 py-2 text-[11px] font-bold uppercase tracking-widest transition ${
-            selectedCategoryId === "all"
-              ? "bg-[var(--bg-grid-inner)] text-[#1be4db]"
-              : "text-[var(--text-dimmer)] hover:text-[var(--text-muted)]"
-          }`}
-          onClick={() => onSelectCategory("all")}
-        >
-          All
-        </button>
-        {allCategories.map((category) => (
-          <button
-            key={category.id}
-            type="button"
-            className={`shrink-0 rounded-t-xl px-4 py-3 text-[11px] font-bold uppercase tracking-widest transition ${
-              selectedCategoryId === category.id
-                ? "bg-[var(--bg-grid-inner)] text-[#1be4db]"
-                : "text-[var(--text-dimmer)] hover:text-[var(--text-muted)]"
-            }`}
-            onClick={() => onSelectCategory(category.id)}
-          >
-            {category.name}
-          </button>
-        ))}
-      </div>
 
       {/* Product grid — logo watermark behind cards */}
       <div className="relative flex-1 overflow-y-auto bg-[var(--bg-grid-inner)] p-4">

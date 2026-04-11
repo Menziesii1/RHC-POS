@@ -730,7 +730,6 @@ export function App() {
               <ProductGrid
                 bootstrap={store.bootstrap}
                 selectedCategoryId={store.selectedCategoryId}
-                onSelectCategory={store.setSelectedCategoryId}
                 onSelectProduct={handleSelectProduct}
               />
               <CartPanel

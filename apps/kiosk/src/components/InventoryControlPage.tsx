@@ -8,7 +8,7 @@ import {
   type UpsertProductInput,
   type UpsertSizeOptionInput,
 } from "@rhc-pos/shared";
-import { ChevronUp, ChevronDown, Package, Settings, FolderOpen, Ruler, Droplets, ArrowLeft, Plus } from "lucide-react";
+import { ChevronUp, ChevronDown, Package, Settings, FolderOpen, Ruler, Droplets, ArrowLeft, Plus, LayoutGrid } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { useConfirm } from "../lib/confirm";
@@ -175,6 +175,7 @@ export function InventoryControlPage({
   const [editingFlavorCategory, setEditingFlavorCategory] = useState<{ id: string; name: string } | null>(null);
   const [editingFlavor, setEditingFlavor] = useState<{ id: string; name: string; price: string; discount: boolean; flavorCategoryId: string } | null>(null);
   const [showAddFlavorModal, setShowAddFlavorModal] = useState(false);
+  const [showFlavorGrid, setShowFlavorGrid] = useState(false);
   const [showAddGroupInput, setShowAddGroupInput] = useState(false);
   const [deleteHoldTarget, setDeleteHoldTarget] = useState<DeleteHoldTarget | null>(null);
   const [deleteHoldProgress, setDeleteHoldProgress] = useState(0);
@@ -941,7 +942,17 @@ export function InventoryControlPage({
                       {selectedFlavorCategoryId === "all" ? "All Flavors" : selectedFlavorCategoryId === "uncategorized" ? "Uncategorized" : (flavorCategories.find(fc => fc.id === selectedFlavorCategoryId)?.name ?? "Flavors")}
                     </div>
                   </div>
-                  <span className="rounded-full bg-[var(--overlay-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--text-dimmer)]">{visibleModifiers.length} items</span>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-[var(--overlay-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--text-dimmer)]">{visibleModifiers.length} items</span>
+                    <button
+                      type="button"
+                      aria-label="Grid view"
+                      onClick={() => setShowFlavorGrid(true)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--overlay-soft)] text-[var(--text-dimmer)] hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)] transition"
+                    >
+                      <LayoutGrid size={15} />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
                   {visibleModifiers.map((modifier) => {
@@ -1082,6 +1093,82 @@ export function InventoryControlPage({
           <div className="mt-5 rounded-xl bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-200">{libraryError}</div>
         )}
 
+        {/* ── Flavor grid overlay ── */}
+        {showFlavorGrid && (() => {
+          const flavorCategories = bootstrap.flavorCategories ?? [];
+          const gridModifiers = bootstrap.modifiers.filter((m) =>
+            selectedFlavorCategoryId === "all" ? true
+            : selectedFlavorCategoryId === "uncategorized" ? !m.flavorCategoryId
+            : m.flavorCategoryId === selectedFlavorCategoryId,
+          );
+          return (
+            <div className="fixed inset-0 z-50 flex flex-col bg-[var(--bg-base)]">
+              {/* Header */}
+              <div className="flex shrink-0 items-center justify-between bg-[var(--bg-elevated)] px-6 py-4">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#1be4db]">Flavor Grid</div>
+                  <div className="mt-0.5 font-display text-xl font-extrabold text-[var(--text-primary)]">
+                    {selectedFlavorCategoryId === "all" ? "All Flavors" : selectedFlavorCategoryId === "uncategorized" ? "Uncategorized" : (flavorCategories.find(fc => fc.id === selectedFlavorCategoryId)?.name ?? "Flavors")}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFlavorGrid(false)}
+                  className="flex items-center gap-1.5 rounded-xl bg-[var(--overlay-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
+                >
+                  <ArrowLeft size={15} /> Close
+                </button>
+              </div>
+
+              {/* Grid */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
+                  {gridModifiers.map((modifier) => {
+                    const deleteTarget = { kind: "flavor" as const, id: modifier.id, label: modifier.name };
+                    const isHolding = deleteHoldTarget?.kind === "flavor" && deleteHoldTarget.id === modifier.id;
+                    return (
+                      <div
+                        key={modifier.id}
+                        className="relative aspect-square overflow-hidden rounded-xl bg-[var(--bg-elevated)] select-none cursor-pointer"
+                        onPointerDown={startDeleteHold(deleteTarget, () =>
+                          handleLibraryAction(() => onFlavorDelete(modifier.id), "Unable to delete flavor."),
+                        )}
+                        onPointerUp={cancelDeleteHold}
+                        onPointerLeave={cancelDeleteHold}
+                        onPointerCancel={cancelDeleteHold}
+                        onPointerMove={updateDeleteHoldPointer}
+                        onContextMenu={(e) => e.preventDefault()}
+                      >
+                        {/* Hold-to-delete progress fill */}
+                        {isHolding && deleteHoldProgress > 0 && (
+                          <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-xl bg-rose-500/10">
+                            <div className="absolute inset-0 origin-bottom bg-rose-500/60" style={{ transform: `scaleY(${deleteHoldProgress})` }} />
+                          </div>
+                        )}
+
+                        <div className="relative z-20 flex h-full flex-col items-center justify-center gap-1 p-2 text-center">
+                          <div className={`text-[clamp(0.6rem,1.8cqi,0.9rem)] font-semibold leading-tight ${modifier.enabled ? "text-[var(--text-primary)]" : "text-[var(--text-dimmest)]"}`}>
+                            {modifier.name}
+                          </div>
+                          <div className="text-[clamp(0.5rem,1.4cqi,0.75rem)] font-medium text-[#1be4db]">
+                            {modifier.priceCents === 0 ? "Free" : `${modifier.discountFlavor ? "-" : "+"}${formatCurrency(Math.abs(modifier.priceCents))}`}
+                          </div>
+                          {!modifier.enabled && (
+                            <div className="text-[clamp(0.45rem,1.2cqi,0.65rem)] text-[var(--text-dimmest)]">Hidden</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {gridModifiers.length === 0 && (
+                  <div className="flex h-40 items-center justify-center text-sm text-[var(--text-dimmest)]">No flavors here</div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── Product modal ── */}
         {/* ── Add Flavor modal ── */}
         {showAddFlavorModal && (() => {
@@ -1107,36 +1194,16 @@ export function InventoryControlPage({
                   </label>
                   <label className="grid gap-1.5">
                     <span className="brand-kicker">Category</span>
-                    <div className="grid gap-2">
-                      <button
-                        type="button"
-                        className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
-                          !newFlavor.flavorCategoryId ? "bg-[#1be4db] text-[#262626]" : "bg-[var(--overlay-soft)] text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
-                        }`}
-                        onClick={() => setNewFlavor((s) => ({ ...s, flavorCategoryId: "" }))}
-                      >
-                        <span>Uncategorized</span>
-                        {!newFlavor.flavorCategoryId ? <span className="text-xs font-bold uppercase tracking-wider">Selected</span> : null}
-                      </button>
-                      <div className="grid gap-2 max-h-[220px] overflow-y-auto pr-1">
-                        {flavorCategories.map((fc) => {
-                          const selected = newFlavor.flavorCategoryId === fc.id;
-                          return (
-                            <button
-                              key={fc.id}
-                              type="button"
-                              className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
-                                selected ? "bg-[#1be4db] text-[#262626]" : "bg-[var(--overlay-soft)] text-[var(--text-primary)] hover:bg-[var(--overlay-hover)]"
-                              }`}
-                              onClick={() => setNewFlavor((s) => ({ ...s, flavorCategoryId: fc.id }))}
-                            >
-                              <span>{fc.name}</span>
-                              {selected ? <span className="text-xs font-bold uppercase tracking-wider">Selected</span> : null}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <select
+                      className="brand-input"
+                      value={newFlavor.flavorCategoryId}
+                      onChange={(e) => setNewFlavor((s) => ({ ...s, flavorCategoryId: e.target.value }))}
+                    >
+                      <option value="">Uncategorized</option>
+                      {flavorCategories.map((fc) => (
+                        <option key={fc.id} value={fc.id}>{fc.name}</option>
+                      ))}
+                    </select>
                   </label>
                   <label className="brand-chip brand-chip-soft">
                     <input type="checkbox" checked={newFlavor.discount} onChange={(e) => setNewFlavor((s) => ({ ...s, discount: e.target.checked }))} />
