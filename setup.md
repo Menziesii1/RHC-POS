@@ -11,13 +11,93 @@ This document captures the current state of the Dell Wyse 5070 Ubuntu kiosk setu
 - Direct Ethernet during home setup: Windows ICS on `192.168.137.0/24`
 - Last known direct Ethernet IP: `192.168.137.165`
 - Tailscale IP: `100.119.238.59`
-- SSH access from Windows:
-
-```powershell
-C:\Windows\System32\OpenSSH\ssh.exe -i C:\Users\calvi\.ssh\codex_rhc_wyse_ed25519 rhc@100.119.238.59
-```
 
 Passwordless sudo was configured for the `rhc` user during setup.
+
+---
+
+## Remote Access & Management
+
+Everything you need to get into this machine or manage it from anywhere.
+
+### SSH
+
+The SSH private key lives at:
+
+```text
+C:\Users\calvi\.ssh\codex_rhc_wyse_ed25519
+```
+
+**From Windows (PowerShell or CMD):**
+
+```powershell
+ssh -i C:\Users\calvi\.ssh\codex_rhc_wyse_ed25519 rhc@100.119.238.59
+```
+
+**From Git Bash / WSL / Mac / Linux:**
+
+```bash
+ssh -i ~/.ssh/codex_rhc_wyse_ed25519 rhc@100.119.238.59
+```
+
+The Tailscale IP `100.119.238.59` works from any device that is also on your Tailscale network, regardless of physical location or what Wi-Fi/Ethernet the Wyse is on.
+
+If you ever lose the key, you would need physical access or another existing SSH session to add a new public key to `/home/rhc/.ssh/authorized_keys`.
+
+### Tailscale
+
+Tailscale keeps the Wyse reachable across any network. It starts automatically on boot (`tailscaled` service).
+
+- **Admin console:** https://login.tailscale.com/admin/machines
+  - Device shows as `rhc-kiosk-01`
+  - Tailscale IP: `100.119.238.59`
+  - From here you can see if the device is online, revoke access, or manage ACLs.
+
+**Check Tailscale status on the Wyse:**
+
+```bash
+sudo tailscale status
+```
+
+**If Tailscale is offline after a network change:**
+
+```bash
+sudo systemctl restart tailscaled
+sudo tailscale up
+```
+
+### GitHub — Source Code
+
+Repository: https://github.com/Menziesii1/RHC-POS
+
+This is where all kiosk, backend, and shared code lives. To pull the latest code onto the Wyse:
+
+```bash
+cd /home/rhc/rhc-pos
+git pull
+```
+
+Then rebuild whichever workspace changed (see **Useful Commands** below).
+
+### Railway — Backend & PIN Management
+
+Railway hosts the production API and Postgres database.
+
+- **Dashboard:** https://railway.app (log in with your account)
+- **API base URL:** `https://rhc-posapi-production.up.railway.app/v1`
+- **Lock-screen PIN** is set as an environment variable in the Railway service. Current PIN: `3388`. Change it in Railway → service → Variables.
+- Redeploying on Railway does not affect the Wyse kiosk directly; the kiosk pulls from the live Railway URL at runtime.
+
+### Deploying Code Changes to the Wyse
+
+The Wyse does not auto-deploy. After pushing code to GitHub, SSH in and run the appropriate rebuild (see **Useful Commands**). The steps are:
+
+1. SSH into the Wyse.
+2. `cd /home/rhc/rhc-pos && git pull`
+3. Run the relevant rebuild command.
+4. The new build is live immediately — no reboot needed.
+
+---
 
 ## Installed On Wyse
 
@@ -199,18 +279,21 @@ A netplan Wi-Fi config was added on the Wyse for the home SSID. Do not commit Wi
 Ziply-2990
 ```
 
-At the last check, the Wi-Fi interface was not associated:
+**Wi-Fi is not functional on this unit.** The internal antenna cables are not connected to the Wi-Fi card's antenna terminals. Without antennas, the card has effectively zero range. The hardware and driver work fine — it just can't hear anything.
 
-```text
-wlp0s12f0 DOWN / no-carrier
+The netplan config has the correct SSID (`Ziply-2990`) and password. If antennas are ever added, it should connect automatically.
+
+To add a new network (e.g. at the church):
+
+```bash
+sudo nano /etc/netplan/50-cloud-init.yaml
+# add another entry under access-points:
+#   "ChurchSSID":
+#     password: "churchpassword"
+sudo netplan apply
 ```
 
-The Wyse scan saw only weak nearby networks and did not clearly see `Ziply-2990`. Possible causes:
-
-- weak signal at the Wyse location
-- missing/poor internal Wi-Fi antenna connection
-- 5 GHz/channel compatibility or range issue
-- SSID/password/auth mismatch
+**Recommended: use Ethernet at the church.** More reliable for a POS and avoids antenna/signal concerns entirely.
 
 Useful Wi-Fi diagnostics:
 
@@ -232,9 +315,7 @@ Backups were created under `/etc/netplan/`.
 
 ## Remaining Work
 
-1. Finish Wi-Fi verification.
-   - Confirm the Wyse can see and join a nearby Wi-Fi network.
-   - If it cannot see normal nearby SSIDs reliably, inspect/replace the Wi-Fi antenna or use Ethernet.
+1. ~~Finish Wi-Fi verification~~ — Wi-Fi is not usable (no antenna cables connected). Use Ethernet at the church.
 
 2. Reboot-test after all current changes.
    - Confirm `rhc-pos-kiosk.service` starts automatically.
