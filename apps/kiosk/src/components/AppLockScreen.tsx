@@ -45,6 +45,10 @@ export function AppLockScreen({ onUnlock, onUnlockAccepted, onUnlocked, onOpenAd
 
   const submitPin = async () => {
     if (submitting || unlocking || !pin) return;
+    if (pin.length < 4) {
+      setError("Enter at least 4 digits.");
+      return;
+    }
     try {
       setSubmitting(true);
       setError(null);
@@ -54,7 +58,7 @@ export function AppLockScreen({ onUnlock, onUnlockAccepted, onUnlocked, onOpenAd
       unlockTimerRef.current = window.setTimeout(() => onUnlocked(), UNLOCK_MS);
     } catch (err) {
       setPin("");
-      setError(err instanceof Error ? err.message : "Invalid PIN.");
+      setError("Incorrect PIN.");
     } finally {
       setSubmitting(false);
     }
