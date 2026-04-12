@@ -28,23 +28,23 @@ interface TransactionsPageProps {
 const PAGE_SIZE = 25;
 
 function tenderIcon(tenderType: TransactionRow["tenderType"]) {
-  if (tenderType === "cash") return <Banknote size={13} className="text-emerald-500" />;
-  if (tenderType === "card") return <CreditCard size={13} className="text-[#5191e5]" />;
-  if (tenderType === "split") return <Split size={13} className="text-amber-500" />;
+  if (tenderType === "cash") return <Banknote size={14} className="text-emerald-500" />;
+  if (tenderType === "card") return <CreditCard size={14} className="text-[#5191e5]" />;
+  if (tenderType === "split") return <Split size={14} className="text-amber-500" />;
   return null;
 }
 
 function statusBadge(status: TransactionRow["status"], refunded: boolean) {
   if (refunded) {
-    return <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-[10px] font-bold text-red-400">Refunded</span>;
+    return <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-bold text-red-400">Refunded</span>;
   }
   if (status === "paid") {
-    return <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-500">Paid</span>;
+    return <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-500">Paid</span>;
   }
   if (status === "canceled") {
-    return <span className="rounded-full bg-[var(--overlay-soft)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--text-dimmer)]">Canceled</span>;
+    return <span className="rounded-full bg-[var(--overlay-soft)] px-2.5 py-0.5 text-xs font-bold text-[var(--text-dimmer)]">Canceled</span>;
   }
-  return <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold text-amber-500">{status}</span>;
+  return <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-500">{status}</span>;
 }
 
 // ── Receipt modal ─────────────────────────────────────────────────────────────
@@ -478,7 +478,7 @@ export function TransactionsPage({ adminPin, onClose, onNavigateInventory, onNav
 
       <div className={`flex min-h-0 flex-1 gap-4 ${selected ? "md:grid md:grid-cols-[1fr_420px]" : ""}`}>
         {/* Table */}
-        <div className="min-w-0 flex-1 overflow-hidden rounded-xl bg-[var(--bg-elevated)]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-[var(--bg-elevated)]">
           {error ? (
             <div className="flex items-center gap-2 p-6 text-sm text-red-400">
               <AlertTriangle size={14} className="shrink-0" /> {error}
@@ -486,15 +486,15 @@ export function TransactionsPage({ adminPin, onClose, onNavigateInventory, onNav
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="flex-1 overflow-y-auto overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 z-10 bg-[var(--bg-surface)] text-[10px] uppercase tracking-wider text-[var(--text-dimmer)]">
+                  <thead className="sticky top-0 z-10 bg-[var(--bg-surface)] text-xs uppercase tracking-wider text-[var(--text-dimmer)]">
                     <tr>
-                      <th className="px-4 py-3 text-left">Order</th>
-                      <th className="px-4 py-3 text-left">Date</th>
-                      <th className="px-4 py-3 text-center">Tender</th>
-                      <th className="px-4 py-3 text-right">Total</th>
-                      <th className="px-4 py-3 text-center">Status</th>
+                      <th className="px-4 py-3.5 text-left">Order</th>
+                      <th className="px-4 py-3.5 text-left">Date</th>
+                      <th className="px-4 py-3.5 text-center">Tender</th>
+                      <th className="px-4 py-3.5 text-right">Total</th>
+                      <th className="px-4 py-3.5 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--divider)]">
@@ -518,20 +518,20 @@ export function TransactionsPage({ adminPin, onClose, onNavigateInventory, onNav
                         }`}
                         onClick={() => setSelected(selected?.id === row.id ? null : row)}
                       >
-                        <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">{row.orderNumber}</td>
-                        <td className="px-4 py-3 text-[var(--text-dimmer)]">
+                        <td className="px-4 py-3.5 font-semibold text-[var(--text-primary)]">{row.orderNumber}</td>
+                        <td className="px-4 py-3.5 text-[var(--text-dimmer)]">
                           {new Date(row.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}{" "}
                           <span className="text-[var(--text-dimmest)]">{new Date(row.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3.5 text-center">
                           <span className="flex items-center justify-center gap-1 capitalize text-[var(--text-dimmer)]">
                             {tenderIcon(row.tenderType)} {row.tenderType ?? "—"}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right font-display font-extrabold text-[var(--text-primary)]">
+                        <td className="px-4 py-3.5 text-right font-display font-extrabold text-[var(--text-primary)]">
                           {formatCurrency(row.totalCents)}
                         </td>
-                        <td className="px-4 py-3 text-center">{statusBadge(row.status, row.refunded)}</td>
+                        <td className="px-4 py-3.5 text-center">{statusBadge(row.status, row.refunded)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -540,8 +540,8 @@ export function TransactionsPage({ adminPin, onClose, onNavigateInventory, onNav
 
               {/* Pagination */}
               {data && data.totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-[var(--divider)] px-4 py-3">
-                  <span className="text-[11px] text-[var(--text-dimmer)]">
+                <div className="shrink-0 flex items-center justify-between border-t border-[var(--divider)] px-4 py-3">
+                  <span className="text-xs text-[var(--text-dimmer)]">
                     {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, data.total)} of {data.total}
                   </span>
                   <div className="flex gap-1">

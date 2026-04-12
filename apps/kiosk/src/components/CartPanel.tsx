@@ -51,7 +51,7 @@ export function CartPanel({
   const logoUrl = theme === "light" ? blackLogoUrl : coloredLogoUrl;
 
   return (
-    <div className={`fixed right-0 top-14 z-40 h-[calc(100dvh-3.5rem)] w-[min(88vw,220px)] min-[480px]:static min-[480px]:h-full min-[480px]:w-[220px] min-[480px]:shrink-0 ${mobileOpen ? "" : "pointer-events-none"}`}>
+    <div className={`fixed right-0 top-14 z-40 h-[calc(100dvh-3.5rem)] w-[min(88vw,270px)] min-[480px]:static min-[480px]:h-full min-[480px]:w-[270px] min-[480px]:shrink-0 ${mobileOpen ? "" : "pointer-events-none"}`}>
 
       <button
         type="button"

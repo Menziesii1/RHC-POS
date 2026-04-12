@@ -43,7 +43,7 @@ function FlavorPicker({
       : allFlavors.filter((m) => m.flavorCategoryId === activeTab);
 
   const flavorGrid = (flavors: typeof allFlavors) => (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-4 gap-1.5">
       {flavors.map((modifier) => {
         const active = selectedIds.includes(modifier.id);
         const priceLabel = modifier.discountFlavor
@@ -56,14 +56,14 @@ function FlavorPicker({
             key={modifier.id}
             type="button"
             onClick={() => onToggle(modifier.id)}
-            className={`aspect-square flex flex-col items-center justify-center gap-1 rounded-xl text-center shadow-md transition active:scale-[0.97] ${
+            className={`aspect-square flex flex-col items-center justify-center gap-0.5 rounded-xl text-center shadow-md transition active:scale-[0.97] ${
               active
                 ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-lg ring-2 ring-[#1be4db]/40"
                 : "bg-[var(--bg-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
             }`}
           >
-            <span className="px-1 text-sm font-bold leading-tight">{modifier.name}</span>
-            <span className={`text-xs font-semibold ${active ? "text-[var(--selector-active-sub)]" : "text-[var(--text-dimmer)]"}`}>
+            <span className="px-0.5 text-sm font-bold leading-tight">{modifier.name}</span>
+            <span className={`text-[11px] font-semibold ${active ? "text-[var(--selector-active-sub)]" : "text-[var(--text-dimmer)]"}`}>
               {priceLabel}
             </span>
           </button>
@@ -83,7 +83,7 @@ function FlavorPicker({
 
   return (
     <div>
-      <div className="mb-2 flex gap-2 sm:gap-1.5 overflow-x-auto pb-0.5">
+      <div className="mb-2 flex gap-2 sm:gap-1.5 overflow-x-auto px-0.5 py-0.5">
         {tabs.map((tab) => {
           const count = (
             tab.id === "__uncategorized__"
@@ -97,7 +97,7 @@ function FlavorPicker({
               type="button"
               className={`shrink-0 flex items-center gap-2 sm:gap-1.5 rounded-full px-5 py-3 sm:px-3.5 sm:py-1.5 text-base sm:text-sm font-bold sm:font-semibold transition ${
                 activeTab === tab.id
-                  ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-lg sm:shadow-md"
+                  ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-md ring-2 ring-[#1be4db]/50"
                   : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] border border-black/10 sm:border-0 shadow-sm sm:shadow-none hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)]"
               }`}
               onClick={() => setActiveTab(tab.id)}
@@ -186,7 +186,7 @@ export function DrinkBuilderOverlay({
 
       {/* Drawer — slides in from the left */}
       <div
-        className={`absolute left-0 top-0 flex h-dvh w-[min(100vw,540px)] flex-col overflow-hidden rounded-r-lg bg-[var(--bg-grid)] shadow-2xl transition-transform duration-150 ease-out ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`absolute left-0 top-0 flex h-dvh w-[min(100vw,820px)] flex-col overflow-hidden rounded-r-lg bg-[var(--bg-grid)] shadow-2xl transition-transform duration-150 ease-out ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between bg-[var(--inset-surface)] px-4 py-3">
@@ -220,37 +220,37 @@ export function DrinkBuilderOverlay({
         {/* Scrollable content */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Left sidebar — product photo + summary (hidden on mobile) */}
-          <div className="hidden sm:flex w-36 shrink-0 flex-col gap-3 overflow-y-auto bg-[var(--bg-base)] p-3">
+          <div className="hidden sm:flex w-48 shrink-0 flex-col gap-3 overflow-y-auto bg-[var(--bg-base)] p-4">
             {productPhoto && (
               <div className="hidden sm:flex items-center justify-center">
                 <img
                   src={productPhoto.src}
                   alt={product.name}
-                  className="h-40 w-40 object-contain drop-shadow-xl"
+                  className="h-52 w-52 object-contain drop-shadow-xl"
                   style={productPhoto.scale !== 1 ? { transform: `scale(${productPhoto.scale})` } : undefined}
                   draggable={false}
                 />
               </div>
             )}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 rounded-lg bg-[var(--inset-surface)] px-2.5 py-2">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--inset-surface)] px-3 py-2.5">
                 {draftLine.iced
-                  ? <Snowflake size={12} className="text-sky-500" />
-                  : <Flame size={12} className="text-orange-500" />}
-                <span className="text-xs font-semibold text-[var(--inset-text)]">
+                  ? <Snowflake size={15} className="text-sky-500" />
+                  : <Flame size={15} className="text-orange-500" />}
+                <span className="text-sm font-semibold text-[var(--inset-text)]">
                   {draftLine.iced ? "Iced" : "Hot"}
                 </span>
               </div>
-              <div className="flex items-center gap-2 rounded-lg bg-[var(--inset-surface)] px-2.5 py-2">
-                <Ruler size={12} className="text-[var(--inset-muted)]" />
-                <span className="text-xs font-semibold text-[var(--inset-text)]">
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--inset-surface)] px-3 py-2.5">
+                <Ruler size={15} className="text-[var(--inset-muted)]" />
+                <span className="text-sm font-semibold text-[var(--inset-text)]">
                   {selectedSize?.name ?? "Standard"}
                 </span>
               </div>
               {selectedFlavors.length > 0 && (
-                <div className="flex items-start gap-2 rounded-lg bg-[var(--inset-surface)] px-2.5 py-2">
-                  <Droplets size={12} className="mt-0.5 shrink-0 text-[#0a8f89]" />
-                  <span className="text-xs font-semibold text-[var(--inset-text)]">
+                <div className="flex items-start gap-2 rounded-lg bg-[var(--inset-surface)] px-3 py-2.5">
+                  <Droplets size={15} className="mt-0.5 shrink-0 text-[#0a8f89]" />
+                  <span className="text-sm font-semibold text-[var(--inset-text)]">
                     {selectedFlavors.map((m) => m.name).join(", ")}
                   </span>
                 </div>
@@ -261,76 +261,79 @@ export function DrinkBuilderOverlay({
           {/* Right — options */}
           <div className="flex-1 overflow-y-auto p-3">
             <div className="space-y-3">
-              {/* Temperature */}
-              <div>
-                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)]">
-                  <Flame size={13} /> Temperature
+              {/* Temperature + Size on one row */}
+              <div className="flex gap-4">
+                {/* Temperature */}
+                <div className="shrink-0">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
+                    <Flame size={18} /> Temperature
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className={`flex h-20 w-28 flex-col items-center justify-center gap-1.5 rounded-xl transition ${
+                        !draftLine.iced
+                          ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-md ring-2 ring-[#1be4db]/50"
+                          : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
+                      }`}
+                      onClick={() => onSetIced(false)}
+                    >
+                      <Flame size={20} className="text-orange-500" />
+                      <span className="text-base font-bold">Hot</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex h-20 w-28 flex-col items-center justify-center gap-1.5 rounded-xl transition ${
+                        draftLine.iced
+                          ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-md ring-2 ring-[#1be4db]/50"
+                          : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
+                      }`}
+                      onClick={() => onSetIced(true)}
+                    >
+                      <Snowflake size={20} className={draftLine.iced ? "text-sky-500" : "text-[var(--text-dimmer)]"} />
+                      <span className="text-base font-bold">Iced</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className={`flex items-center gap-2 rounded-xl px-9 py-6 sm:px-3.5 sm:py-2.5 transition ${
-                      !draftLine.iced
-                        ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-md"
-                        : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
-                    }`}
-                    onClick={() => onSetIced(false)}
-                  >
-                    <Flame size={14} className="text-orange-500" />
-                    <span className="text-2xl sm:text-base font-bold sm:font-semibold">Hot</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`flex items-center gap-2 rounded-xl px-9 py-6 sm:px-3.5 sm:py-2.5 transition ${
-                      draftLine.iced
-                        ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-md"
-                        : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
-                    }`}
-                    onClick={() => onSetIced(true)}
-                  >
-                    <Snowflake size={14} className={draftLine.iced ? "text-sky-500" : "text-[var(--text-dimmer)]"} />
-                    <span className="text-2xl sm:text-base font-bold sm:font-semibold">Iced</span>
-                  </button>
-                </div>
-              </div>
 
-              {/* Size */}
-              {allowedSizes.length > 0 && (
-                <div>
-                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)]">
-                    <Ruler size={13} /> Size
+                {/* Size */}
+                {allowedSizes.length > 0 && (
+                  <div className="min-w-0">
+                    <div className="mb-2 flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
+                      <Ruler size={18} /> Size
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {allowedSizes.map((size) => {
+                        const active = draftLine.sizeOptionId === size.id;
+                        const priceDelta = getSizeAdjustmentCents(bootstrap, product.id, size.id);
+                        return (
+                          <button
+                            key={size.id}
+                            type="button"
+                            className={`flex h-20 w-28 flex-col items-center justify-center rounded-xl transition ${
+                              active
+                                ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-md ring-2 ring-[#1be4db]/50"
+                                : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
+                            }`}
+                            onClick={() => onSelectSize(size.id)}
+                          >
+                            <span className="text-base font-bold leading-tight">{size.name}</span>
+                            <span className={`text-sm ${active ? "text-[var(--selector-active-sub)]" : "text-[var(--selector-inactive-sub)]"}`}>
+                              {priceDelta === 0 ? "Base price" : `${priceDelta > 0 ? "+" : ""}${formatCurrency(priceDelta)}`}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {allowedSizes.map((size) => {
-                      const active = draftLine.sizeOptionId === size.id;
-                      const priceDelta = getSizeAdjustmentCents(bootstrap, product.id, size.id);
-                      return (
-                        <button
-                          key={size.id}
-                          type="button"
-                          className={`rounded-xl px-9 py-6 sm:px-3.5 sm:py-2.5 text-left transition ${
-                            active
-                              ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-md"
-                              : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] hover:bg-[var(--overlay-hover)]"
-                          }`}
-                          onClick={() => onSelectSize(size.id)}
-                        >
-                          <span className="block text-2xl sm:text-base font-bold sm:font-semibold">{size.name}</span>
-                          <span className={`mt-0.5 block text-sm sm:text-sm ${active ? "text-[var(--selector-active-sub)]" : "text-[var(--selector-inactive-sub)]"}`}>
-                            {priceDelta === 0 ? "Base price" : `${priceDelta > 0 ? "+" : ""}${formatCurrency(priceDelta)}`}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Flavors */}
               {allowedFlavors.length > 0 && (
                 <div>
-                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dimmer)]">
-                    <Droplets size={13} /> Flavors
+                  <div className="mb-2 flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
+                    <Droplets size={18} /> Flavors
                   </div>
                   <FlavorPicker bootstrap={bootstrap} selectedIds={draftLine.modifierIds} onToggle={onToggleFlavor} />
                 </div>

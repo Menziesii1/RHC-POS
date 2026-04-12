@@ -74,11 +74,11 @@ export function ActionBar({
       {/* Tender button */}
       <button
         type="button"
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5191e5] py-4 text-sm font-bold text-white shadow-md transition active:scale-[0.97] disabled:opacity-30"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5191e5] py-5 text-base font-bold text-white shadow-md transition active:scale-[0.97] disabled:opacity-30"
         disabled={disabled}
         onClick={() => setTenderOpen((o) => !o)}
       >
-        <Wallet size={16} />
+        <Wallet size={20} />
         Tender
       </button>
 
@@ -86,20 +86,20 @@ export function ActionBar({
       <div className={`mt-2 grid gap-2 ${adminEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
         <button
           type="button"
-          className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--bg-elevated)] py-2 text-[11px] font-medium text-[var(--text-dimmer)] shadow-sm transition hover:text-[var(--text-muted)] disabled:opacity-30"
+          className="flex items-center justify-center gap-2 rounded-xl bg-[var(--bg-elevated)] py-3 text-sm font-medium text-[var(--text-dimmer)] shadow-sm transition hover:text-[var(--text-muted)] disabled:opacity-30"
           disabled={disabled}
           onClick={onClear}
         >
-          <Trash2 size={13} />
+          <Trash2 size={16} />
           Clear
         </button>
         {adminEnabled && (
           <button
             type="button"
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--bg-elevated)] py-2 text-[11px] font-medium text-[var(--text-dimmer)] shadow-sm transition hover:text-[var(--text-muted)]"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[var(--bg-elevated)] py-3 text-sm font-medium text-[var(--text-dimmer)] shadow-sm transition hover:text-[var(--text-muted)]"
             onClick={onAdmin}
           >
-            <Settings size={13} />
+            <Settings size={16} />
             Admin
           </button>
         )}

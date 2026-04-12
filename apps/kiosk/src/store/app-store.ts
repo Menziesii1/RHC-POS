@@ -16,6 +16,7 @@ interface AppState {
   pendingOrder: DraftOrder | null;
   pendingTransaction: PendingTransactionSnapshot | null;
   successOrder: DraftOrder | null;
+  successCashTenderedCents: number | null;
   adminUnlocked: boolean;
   adminPin: string;
   draftLine: DrinkLineDraft | null;
@@ -44,7 +45,7 @@ interface AppState {
   setPaymentError: (message: string | null) => void;
   setPendingOrder: (order: DraftOrder | null) => void;
   setPendingTransaction: (snapshot: PendingTransactionSnapshot | null) => void;
-  markSuccess: (order: DraftOrder) => void;
+  markSuccess: (order: DraftOrder, cashTenderedCents?: number) => void;
   dismissSuccess: () => void;
   restorePersisted: (state: {
     cartLines: CartLineState[];
@@ -147,6 +148,7 @@ export const useAppStore = create<AppState>((set) => ({
   pendingOrder: null,
   pendingTransaction: null,
   successOrder: null,
+  successCashTenderedCents: null,
   adminUnlocked: false,
   adminPin: "",
   draftLine: null,
@@ -312,9 +314,10 @@ export const useAppStore = create<AppState>((set) => ({
   setPaymentError: (paymentError) => set({ paymentError }),
   setPendingOrder: (pendingOrder) => set({ pendingOrder }),
   setPendingTransaction: (pendingTransaction) => set({ pendingTransaction }),
-  markSuccess: (order) =>
+  markSuccess: (order, cashTenderedCents) =>
     set({
       successOrder: order,
+      successCashTenderedCents: cashTenderedCents ?? null,
       overlay: "success",
       cartLines: [],
       selectedLineId: null,
@@ -327,6 +330,7 @@ export const useAppStore = create<AppState>((set) => ({
     set({
       overlay: "none",
       successOrder: null,
+      successCashTenderedCents: null,
     }),
   restorePersisted: ({ cartLines, selectedCategoryId, pendingTransaction, pendingOrder }) =>
     set((state) => {

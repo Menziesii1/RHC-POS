@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 
 import { AppLockScreen } from "../components/AppLockScreen";
+import { VirtualKeyboard } from "../components/VirtualKeyboard";
 import { ActionBar } from "../components/ActionBar";
 import { AdminPinDialog } from "../components/AdminPinDialog";
 import { AnalyticsPage } from "../components/AnalyticsPage";
@@ -263,13 +264,14 @@ export function App() {
       return;
     }
 
+    const isCash = store.successCashTenderedCents !== null;
     const timeout = window.setTimeout(() => {
       store.dismissSuccess();
       clearPersistedState();
-    }, 2500);
+    }, isCash ? 5000 : 2500);
 
     return () => window.clearTimeout(timeout);
-  }, [store.overlay]);
+  }, [store.overlay, store.successCashTenderedCents]);
 
   useEffect(() => {
     return () => {
@@ -358,7 +360,7 @@ export function App() {
       store.setPendingOrder(order);
       store.setPendingTransaction({ orderId: order.id, stage: "cash", savedAt: new Date().toISOString() });
       const paid = await api.payCash(order.id, tenderedCents);
-      store.markSuccess(paid);
+      store.markSuccess(paid, tenderedCents);
       clearPersistedState();
     } catch (error) {
       store.setPaymentError(error instanceof Error ? error.message : "Cash payment failed.");
@@ -885,7 +887,11 @@ export function App() {
       ) : null}
 
       {store.overlay === "success" && store.successOrder ? (
-        <SuccessScreen orderNumber={store.successOrder.orderNumber} totalCents={store.successOrder.totalCents} />
+        <SuccessScreen
+          orderNumber={store.successOrder.orderNumber}
+          totalCents={store.successOrder.totalCents}
+          cashTenderedCents={store.successCashTenderedCents ?? undefined}
+        />
       ) : null}
 
       {store.view === "register" && cartView.lines.length > 0 && !mobileCartOpen && (
@@ -917,6 +923,7 @@ export function App() {
       </div>
       {lockOverlay}
       {lockAdminPrompt}
+      <VirtualKeyboard />
     </div>
   );
 }
