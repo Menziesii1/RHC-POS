@@ -42,39 +42,43 @@ function FlavorPicker({
       ? uncategorized
       : allFlavors.filter((m) => m.flavorCategoryId === activeTab);
 
+  const flavorGrid = (flavors: typeof allFlavors) => (
+    <div className="grid grid-cols-3 gap-2">
+      {flavors.map((modifier) => {
+        const active = selectedIds.includes(modifier.id);
+        const priceLabel = modifier.discountFlavor
+          ? `${formatCurrency(modifier.priceCents)} off`
+          : modifier.priceCents === 0
+            ? "Included"
+            : `+${formatCurrency(modifier.priceCents)}`;
+        return (
+          <button
+            key={modifier.id}
+            type="button"
+            onClick={() => onToggle(modifier.id)}
+            className={`aspect-square flex flex-col items-center justify-center gap-1 rounded-xl text-center shadow-md transition active:scale-[0.97] ${
+              active
+                ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-lg ring-2 ring-[#1be4db]/40"
+                : "bg-[var(--bg-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+            }`}
+          >
+            <span className="px-1 text-sm font-bold leading-tight">{modifier.name}</span>
+            <span className={`text-xs font-semibold ${active ? "text-[var(--selector-active-sub)]" : "text-[var(--text-dimmer)]"}`}>
+              {priceLabel}
+            </span>
+          </button>
+        );
+      })}
+      {flavors.length === 0 && (
+        <div className="col-span-3 py-4 text-center text-sm text-[var(--text-dimmest)]">
+          No flavors in this group.
+        </div>
+      )}
+    </div>
+  );
+
   if (tabs.length === 0) {
-    return (
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {allFlavors.map((modifier) => {
-          const active = selectedIds.includes(modifier.id);
-          return (
-            <button
-              key={modifier.id}
-              type="button"
-              className={`rounded-xl px-9 py-6 sm:px-3.5 sm:py-2.5 text-left transition ${
-                active
-                  ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-lg sm:shadow-md"
-                  : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] border border-black/10 sm:border-0 shadow-sm sm:shadow-none hover:bg-[var(--overlay-hover)]"
-              }`}
-              onClick={() => onToggle(modifier.id)}
-            >
-              <span className="block text-2xl sm:text-base font-bold sm:font-semibold leading-snug">{modifier.name}</span>
-              <span
-                className={`mt-0.5 block text-sm sm:text-sm ${
-                  active ? "text-[var(--selector-active-sub)]" : "text-[var(--selector-inactive-sub)]"
-                }`}
-              >
-                {modifier.discountFlavor
-                  ? `${formatCurrency(modifier.priceCents)} off`
-                  : modifier.priceCents === 0
-                    ? "Included"
-                    : `+${formatCurrency(modifier.priceCents)}`}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    );
+    return flavorGrid(allFlavors);
   }
 
   return (
@@ -115,41 +119,7 @@ function FlavorPicker({
         })}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {visibleFlavors.map((modifier) => {
-          const active = selectedIds.includes(modifier.id);
-          return (
-            <button
-              key={modifier.id}
-              type="button"
-              className={`rounded-xl px-9 py-6 sm:px-3.5 sm:py-2.5 text-left transition ${
-                active
-                  ? "bg-[var(--selector-active-bg)] text-[var(--selector-active-text)] shadow-lg sm:shadow-md"
-                  : "bg-[var(--selector-inactive-bg)] text-[var(--selector-inactive-text)] border border-black/10 sm:border-0 shadow-sm sm:shadow-none hover:bg-[var(--overlay-hover)]"
-              }`}
-              onClick={() => onToggle(modifier.id)}
-            >
-              <span className="block text-2xl sm:text-base font-bold sm:font-semibold leading-snug">{modifier.name}</span>
-              <span
-                className={`mt-0.5 block text-sm sm:text-sm ${
-                  active ? "text-[var(--selector-active-sub)]" : "text-[var(--selector-inactive-sub)]"
-                }`}
-              >
-                {modifier.discountFlavor
-                  ? `${formatCurrency(modifier.priceCents)} off`
-                  : modifier.priceCents === 0
-                    ? "Included"
-                    : `+${formatCurrency(modifier.priceCents)}`}
-              </span>
-            </button>
-          );
-        })}
-        {visibleFlavors.length === 0 && (
-          <div className="col-span-3 py-4 text-center text-sm text-[var(--text-dimmest)]">
-            No flavors in this group.
-          </div>
-        )}
-      </div>
+      {flavorGrid(visibleFlavors)}
 
       {selectedIds.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
