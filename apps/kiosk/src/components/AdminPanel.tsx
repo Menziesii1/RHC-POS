@@ -577,18 +577,22 @@ export function AdminPanel({
                 value={newFlavor.name}
                 onChange={(e) => setNewFlavor((f) => ({ ...f, name: e.target.value }))}
               />
-              <input
-                type="text"
-                inputMode="decimal"
-                className="brand-input"
-                value={newFlavorPriceStr}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (!isMoneyInput(raw)) return;
-                  setNewFlavorPriceStr(raw);
-                }}
-                onBlur={() => setNewFlavorPriceStr(normalizeMoneyInput(newFlavorPriceStr))}
-              />
+              {newFlavor.discountFlavor ? (
+                <div className="brand-input flex items-center text-emerald-500 font-semibold">$1.00 off</div>
+              ) : (
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className="brand-input"
+                  value={newFlavorPriceStr}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (!isMoneyInput(raw)) return;
+                    setNewFlavorPriceStr(raw);
+                  }}
+                  onBlur={() => setNewFlavorPriceStr(normalizeMoneyInput(newFlavorPriceStr))}
+                />
+              )}
             </div>
             <label className="brand-chip brand-chip-soft w-fit">
               <input
@@ -604,7 +608,7 @@ export function AdminPanel({
               onClick={() =>
                 void onCreateFlavor({
                   ...newFlavor,
-                  priceCents: moneyInputToCents(newFlavorPriceStr),
+                  priceCents: newFlavor.discountFlavor ? -100 : moneyInputToCents(newFlavorPriceStr),
                 }).then(() => {
                   setNewFlavor({
                     name: "",
@@ -1089,25 +1093,29 @@ export function AdminPanel({
                             </label>
                             <label className="grid gap-1">
                               <span className="brand-kicker">Price</span>
-                              <input
-                                type="text"
-                                inputMode="decimal"
-                                className="brand-input"
-                                value={flavorPriceInputs[modifier.id] ?? (draft.priceCents / 100).toFixed(2)}
-                                onChange={(e) => {
-                                  const raw = e.target.value;
-                                  if (!isMoneyInput(raw)) return;
-                                  setFlavorPriceInputs((cur) => ({ ...cur, [modifier.id]: raw }));
-                                }}
-                                onBlur={() =>
-                                  setFlavorPriceInputs((cur) => ({
-                                    ...cur,
-                                    [modifier.id]: normalizeMoneyInput(
-                                      cur[modifier.id] ?? (draft.priceCents / 100).toFixed(2),
-                                    ),
-                                  }))
-                                }
-                              />
+                              {draft.discountFlavor ? (
+                                <div className="brand-input flex items-center text-emerald-500 font-semibold">$1.00 off</div>
+                              ) : (
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  className="brand-input"
+                                  value={flavorPriceInputs[modifier.id] ?? (Math.abs(draft.priceCents) / 100).toFixed(2)}
+                                  onChange={(e) => {
+                                    const raw = e.target.value;
+                                    if (!isMoneyInput(raw)) return;
+                                    setFlavorPriceInputs((cur) => ({ ...cur, [modifier.id]: raw }));
+                                  }}
+                                  onBlur={() =>
+                                    setFlavorPriceInputs((cur) => ({
+                                      ...cur,
+                                      [modifier.id]: normalizeMoneyInput(
+                                        cur[modifier.id] ?? (Math.abs(draft.priceCents) / 100).toFixed(2),
+                                      ),
+                                    }))
+                                  }
+                                />
+                              )}
                             </label>
                             <label className="grid gap-1">
                               <span className="brand-kicker">Sort #</span>
@@ -1157,8 +1165,8 @@ export function AdminPanel({
                               onClick={() =>
                                 void onFlavorSave(modifier.id, {
                                   ...draft,
-                                  priceCents: moneyInputToCents(
-                                    flavorPriceInputs[modifier.id] ?? (draft.priceCents / 100).toFixed(2),
+                                  priceCents: draft.discountFlavor ? -100 : moneyInputToCents(
+                                    flavorPriceInputs[modifier.id] ?? (Math.abs(draft.priceCents) / 100).toFixed(2),
                                   ),
                                   sortOrder: Number(flavorSortInputs[modifier.id] ?? String(draft.sortOrder)),
                                 }).then(() => {

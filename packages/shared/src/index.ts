@@ -334,9 +334,11 @@ export function calculateFlavorAdjustment(
     .filter((m) => !m.discountFlavor)
     .reduce((sum, m) => sum + m.priceCents, 0);
 
+  // Normalize: priceCents may be stored as positive (user entered "$1.00") or
+  // negative (-100). Either way, treat discount flavors as negative adjustments.
   const rawDiscount = modifiers
     .filter((m) => m.discountFlavor)
-    .reduce((sum, m) => sum + m.priceCents, 0);
+    .reduce((sum, m) => sum + (m.priceCents > 0 ? -m.priceCents : m.priceCents), 0);
 
   const cappedDiscount = Math.max(rawDiscount, MAX_DISCOUNT_SYRUP_CENTS);
 

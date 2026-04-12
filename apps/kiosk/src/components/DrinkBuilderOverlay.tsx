@@ -47,7 +47,7 @@ function FlavorPicker({
       {flavors.map((modifier) => {
         const active = selectedIds.includes(modifier.id);
         const priceLabel = modifier.discountFlavor
-          ? `${formatCurrency(modifier.priceCents)} off`
+          ? `${formatCurrency(Math.abs(modifier.priceCents))} off`
           : modifier.priceCents === 0
             ? "Included"
             : `+${formatCurrency(modifier.priceCents)}`;
