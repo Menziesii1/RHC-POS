@@ -997,7 +997,7 @@ export function InventoryControlPage({
                             type="button"
                             onPointerDown={(event) => event.stopPropagation()}
                             className="rounded-xl bg-[var(--overlay-soft)] px-3 py-2 text-xs font-semibold text-[var(--text-muted)] transition hover:bg-[var(--overlay-hover)] hover:text-[var(--text-primary)] active:bg-[#1be4db]/15 active:text-[var(--text-primary)]"
-                            onClick={() => setEditingFlavor({ id: modifier.id, name: modifier.name, price: (modifier.priceCents / 100).toFixed(2), discount: modifier.discountFlavor, flavorCategoryId: modifier.flavorCategoryId ?? "" })}
+                            onClick={() => setEditingFlavor({ id: modifier.id, name: modifier.name, price: (Math.abs(modifier.priceCents) / 100).toFixed(2), discount: modifier.discountFlavor, flavorCategoryId: modifier.flavorCategoryId ?? "" })}
                           >
                             Edit
                           </button>
@@ -1212,7 +1212,7 @@ export function InventoryControlPage({
                   <div className="flex gap-2 pt-1">
                     <button type="button" className="touch-button flex-1 bg-[#1be4db] text-[#262626]"
                       onClick={() => void handleLibraryAction(async () => {
-                        await onCreateFlavor({ name: newFlavor.name, priceCents: Math.round(Number(newFlavor.price || "0") * 100), discountFlavor: newFlavor.discount, enabled: true, sortOrder: bootstrap.modifiers.length + 1, flavorCategoryId: newFlavor.flavorCategoryId || null });
+                        await onCreateFlavor({ name: newFlavor.name, priceCents: newFlavor.discount ? -100 : Math.round(Number(newFlavor.price || "0") * 100), discountFlavor: newFlavor.discount, enabled: true, sortOrder: bootstrap.modifiers.length + 1, flavorCategoryId: newFlavor.flavorCategoryId || null });
                         setShowAddFlavorModal(false);
                         setNewFlavor({ name: "", price: "0.00", discount: false, flavorCategoryId: "" });
                       }, "Unable to create flavor.")}
@@ -1240,13 +1240,18 @@ export function InventoryControlPage({
                     <span className="brand-kicker">Name</span>
                     <input className="brand-input" autoFocus value={editingFlavor.name} onChange={(e) => setEditingFlavor((s) => s ? { ...s, name: e.target.value } : null)} />
                   </label>
-                  <label className="grid gap-1.5">
-                    <span className="brand-kicker">Price adjustment</span>
-                    <input type="text" inputMode="decimal" className="brand-input" value={editingFlavor.price}
-                      onChange={(e) => { if (!isMoneyInput(e.target.value)) return; setEditingFlavor((s) => s ? { ...s, price: e.target.value } : null); }}
-                      onBlur={() => setEditingFlavor((s) => s ? { ...s, price: normalizeMoneyInput(s.price) } : null)}
-                    />
-                  </label>
+                  {!editingFlavor.discount && (
+                    <label className="grid gap-1.5">
+                      <span className="brand-kicker">Price adjustment</span>
+                      <input type="text" inputMode="decimal" className="brand-input" value={editingFlavor.price}
+                        onChange={(e) => { if (!isMoneyInput(e.target.value)) return; setEditingFlavor((s) => s ? { ...s, price: e.target.value } : null); }}
+                        onBlur={() => setEditingFlavor((s) => s ? { ...s, price: normalizeMoneyInput(s.price) } : null)}
+                      />
+                    </label>
+                  )}
+                  {editingFlavor.discount && (
+                    <div className="brand-input flex items-center text-emerald-500 font-semibold">$1.00 off (fixed)</div>
+                  )}
                   <label className="grid gap-1.5">
                     <span className="brand-kicker">Category</span>
                     <div className="grid gap-2">
@@ -1289,7 +1294,7 @@ export function InventoryControlPage({
                       onClick={() => void handleLibraryAction(async () => {
                         if (!editingFlavor) return;
                         const orig = bootstrap.modifiers.find(m => m.id === editingFlavor.id);
-                        await onFlavorSave(editingFlavor.id, { name: editingFlavor.name, priceCents: Math.round(Number(editingFlavor.price || "0") * 100), discountFlavor: editingFlavor.discount, enabled: orig?.enabled ?? true, sortOrder: orig?.sortOrder ?? 0, flavorCategoryId: editingFlavor.flavorCategoryId || null });
+                        await onFlavorSave(editingFlavor.id, { name: editingFlavor.name, priceCents: editingFlavor.discount ? -100 : Math.round(Number(editingFlavor.price || "0") * 100), discountFlavor: editingFlavor.discount, enabled: orig?.enabled ?? true, sortOrder: orig?.sortOrder ?? 0, flavorCategoryId: editingFlavor.flavorCategoryId || null });
                         setEditingFlavor(null);
                       }, "Unable to save.")}
                     >Save Changes</button>
