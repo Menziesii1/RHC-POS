@@ -7,11 +7,15 @@ import americano from "../../assets/Americano.png";
 import hotChocolate from "../../assets/Hot Chocolate.png";
 import italianSoda from "../../assets/Italian soda.webp";
 import chai from "../../assets/Chai.webp";
+import cookie from "../../assets/Cookie.png";
+import tShirt from "../../assets/T-Shirt.png";
 
 // Maps keyword patterns to imported image assets.
 // Add new entries here as you add more photos to apps/kiosk/assets/.
 // Optional `scale` overrides the default display size (1 = 100%).
 const IMAGE_MAP: Array<{ keywords: string[]; src: string; scale?: number }> = [
+  { keywords: ["cookie"], src: cookie },
+  { keywords: ["t shirt", "t-shirt", "tshirt"], src: tShirt },
   { keywords: ["iced coffee", "cold brew", "dirty chai", "iced"], src: icedCoffee },
   { keywords: ["caffe latte", "caffe  latte", "latte"], src: caffeLatte },
   { keywords: ["mocha"], src: mocha, scale: 0.85 },
