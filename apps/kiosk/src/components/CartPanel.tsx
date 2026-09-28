@@ -47,7 +47,7 @@ export function CartPanel({
   const { theme } = useAppStore();
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const editingLine = lines.find((l) => l.id === editingLineId) ?? null;
-  const allowedModifiers = editingLine ? bootstrap.modifiers.filter((m) => m.enabled) : [];
+  const allowedModifiers = editingLine && editingLine.product.customizable !== false ? bootstrap.modifiers.filter((m) => m.enabled) : [];
   const logoUrl = theme === "light" ? blackLogoUrl : coloredLogoUrl;
 
   return (
@@ -112,7 +112,7 @@ export function CartPanel({
                       {line.product.name}
                     </span>
                   </div>
-                  {(line.sizeOption || line.modifiers.length > 0 || line.iced !== undefined) && (
+                  {line.product.customizable !== false && (line.sizeOption || line.modifiers.length > 0 || line.iced !== undefined) && (
                     <div className="mt-0.5 truncate text-[11px] text-[var(--text-dimmer)]">
                       {[line.iced ? "Iced" : "Hot", line.sizeOption?.name, ...line.modifiers.map((m) => m.name)]
                         .filter(Boolean)

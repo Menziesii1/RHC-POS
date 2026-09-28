@@ -291,8 +291,8 @@ export function VirtualKeyboard() {
     const onFocusIn = (e: FocusEvent) => {
       const el = e.target;
       if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) return;
-      // Skip hidden/invisible inputs
-      if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
+      // File pickers and other non-text controls must retain their native behavior.
+      if (["hidden", "checkbox", "radio", "file", "button", "submit", "range", "color"].includes(el.type)) return;
 
       if (hideTimerRef.current !== null) {
         clearTimeout(hideTimerRef.current);

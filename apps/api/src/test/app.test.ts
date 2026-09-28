@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
-import { loadConfig } from "../config.js";
+import { testConfig } from "./config.js";
 import { MemoryPosRepository } from "../repositories/memory-repository.js";
 
 let repository: MemoryPosRepository;
@@ -13,7 +13,7 @@ beforeEach(() => {
 describe("RHC POS API", () => {
   it("creates orders and finalizes cash payment", async () => {
     const app = await createApp({
-      config: loadConfig(),
+      config: testConfig,
       repository,
     });
 
@@ -52,7 +52,7 @@ describe("RHC POS API", () => {
 
   it("starts a mock card payment and marks the order paid", async () => {
     const app = await createApp({
-      config: loadConfig(),
+      config: testConfig,
       repository,
     });
 

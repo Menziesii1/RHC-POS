@@ -8,6 +8,7 @@ import type {
   Category,
   PatchSettingsInput,
   Product,
+  ProductImage,
   SizeOption,
   SummaryResponse,
   UpsertCategoryInput,
@@ -59,6 +60,9 @@ export interface TransactionListResponse {
 }
 
 export interface PosRepository {
+  listProductImages(): Promise<ProductImage[]>;
+  getProductImage(id: string): Promise<StoredProductImage | null>;
+  saveProductImage(input: NewProductImage): Promise<ProductImage>;
   getBootstrapBase(): Promise<Omit<BootstrapResponse, "status">>;
   createDraftOrder(input: CartInput): Promise<DraftOrder>;
   getOrder(orderId: string): Promise<DraftOrder | null>;
@@ -91,3 +95,9 @@ export interface PosRepository {
   markOrderRefunded(orderId: string): Promise<void>;
   getRecentOrders(): Promise<DraftOrder[]>;
 }
+
+export type NewProductImage = Omit<ProductImage, "id" | "createdAt"> & {
+  data: Uint8Array;
+  contentHash: string;
+};
+export type StoredProductImage = NewProductImage & ProductImage;

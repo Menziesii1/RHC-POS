@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 
 import { getSizeAdjustmentCents } from "../lib/cart";
-import { getProductImage } from "../lib/product-images";
+import { ProductPhoto } from "./ProductPhoto";
 import type { DrinkLineDraft } from "../types/ui";
 
 interface DrinkBuilderOverlayProps {
@@ -160,7 +160,6 @@ export function DrinkBuilderOverlay({
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  const productPhoto = getProductImage(product.name);
   const allowedSizes = bootstrap.sizes.filter((s) => s.enabled);
   const allowedFlavors = bootstrap.modifiers.filter((m) => m.enabled);
   const selectedSize = allowedSizes.find((s) => s.id === draftLine.sizeOptionId) ?? null;
@@ -221,17 +220,9 @@ export function DrinkBuilderOverlay({
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Left sidebar — product photo + summary (hidden on mobile) */}
           <div className="hidden sm:flex w-48 shrink-0 flex-col gap-3 overflow-y-auto bg-[var(--bg-base)] p-4">
-            {productPhoto && (
-              <div className="hidden sm:flex items-center justify-center">
-                <img
-                  src={productPhoto.src}
-                  alt={product.name}
-                  className="h-52 w-52 object-contain drop-shadow-xl"
-                  style={productPhoto.scale !== 1 ? { transform: `scale(${productPhoto.scale})` } : undefined}
-                  draggable={false}
-                />
-              </div>
-            )}
+            <div className="hidden sm:flex items-center justify-center">
+              <ProductPhoto name={product.name} imageId={product.imageId} className="h-52 w-52 object-contain drop-shadow-xl" />
+            </div>
             <div className="space-y-2">
               <div className="flex items-center gap-2 rounded-lg bg-[var(--inset-surface)] px-3 py-2.5">
                 {draftLine.iced

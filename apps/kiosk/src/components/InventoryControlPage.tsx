@@ -12,9 +12,11 @@ import { ChevronUp, ChevronDown, Package, Settings, FolderOpen, Ruler, Droplets,
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { useConfirm } from "../lib/confirm";
+import { ProductImagePicker } from "./ProductImagePicker";
 import { AdminWorkspaceHeader } from "./AdminWorkspaceHeader";
 
 interface InventoryControlPageProps {
+  adminPin: string;
   bootstrap: BootstrapResponse;
   analytics: AnalyticsRangeResponse | null;
   onClose: () => void;
@@ -82,6 +84,8 @@ const HOLD_TO_DELETE_MS = 1000;
 function defaultProductDraft(bootstrap: BootstrapResponse): UpsertProductInput {
   return {
     name: "",
+    imageId: null,
+    customizable: true,
     categoryId: bootstrap.categories[0]?.id ?? "",
     priceCents: 0,
     discountCents: 0,
@@ -98,16 +102,18 @@ function defaultProductDraft(bootstrap: BootstrapResponse): UpsertProductInput {
 function toProductDraft(product: BootstrapResponse["products"][number]): UpsertProductInput {
   return {
     name: product.name,
+    imageId: product.imageId ?? null,
+    customizable: product.customizable ?? true,
     categoryId: product.categoryId,
     priceCents: product.priceCents,
     discountCents: product.discountCents,
     enabled: product.enabled,
     sortOrder: product.sortOrder,
     productType: product.productType,
-    modifierIds: [],
-    sizeOptionIds: [],
-    sizeOptionPrices: [],
-    defaultSizeOptionId: null,
+    modifierIds: product.modifierIds,
+    sizeOptionIds: product.sizeOptionIds,
+    sizeOptionPrices: product.sizeOptionPrices,
+    defaultSizeOptionId: product.defaultSizeOptionId,
   };
 }
 
@@ -127,6 +133,7 @@ function SubPageHeader({ title, onBack }: { title: string; onBack: () => void })
 }
 
 export function InventoryControlPage({
+  adminPin,
   bootstrap,
   analytics,
   onClose,
@@ -163,6 +170,7 @@ export function InventoryControlPage({
   const [productSortOrderStr, setProductSortOrderStr] = useState("1");
   const [productError, setProductError] = useState<string | null>(null);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSize, setNewSize] = useState({ name: "", price: "0.00" });
@@ -255,11 +263,11 @@ export function InventoryControlPage({
   useEffect(() => () => clearDeleteHold(), []);
 
   const activeProducts = bootstrap.products.filter((product) => product.enabled).length;
-  const canSubmitProduct = productDraft.name.trim().length > 0 && productDraft.categoryId.trim().length > 0 && !isSavingProduct;
+  const canSubmitProduct = productDraft.name.trim().length > 0 && productDraft.categoryId.trim().length > 0 && !isSavingProduct && !isUploadingImage;
 
   const openCreateModal = () => { setProductError(null); setProductModal({ mode: "create", productId: null }); };
   const openEditModal = (productId: string) => { setProductError(null); setProductModal({ mode: "edit", productId }); };
-  const closeProductModal = () => { setProductError(null); setProductModal(null); };
+  const closeProductModal = () => { setIsUploadingImage(false); setProductError(null); setProductModal(null); };
   const triggerSuccessFlash = () => setSuccessFlashToken(Date.now());
 
   const clearDeleteHold = () => {
@@ -1383,9 +1391,27 @@ export function InventoryControlPage({
                     />
                   </label>
                 </div>
-                <div className="rounded-lg bg-[var(--overlay-soft)] px-3 py-2.5 text-xs font-medium leading-5 text-[var(--text-muted)]">
-                  Size and flavor assignment is global — any enabled size or flavor applies everywhere.
-                </div>
+                <label className="flex items-center justify-between gap-4 rounded-xl bg-[var(--overlay-soft)] p-4 text-[var(--text-primary)]">
+                  <span>
+                    <span className="block text-sm font-bold">Customizable</span>
+                    <span className="mt-1 block text-xs text-[var(--text-muted)]">
+                      {productDraft.customizable !== false
+                        ? "Show size, flavor, and hot/iced options when this item is tapped."
+                        : "Add directly to the cart with no options."}
+                    </span>
+                  </span>
+                  <span className="relative shrink-0">
+                    <input type="checkbox" role="switch" aria-label="Customizable" className="peer sr-only"
+                      checked={productDraft.customizable !== false}
+                      onChange={(e) => setProductDraft((draft) => ({ ...draft, customizable: e.target.checked }))} />
+                    <span aria-hidden="true" className="block h-7 w-12 rounded-full bg-zinc-500 transition peer-checked:bg-[#0a8f89] peer-focus-visible:ring-2 peer-focus-visible:ring-[#1be4db] peer-focus-visible:ring-offset-2" />
+                    <span aria-hidden="true" className="pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
+                  </span>
+                </label>
+                <ProductImagePicker key={productModal.productId ?? "new-product"} adminPin={adminPin}
+                  productName={productDraft.name} imageId={productDraft.imageId} disabled={isSavingProduct}
+                  onChange={(imageId) => setProductDraft((draft) => ({ ...draft, imageId }))}
+                  onBusyChange={setIsUploadingImage} />
                 <div className="flex flex-wrap items-center gap-2.5 pt-3">
                   <button
                     type="button"

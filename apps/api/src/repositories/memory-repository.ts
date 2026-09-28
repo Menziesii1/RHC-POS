@@ -10,6 +10,7 @@ import {
   type Modifier,
   type PatchSettingsInput,
   type Product,
+  type ProductImage,
   type SizeOption,
   type SummaryResponse,
   type UpsertCategoryInput,
@@ -19,10 +20,11 @@ import {
   type UpsertSizeOptionInput,
 } from "@rhc-pos/shared";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "node:crypto";
 
 import { HttpError } from "../lib/http-error.js";
 import { createOrderNumber } from "../lib/order-number.js";
-import type { AuditEventInput, CardPaymentUpdateInput, PosRepository, TransactionListResponse } from "./types.js";
+import type { AuditEventInput, CardPaymentUpdateInput, PosRepository, TransactionListResponse, NewProductImage, StoredProductImage } from "./types.js";
 
 type LineSummary = DraftOrder["lines"][number]["modifierSummary"];
 
@@ -39,6 +41,7 @@ function toMap<T extends { id: string }>(items: T[]) {
 }
 
 export class MemoryPosRepository implements PosRepository {
+  private productImages = new Map<string, StoredProductImage>();
   private lockScreenPinHash = bcrypt.hashSync("1357", 10);
 
   private bootstrap: Omit<BootstrapResponse, "status"> = {
@@ -275,7 +278,10 @@ export class MemoryPosRepository implements PosRepository {
         throw new HttpError(400, `Product ${item.productId} is not available.`);
       }
 
-      const selectedSizeId = item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
+      if (product.customizable === false && (item.sizeOptionId || item.modifierIds.length || item.isIced)) {
+        throw new HttpError(400, `${product.name} does not accept customization. Remove it and add it again.`);
+      }
+      const selectedSizeId = product.customizable === false ? null : item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
       const size = selectedSizeId ? sizes.get(selectedSizeId) ?? null : null;
       if (selectedSizeId && (!size || !size.enabled)) {
         throw new HttpError(400, `Size ${selectedSizeId} is not allowed for ${product.name}.`);
@@ -781,6 +787,22 @@ export class MemoryPosRepository implements PosRepository {
     });
   }
 
+  async listProductImages(): Promise<ProductImage[]> {
+    return [...this.productImages.values()].reverse().map(({ data, contentHash, ...image }) => structuredClone(image));
+  }
+
+  async getProductImage(id: string): Promise<StoredProductImage | null> {
+    return structuredClone(this.productImages.get(id) ?? null);
+  }
+
+  async saveProductImage(input: NewProductImage): Promise<ProductImage> {
+    const existing = [...this.productImages.values()].find((image) => image.contentHash === input.contentHash);
+    const stored = existing ?? { ...input, id: randomUUID(), createdAt: nowIso() };
+    this.productImages.set(stored.id, structuredClone(stored));
+    const { data, contentHash, ...image } = stored;
+    return structuredClone(image);
+  }
+
   async listProducts(): Promise<Product[]> {
     return structuredClone(this.bootstrap.products);
   }
@@ -788,6 +810,10 @@ export class MemoryPosRepository implements PosRepository {
   async upsertProduct(input: UpsertProductInput, actorLabel: string): Promise<Product> {
     const product: Product = {
       id: input.id ?? slugify(input.name),
+      customizable: input.customizable ?? this.bootstrap.products.find((p) => p.id === (input.id ?? slugify(input.name)))?.customizable ?? true,
+      imageId: input.imageId === undefined
+        ? this.bootstrap.products.find((p) => p.id === (input.id ?? slugify(input.name)))?.imageId ?? null
+        : input.imageId,
       name: input.name,
       categoryId: input.categoryId,
       priceCents: input.priceCents,

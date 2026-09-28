@@ -99,7 +99,10 @@ export class KioskSyncService implements LocalSyncService {
         throw new HttpError(400, `Product ${item.productId} is not available.`);
       }
 
-      const selectedSizeId = item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
+      if (product.customizable === false && (item.sizeOptionId || item.modifierIds.length || item.isIced)) {
+        throw new HttpError(400, `${product.name} does not accept customization. Remove it and add it again.`);
+      }
+      const selectedSizeId = product.customizable === false ? null : item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
       const size = selectedSizeId ? sizes.get(selectedSizeId) ?? null : null;
       if (selectedSizeId && (!size || !size.enabled)) {
         throw new HttpError(400, `Size ${selectedSizeId} is not allowed for ${product.name}.`);

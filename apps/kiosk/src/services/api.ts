@@ -9,6 +9,7 @@ import type {
   UpsertModifierInput,
   PatchSettingsInput,
   Product,
+  ProductImage,
   SizeOption,
   SummaryResponse,
   UpsertSizeOptionInput,
@@ -56,6 +57,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  listProductImages: (pin: string) => request<ProductImage[]>("/admin/product-images", {
+    headers: { "x-admin-pin": pin },
+  }),
+  uploadProductImage: (pin: string, file: File) => request<ProductImage>(
+    `/admin/product-images?name=${encodeURIComponent(file.name.slice(0, 120))}`, {
+      method: "POST",
+      headers: { "x-admin-pin": pin, "Content-Type": file.type },
+      body: file,
+    },
+  ),
   getBootstrap: () => request<BootstrapResponse>("/bootstrap"),
   getDashboard: () => request<SummaryResponse>("/dashboard/today"),
   listCategories: () => request<BootstrapResponse["categories"]>("/admin/categories"),

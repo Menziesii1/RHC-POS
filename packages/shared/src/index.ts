@@ -2,6 +2,18 @@ import { z } from "zod";
 
 export const idSchema = z.string().min(1);
 
+export const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+export const productImageSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  contentType: z.string(),
+  byteSize: z.number().int(),
+  width: z.number().int(),
+  height: z.number().int(),
+  createdAt: z.string().datetime(),
+});
+export type ProductImage = z.infer<typeof productImageSchema>;
+
 export const categorySchema = z.object({
   id: idSchema,
   name: z.string().min(1),
@@ -42,6 +54,8 @@ export const productTypeSchema = z.enum(["drink", "food", "discount", "kids"]);
 
 export const productSchema = z.object({
   id: idSchema,
+  imageId: z.string().uuid().nullable().optional(),
+  customizable: z.boolean().optional(),
   name: z.string().min(1),
   categoryId: idSchema,
   priceCents: z.number().int().nonnegative(),
@@ -278,6 +292,9 @@ export const upsertFlavorCategorySchema = z.object({
 
 export const upsertProductSchema = z.object({
   id: z.string().optional(),
+  // Omission preserves an existing selection for older kiosk clients.
+  imageId: z.string().uuid().nullable().optional(),
+  customizable: z.boolean().optional(),
   name: z.string().min(1),
   categoryId: idSchema,
   priceCents: z.number().int().nonnegative(),

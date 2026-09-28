@@ -9,6 +9,7 @@ import italianSoda from "../../assets/Italian soda.webp";
 import chai from "../../assets/Chai.webp";
 import cookie from "../../assets/Cookie.png";
 import tShirt from "../../assets/T-Shirt.png";
+import { API_BASE_URL } from "../services/api";
 
 // Maps keyword patterns to imported image assets.
 // Add new entries here as you add more photos to apps/kiosk/assets/.
@@ -32,7 +33,12 @@ export interface ProductImageResult {
   scale: number;
 }
 
-export function getProductImage(productName: string): ProductImageResult | null {
+export function productImageUrl(imageId: string): string {
+  return `${API_BASE_URL.replace(/\/$/, "")}/product-images/${encodeURIComponent(imageId)}`;
+}
+
+export function getProductImage(productName: string, imageId?: string | null): ProductImageResult | null {
+  if (imageId) return { src: productImageUrl(imageId), scale: 1 };
   const lower = productName.toLowerCase();
   for (const entry of IMAGE_MAP) {
     if (entry.keywords.some((kw) => lower.includes(kw))) {

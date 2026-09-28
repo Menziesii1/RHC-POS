@@ -13,6 +13,7 @@ import {
   type Modifier,
   type PatchSettingsInput,
   type Product,
+  type ProductImage,
   type SizeOption,
   type SummaryResponse,
   type UpsertCategoryInput,
@@ -25,7 +26,7 @@ import {
 import type { AppConfig } from "../config.js";
 import { HttpError } from "../lib/http-error.js";
 import { createOrderNumber } from "../lib/order-number.js";
-import type { AuditEventInput, CardPaymentUpdateInput, PosRepository, TransactionListResponse, TransactionRow } from "./types.js";
+import type { AuditEventInput, CardPaymentUpdateInput, PosRepository, TransactionListResponse, TransactionRow, NewProductImage, StoredProductImage } from "./types.js";
 
 type ProductRecord = Awaited<ReturnType<PrismaPosRepository["getProductRecords"]>>[number];
 type OrderRecord = Awaited<ReturnType<PrismaPosRepository["getOrderRecord"]>>;
@@ -140,7 +141,10 @@ export class PrismaPosRepository implements PosRepository {
         throw new HttpError(400, `Product ${item.productId} is not available.`);
       }
 
-      const selectedSizeId = item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
+      if (product.customizable === false && (item.sizeOptionId || item.modifierIds.length || item.isIced)) {
+        throw new HttpError(400, `${product.name} does not accept customization. Remove it and add it again.`);
+      }
+      const selectedSizeId = product.customizable === false ? null : item.sizeOptionId ?? product.defaultSizeOptionId ?? null;
       const size = selectedSizeId ? sizes.get(selectedSizeId) ?? null : null;
       if (selectedSizeId && (!size || !size.enabled)) {
         throw new HttpError(400, `Size ${selectedSizeId} is not allowed for ${product.name}.`);
@@ -183,7 +187,7 @@ export class PrismaPosRepository implements PosRepository {
         sizeAdjustmentCents,
         modifierIds: item.modifierIds,
         modifierSummary,
-        isIced: item.isIced ?? null,
+        isIced: product.customizable === false ? null : item.isIced ?? null,
         flavorAdjustmentCents,
         discountCents: product.discountCents,
         lineTotalCents: unitPriceCents * item.quantity,
@@ -798,6 +802,30 @@ export class PrismaPosRepository implements PosRepository {
     await this.prisma.sizeOption.delete({ where: { id: sizeId } });
   }
 
+  async listProductImages(): Promise<ProductImage[]> {
+    const images = await this.prisma.productImage.findMany({
+      where: { locationId: this.config.LOCATION_ID },
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      select: { id: true, name: true, contentType: true, byteSize: true, width: true, height: true, createdAt: true },
+    });
+    return images.map((image) => ({ ...image, createdAt: image.createdAt.toISOString() }));
+  }
+
+  async getProductImage(id: string): Promise<StoredProductImage | null> {
+    const image = await this.prisma.productImage.findFirst({ where: { id, locationId: this.config.LOCATION_ID } });
+    return image ? { ...image, createdAt: image.createdAt.toISOString() } : null;
+  }
+
+  async saveProductImage(input: NewProductImage): Promise<ProductImage> {
+    const image = await this.prisma.productImage.upsert({
+      where: { locationId_contentHash: { locationId: this.config.LOCATION_ID, contentHash: input.contentHash } },
+      update: {},
+      create: { ...input, data: new Uint8Array(input.data), locationId: this.config.LOCATION_ID },
+      select: { id: true, name: true, contentType: true, byteSize: true, width: true, height: true, createdAt: true },
+    });
+    return { ...image, createdAt: image.createdAt.toISOString() };
+  }
+
   async listProducts(): Promise<Product[]> {
     const products = await this.getProductRecords();
     return products.map((product) => this.mapProduct(product));
@@ -817,6 +845,8 @@ export class PrismaPosRepository implements PosRepository {
       where: { id: productId },
       update: {
         name: input.name,
+        imageId: input.imageId,
+        customizable: input.customizable,
         categoryId: input.categoryId,
         priceCents: input.priceCents,
         discountCents: input.discountCents,
@@ -842,6 +872,8 @@ export class PrismaPosRepository implements PosRepository {
         id: productId,
         locationId: this.config.LOCATION_ID,
         name: input.name,
+        imageId: input.imageId,
+        customizable: input.customizable,
         categoryId: input.categoryId,
         priceCents: input.priceCents,
         discountCents: input.discountCents,
@@ -1081,6 +1113,8 @@ export class PrismaPosRepository implements PosRepository {
     return {
       id: product.id,
       name: product.name,
+      imageId: product.imageId,
+      customizable: product.customizable,
       categoryId: product.categoryId,
       priceCents: product.priceCents,
       discountCents: product.discountCents,

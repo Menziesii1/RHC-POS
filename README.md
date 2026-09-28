@@ -43,6 +43,18 @@ RHC POS is a kiosk-first, in-store point of sale system for a church coffee shop
 
 ## Kiosk Deployment
 
+### Product images and customization
+
+In **Admin → Products → Add Product** (or click an existing item), use **Upload image** or select a thumbnail from the saved image library, then save the product. PNG, JPEG and WebP files up to 5 MB are supported; transparency is preserved. **Use default image** restores the existing name-based picture without deleting the uploaded image.
+
+The **Customizable** switch controls the register flow. Turn it off for items such as cookies that should go straight into the cart without sizes, flavors or temperature options. Existing products default to customizable. Prices and option assignments are retained when this switch or the image changes.
+
+Images are optimized to WebP (up to 1024 pixels and 1 MB stored size) and stored in the existing PostgreSQL database. They survive API redeploys and are included in database backups; no Railway volume or separate storage credentials are required. Library listing and upload require the admin PIN. Image URLs are public catalog media and contain no credentials. Identical uploads are reused.
+
+Deploy the API and its additive migrations first, then update the physical kiosk frontend once. Thereafter, new images and product settings arrive with the normal catalog refresh (about 30 seconds online), without rebuilding the kiosk. The current Wyse must keep using the direct Railway API URL documented in `setup.md`. The experimental cash-only sync proxy does not provide the image library endpoints; newly uploaded images need network access, while previously loaded images may remain in the browser cache.
+
+See [infra/product-images.md](infra/product-images.md) for rollout and validation details.
+
 The register runs on a **Dell Wyse 5070** thin client (`rhc-kiosk-01`) running Ubuntu Server 24.04 LTS. On boot it starts nginx, the local sync service, Xorg/Openbox, and Chrome in kiosk mode pointing at `http://127.0.0.1/`. The frontend talks directly to the Railway API for live operation.
 
 **Services on the Wyse:**

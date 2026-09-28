@@ -1,7 +1,7 @@
 import { Coffee, UtensilsCrossed, CupSoda, IceCreamCone, Tag, Wheat, Candy, Soup, Sandwich } from "lucide-react";
 import type { BootstrapResponse } from "@rhc-pos/shared";
 import { formatCurrency } from "@rhc-pos/shared";
-import { getProductImage } from "../lib/product-images";
+import { ProductPhoto } from "./ProductPhoto";
 import logoUrl from "../../assets/River Hills Logo without text Colored.svg?url";
 
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
@@ -61,7 +61,6 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectProduct }: 
             {visibleProducts.map((product) => {
               const category = allCategories.find((c) => c.id === product.categoryId);
               const ItemIcon = category ? getCategoryIcon(category.name) : Coffee;
-              const photo = getProductImage(product.name);
 
               return (
                 <button
@@ -72,19 +71,13 @@ export function ProductGrid({ bootstrap, selectedCategoryId, onSelectProduct }: 
                 >
                   {/* Photo or icon area */}
                   <div className="flex h-32 w-full items-center justify-center overflow-hidden bg-[var(--bg-surface)]">
-                    {photo ? (
-                      <img
-                        src={photo.src}
-                        alt={product.name}
-                        className="h-full w-full object-contain p-3 transition group-hover:scale-105 drop-shadow-lg"
-                        style={photo.scale !== 1 ? { transform: `scale(${photo.scale})` } : undefined}
-                        draggable={false}
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1be4db]/10 transition group-hover:bg-[#1be4db]/15">
-                        <ItemIcon size={24} className="text-[#1be4db]" />
-                      </div>
-                    )}
+                    <ProductPhoto name={product.name} imageId={product.imageId}
+                      className="h-full w-full object-contain p-3 transition group-hover:scale-105 drop-shadow-lg"
+                      fallback={
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1be4db]/10 transition group-hover:bg-[#1be4db]/15">
+                          <ItemIcon size={24} className="text-[#1be4db]" />
+                        </div>
+                      } />
                   </div>
                   {/* Text area */}
                   <div className="px-2.5 py-2 text-center bg-[var(--bg-card)]">

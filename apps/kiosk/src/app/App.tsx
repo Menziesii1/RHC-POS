@@ -323,7 +323,7 @@ export function App() {
           : bootstrap.sizes.find((size) => size.enabled)?.id) ?? null;
       const hasEnabledModifiers = bootstrap.modifiers.some((modifier) => modifier.enabled);
       const hasEnabledSizes = bootstrap.sizes.some((size) => size.enabled);
-      const needsConfigurator = hasEnabledSizes || hasEnabledModifiers;
+      const needsConfigurator = product.customizable !== false && (hasEnabledSizes || hasEnabledModifiers);
 
       if (needsConfigurator) {
         const icedByDefault = ["frappuccino", "frap", "red bull", "italian soda"].some((kw) =>
@@ -746,6 +746,8 @@ export function App() {
                 onCloseMobile={() => setMobileCartOpen(false)}
                 onRemoveLine={(lineId) => mutateCart(() => store.removeLine(lineId))}
                 onEditLine={(lineId) => {
+                  const line = store.cartLines.find((entry) => entry.id === lineId);
+                  if (store.bootstrap?.products.find((product) => product.id === line?.productId)?.customizable === false) return;
                   store.beginDraftLineFromCartLine(lineId);
                   store.setOverlay("drink-builder");
                 }}
@@ -770,6 +772,7 @@ export function App() {
           <div className="flex-1 overflow-auto p-3 lg:p-4">
             <div className="pos-view-panel p-5 lg:p-6">
               <InventoryControlPage
+                adminPin={store.adminPin}
                 bootstrap={store.bootstrap}
                 analytics={analytics}
                 onClose={handleAdminClose}

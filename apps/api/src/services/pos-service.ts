@@ -148,7 +148,11 @@ export class PosService {
   }
 
   async upsertProduct(input: unknown, actorLabel: string) {
-    return this.repository.upsertProduct(upsertProductSchema.parse(input), actorLabel);
+    const parsed = upsertProductSchema.parse(input);
+    if (parsed.imageId && !(await this.repository.getProductImage(parsed.imageId))) {
+      throw new HttpError(400, "Choose an image from this store's image library.");
+    }
+    return this.repository.upsertProduct(parsed, actorLabel);
   }
 
   async deleteProduct(productId: string): Promise<{ ok: true }> {

@@ -10,6 +10,7 @@ import { MemoryPosRepository } from "./repositories/memory-repository.js";
 import { PrismaPosRepository } from "./repositories/prisma-repository.js";
 import type { PosRepository } from "./repositories/types.js";
 import { registerRoutes } from "./routes/index.js";
+import { registerProductImageRoutes } from "./routes/product-images.js";
 import { AdminAuthService } from "./services/admin-auth-service.js";
 import { PosService } from "./services/pos-service.js";
 import { createTerminalService } from "./services/terminal-service.js";
@@ -90,5 +91,6 @@ export async function createApp(options: CreateAppOptions) {
 
   app.get("/", async () => ({ ok: true, service: "api" }));
   registerRoutes(app, posService);
+  registerProductImageRoutes(app, repository, posService);
   return app;
 }
